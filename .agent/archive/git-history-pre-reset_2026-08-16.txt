@@ -1,0 +1,364 @@
+commit 2d7666819e8acbd328fe01fa882ed64d911a5f6d
+Author: Stylenecy <dex.bennett28@gmail.com>
+Date: Wed Aug 12 12:47:04 2026 +0700
+
+feat: WhatsApp contact access + Cross note fixes
+
+- profiles.whatsapp gated by SECURITY DEFINER RPC get_member_whatsapp(),
+  column-level revoke from anon/authenticated, new ministry role/table
+- normalize_phone() (TS + Python) with length validation, importer report
+  shows 0/92 failed against real Excel source
+- WhatsAppButton renders only when a valid wa.me link exists
+- Cross 2 placeholder "orang Manado" identified as Matthew (confirmed by Dex)
+- import pipeline scripts + Supabase setup docs
+
+----------------------------------------
+commit 9a3f776e0e8bee0beabcbec60959790797ff4f3b
+Author: Stylenecy <dex.bennett28@gmail.com>
+Date: Tue Aug 11 10:21:32 2026 +0700
+
+feat: finance module absorbs Nathan's kas structure
+
+Kas Besar/Kas Kecil split, categories match his chart of accounts exactly,
+treasurer role (RLS-gated, admin_emails-pattern), bulk paste-and-validate
+import from his spreadsheet, CSV export. Migration 0005.
+
+Co-Authored-By: Claude Opus 5 <noreply@anthropic.com>
+
+----------------------------------------
+commit b50deebd2773a896276dc8575e5ec7d37404a9f7
+Author: Stylenecy <dex.bennett28@gmail.com>
+Date: Sat Aug 8 16:49:25 2026 +0700
+
+harden: move Cross-leadership writes to SQL-enforced RPCs, no rush this time
+
+Dex called off tonight's rollout after ibadah — nobody but Angel knows this
+exists yet. With the time pressure gone, this closes the gap the rushed
+version had documented and accepted rather than fixed: any signed-in user
+could call the Supabase REST API directly and self-insert as leader of any
+group, because the shared claim code was only checked in the Next.js
+server action, never in Postgres. Someone bypassing the app entirely
+wouldn't have needed the code at all.
+
+Migration 0004 moves both writes (claim leadership, add a member) into
+SECURITY DEFINER functions — claim_cross_leadership() and
+add_cross_member() — that validate the code and the caller's leadership
+in SQL, in one transaction each. The permissive INSERT policies from 0003
+are dropped: cross_memberships and profiles now accept no direct client
+writes at all, only through these two functions. A partial unique index
+closes the same-second double-claim race that a check-then-insert alone
+can't.
+
+ADMIN_EMAILS and CROSS_CLAIM_CODE move out of Vercel env vars into two
+locked-down tables (admin_emails, cross_claim_codes — RLS enabled, zero
+client policies, readable only by the functions above or the SQL Editor).
+One source of truth instead of two, and Dex can rotate the code himself
+without redeploying or asking me. Both env vars removed from Vercel.
+
+Also, since there was room to do this properly instead of just fast:
+
+- get_my_app_role() RPC replaces the env-var admin check in
+  getCurrentProfile() — same reasoning, one source of truth.
+- /dashboard/cross/mine now matches what the backend actually allows: an
+  admin can add members to any group (already true in the RPC), so the UI
+  now shows every group to an admin, labeled clearly when it's "managing
+  via admin access" versus a group they've personally claimed as CL.
+- Quick-add warns (not blocks) on a name that already exists in the group
+  — a mistyped duplicate is more likely than two people who happen to
+  share a nickname, but it does happen, so this doesn't hard-block it.
+- Empty states rewritten to guide rather than state absence: an unclaimed
+  group says how to claim it, a claimed-but-empty group says one name is
+  enough to start, /dashboard/members no longer tells people to run a
+  seed.sql that no longer describes how member data actually gets in.
+- Verified no hardcoded assumption of "8 leaders" or "5 claimed groups"
+  anywhere — every group renders from its own membership rows, so the
+  Dex+Angel pilot (1-2 claimed groups) and a full rollout render through
+  the same code path.
+- Test suite: 36 -> 50. New: tests/validation.test.ts (the name rule
+  mirrored client-side) and tests/cross-data.test.ts (every demo-mode
+  data.ts helper this feature added, including the session-aware ones
+  failing safe to null/[] outside a real login instead of throwing).
+
+PROJECT_MASTER.md now carries a calm, no-deadline setup guide for the one
+remaining step (enabling Google as an Auth provider — needs Dex's own
+Google Cloud Console access, which no tool here can reach) with a time
+estimate and a 30-second way to verify it worked.
+
+Verified: tsc clean, 50/50 tests, production build clean, migration 0004
+applied via Supabase MCP and confirmed by querying the database (4
+functions exist, admin_emails/cross_claim_codes seeded, the old insert
+policies are gone) rather than assumed successful.
+
+Co-Authored-By: Claude Opus 5 <noreply@anthropic.com>
+
+----------------------------------------
+commit 23be301a232e6419b9b1aacc026f89c75a31ace2
+Author: Stylenecy <dex.bennett28@gmail.com>
+Date: Sat Aug 8 16:37:04 2026 +0700
+
+docs: record Cross Leader self-service rollout + Google OAuth blocker
+
+Co-Authored-By: Claude Opus 5 <noreply@anthropic.com>
+
+----------------------------------------
+commit 42f0dfdb5bda0218fb882c48b4c40ebc2aa000fb
+Author: Stylenecy <dex.bennett28@gmail.com>
+Date: Sat Aug 8 16:33:27 2026 +0700
+
+feat: real Cross Leader self-service — multi-leader groups, quick-add members
+
+Dex needs the 5 real Cross groups usable tonight, before the 8 leaders
+scatter after ibadah. Nobody can pre-wire 8 accounts by hand in that
+window, so the flow is self-service instead: each leader signs in with
+their own Google account, claims their group behind a shared code, and
+adds members by name only — the roster gets built by using the app, not
+by waiting for a spreadsheet to get tidy first.
+
+Schema: a Cross group can now have more than one leader. Two of the five
+real groups are co-led (Wangke & Arion; Nita, Grace & Erica), which the
+old single `crosses.leader_id` FK couldn't express. Leadership is now a
+`role` on cross_memberships instead, so any number of active `leader` rows
+can point at one group. getCrossLeaders()/getAllCrossLeaderNicknames() read
+that; the old single-leader field stays only as a legacy fallback.
+
+Found while wiring this up: cross_memberships and skills had RLS enabled
+with zero policies, and finance_transactions had no UPDATE policy. All
+three would have silently rejected every real query the moment Supabase
+went live — not just tonight's feature, but the edit/delete work from
+this afternoon too. Fixed in the same migration (0003).
+
+New: /dashboard/cross/mine. No leader membership yet -> pick-your-group +
+code screen. Already leading one or more groups -> each group's roster
+plus a one-line name-only add form, built for someone standing up mid-Cross
+on a phone. Ownership is enforced server-side in the same action that does
+the write (src/app/actions/cross.ts), not just hidden in the UI, and again
+by RLS as a second layer.
+
+The claim code is a light gate, not a real access boundary — it stops a
+stranger who finds the URL from casually claiming a group, but doesn't
+stop someone who deliberately calls the Supabase REST API directly with
+their own session. Fine for an internal youth-group roster tonight;
+flagged in the report as something to harden later if it ever needs to be.
+
+Privacy: the 8 real nicknames (Dex, Angel, Wangke, Arion, Nita, Grace,
+Erica, Nathan) are seeded — Dex explicitly authorized nickname-only usage
+this session. No surname, birth date, phone number, hometown, or
+university for any of them; Profile's non-name fields are now nullable
+throughout so a quick-added member can start with just a name too.
+
+Also applied: migration 0002 (soft-delete finance) from this afternoon,
+which had a written file but was never actually run — the Supabase
+project was paused the whole time.
+
+Verified: tsc clean, 36/36 tests, production build clean.
+
+Co-Authored-By: Claude Opus 5 <noreply@anthropic.com>
+
+----------------------------------------
+commit f356bb1a923496eb29011e24aae9dec55dec2a52
+Author: Stylenecy <dex.bennett28@gmail.com>
+Date: Sat Aug 8 15:54:12 2026 +0700
+
+docs: record the 8 Aug audit, restoration and remaining Supabase steps
+
+Co-Authored-By: Claude Opus 5 <noreply@anthropic.com>
+
+----------------------------------------
+commit 8d4f5472f6fc30b90fe4f8378c7c95e3af17c197
+Author: Stylenecy <dex.bennett28@gmail.com>
+Date: Sat Aug 8 15:49:33 2026 +0700
+
+fix: restore Warta landing, remove real member data from bundle
+
+The 7 Aug session replaced the landing hero with a Three.js canvas and
+repointed the demo seed at the real GKKK Yogyakarta roster. Neither change
+was committed or deployed, so production was never affected.
+
+Three regressions, restored here:
+
+1. Real member data reached a public surface. seed.ts was rewritten with
+   twelve real full legal names and exact birth dates taken from the
+   WhatsApp export in .agent/ — the directory .vercelignore excludes from
+   deploys precisely because it holds personal data. Everything in src/
+   ships, and while Supabase is unconfigured proxy.ts lets every
+   /dashboard request through without a login, so /dashboard/members would
+   have published those names and birth dates to anyone with the URL.
+   Whether real names appear publicly is still Dex's open decision.
+   The seed is demo data again; the real roster is preserved under
+   database/, which never leaves this machine.
+
+2. Demo dates were pinned to 2026-08-08 and the comment explaining why
+   that is a bug was deleted. getUpcomingGathering() filters out past
+   events, so the landing headline would have changed by itself at 17:00
+   that day and the whole site would have fallen back to its empty state
+   after 29 Aug. Restored to dates computed relative to today.
+
+3. Three.js added 561 KB raw / 139 KB gzip to the landing page as a hard,
+   non-lazy import — the one page every jemaat opens, on mid-range phones.
+   The canvas also ran an unconditional requestAnimationFrame loop with
+   bloom and a mirror pass, ignoring prefers-reduced-motion entirely, had
+   no WebGL fallback, and leaked its LFO oscillators and GPU buffers on
+   unmount. Client JS is back to 197 KB gzip, down 41%.
+
+The component and its write-up are kept verbatim under docs/experiments/
+rather than discarded; the technique is worth reusing where a heavy canvas
+belongs. Useful content it introduced is kept: Ruang Hermon as the venue,
+the Saturday 15:00 latihan, and the five-group Cross structure.
+
+Also carried forward, previously unfinished:
+
+- Edit and delete for events and finance rows. Both are soft: events
+  archive, transactions set deleted_at (migration 0002), matching the
+  site's promise that the next kepengurusan inherits a memory rather than
+  an empty folder. Both are reversible.
+- Per-Cross member rosters, via the cross_memberships table that already
+  existed in the schema but was never wired up. Counts now come from the
+  membership rows instead of a memberCount column that drifts.
+- Event times. A bare <input type="date"> was saved as UTC midnight, i.e.
+  07:00 WIB, which would have silently moved every 17:00 service. Forms
+  now take a WIB time and wibToISO() converts it explicitly.
+- First test suite: 35 tests over WIB formatting, seed invariants,
+  membership integrity and schema validation. One test fails the build if
+  a real name from the archived roster reappears in seed.ts; another fails
+  if seed dates are ever pinned to a literal calendar date again.
+
+Verified: tsc clean, 35/35 tests pass, 12 routes 200 locally, one h1 per
+page, 0 WCAG AA failures across all 14 colour token pairs.
+
+Co-Authored-By: Claude Opus 5 <noreply@anthropic.com>
+
+----------------------------------------
+commit e760129e9165c4777b2f167b9dc33704ee932a24
+Author: Stylenecy <dex.bennett28@gmail.com>
+Date: Sat Aug 1 16:28:07 2026 +0700
+
+feat: redesign all dashboard pages, accessible modals, SEO/share metadata
+
+Dashboard pages no longer rely on the compatibility layer for their
+appearance. Ibadah is split into upcoming/past; anggota, Cross, rapat,
+keuangan, audit, pengaturan and the four detail pages are rebuilt on
+shared parts in components/page-parts.tsx.
+
+Modal.tsx replaces two plain-div dialogs that had no role, no aria-modal,
+no Escape handler and no focus containment - keyboard users could Tab out
+of the dialog into the page behind it and could not dismiss it without a
+mouse. Focus is now trapped in both directions and restored on close.
+
+Raw enum values (published, active, change_requested) were rendered
+straight to users across every page; all are mapped to Indonesian labels.
+
+recordedById is no longer hardcoded to 'user-1'.
+
+Member detail deliberately omits phone numbers: the page is reachable by
+any signed-in user and the number belongs to the member.
+
+Adds robots.ts (dashboard and login disallowed - those pages carry member
+data), sitemap.ts, an OG share card that fetches no external fonts, a real
+404 page, and lib/site.ts deriving the canonical origin from
+VERCEL_PROJECT_PRODUCTION_URL rather than a hardcoded host.
+
+Co-Authored-By: Claude Opus 5 <noreply@anthropic.com>
+
+----------------------------------------
+commit d4c0cb99cdfb7b44e2af2f7dbfe96212ae9d5598
+Author: Stylenecy <dex.bennett28@gmail.com>
+Date: Sat Aug 1 16:12:13 2026 +0700
+
+docs: record deploy, design direction, and open decisions for Dex
+
+Co-Authored-By: Claude Opus 5 <noreply@anthropic.com>
+
+----------------------------------------
+commit 8af083378fe802186d79a6aaa1e47599030bc392
+Author: Stylenecy <dex.bennett28@gmail.com>
+Date: Sat Aug 1 15:54:44 2026 +0700
+
+a11y: associate form labels with their inputs
+
+The two modal forms rendered <label> next to fields with no htmlFor/id
+pair, so assistive tech could not tell which label described which
+control. All 11 pairs are now associated.
+
+Co-Authored-By: Claude Opus 5 <noreply@anthropic.com>
+
+----------------------------------------
+commit 8f4e91fede56a6eb89d8f6ed2e5c34d94a268982
+Author: Stylenecy <dex.bennett28@gmail.com>
+Date: Sat Aug 1 15:37:11 2026 +0700
+
+fix: pin all date formatting to WIB, declare zod, exclude member data from deploys
+
+- Every remaining toLocaleDateString call ran in the server's zone (UTC on
+  Vercel), which can render a Saturday evening service as Sunday. All now go
+  through the shared Asia/Jakarta formatters.
+- zod was imported by lib/schemas but resolved only as a transitive dep of
+  eslint-config-next, a devDependency. Declared directly.
+- Raw enum values ('published', 'active') were rendered straight into the UI;
+  mapped to Indonesian labels.
+- .vercelignore keeps .agent/ and database/ (~22 MB of WhatsApp exports and
+  member records) out of the deployment upload. Nothing in src imports them.
+
+Co-Authored-By: Claude Opus 5 <noreply@anthropic.com>
+
+----------------------------------------
+commit 66732872ee02ef523d68caf7ba94585d46219121
+Author: Stylenecy <dex.bennett28@gmail.com>
+Date: Sat Aug 1 15:32:59 2026 +0700
+
+feat: rebuild design system, fix demo-mode 500s, halve font payload
+
+Blocking fix: proxy/middleware called createServerClient with non-null
+asserted env vars, so every /login and /dashboard request threw 500 when
+Supabase was unconfigured. Nine of ten routes were down in demo mode.
+Guarded behind isSupabaseConfigured and migrated middleware.ts -> proxy.ts.
+
+Design: replace the generic SaaS landing with an editorial 'Warta' layout
+built on the ministry's actual weekly rhythm. Adds a night-toned anchor
+section, a real type scale using Fraunces' optical-size axis, paper grain,
+and sage as a second semantic so amber stops carrying every state.
+
+Accessibility: previous ink-muted (3.57:1) and ink-faint (2.20:1) failed
+WCAG AA and were used for all body copy and captions. Retuned every
+foreground token to pass >=4.5:1 against both paper tones. Adds skip link,
+global focus-visible rings, 44px minimum touch targets, aria-current,
+landmark labels, prefers-reduced-motion and prefers-contrast handling.
+
+Mobile: the dashboard's only nav was 'hidden md:block', leaving phone users
+with no way to change modules. Adds a bottom tab bar plus an overflow sheet.
+
+Performance: drop framer-motion (CSS entrance animation instead), move
+fonts from a render-blocking Google Fonts <link> to next/font, and trim
+Geist Mono plus Fraunces' SOFT/WONK axes. Fonts 262 KB -> 134 KB,
+third-party requests 3 -> 0.
+
+Correctness: date formatters now pin Asia/Jakarta so a Saturday service
+does not render as Sunday on a UTC server; seed data is generated relative
+to today instead of expired July dates; login OAuth redirected to the
+Supabase origin and never followed the returned provider URL.
+
+Co-Authored-By: Claude Opus 5 <noreply@anthropic.com>
+
+----------------------------------------
+commit 8b03809271eee2064e2bc03b3bc5ac3efc7a6309
+Author: Stylenecy <dex.bennett28@gmail.com>
+Date: Sat Aug 1 15:12:30 2026 +0700
+
+docs(cross): sync session updates 30 Jul — hadiah closed, susunan Cross final, safety note
+
+Co-Authored-By: Claude Opus 5 <noreply@anthropic.com>
+
+----------------------------------------
+commit 3d8a6e992ea0b0db85c2061ccb4a5bd59286afe7
+Author: Stylenecy <dex.bennett28@gmail.com>
+Date: Wed Jul 29 16:24:57 2026 +0700
+
+Add progress report, idempotent schema/seed SQL, .gitignore, git init
+
+----------------------------------------
+commit f8377e3fe4041938802bbff276e3e6baedc5d2cb
+Author: Stylenecy <dex.bennett28@gmail.com>
+Date: Wed Jul 29 16:20:57 2026 +0700
+
+Initial commit: YGMS v2 — Sanctuary Editorial, Next.js 16, Supabase integration ready
+
+----------------------------------------

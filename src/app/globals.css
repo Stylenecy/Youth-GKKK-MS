@@ -1,0 +1,511 @@
+@import "tailwindcss";
+
+/* ============================================================
+   YGMS — "Warta" design system
+   A church youth ministry's weekly bulletin, made digital.
+   Ink on warm paper. Restraint over decoration.
+
+   Every foreground token below is measured against its intended
+   background and meets WCAG AA (>= 4.5:1) for normal text.
+   ============================================================ */
+
+@theme inline {
+  /* --- Paper (light surfaces) --- */
+  --color-canvas: #faf7f2; /* warm paper, the default plane */
+  --color-canvas-sunk: #f3eee5; /* recessed band, breaks the flat plane */
+  --color-surface: #ffffff; /* raised card */
+
+  /* --- Ink (foreground on paper) --- */
+  /* Ratios are quoted against canvas-sunk, the *darker* of the two paper
+     tones, so every value holds on both planes. */
+  --color-ink: #241f1b; /* 14.1:1 — headings, primary text */
+  --color-ink-muted: #6f655c; /*  4.9:1 — body / secondary       */
+  --color-ink-faint: #756a60; /*  4.6:1 — captions, meta         */
+
+  /* --- Night (dark anchor sections) --- */
+  --color-deep: #1c1815; /* warm near-black, not a cold grey */
+  --color-deep-soft: #2a241f; /* card on night */
+  --color-on-deep: #faf7f2; /* 16.5:1 on deep */
+  --color-on-deep-muted: #a79b8e; /*  6.5:1 on deep */
+
+  /* --- Amber: the single accent. Used rarely, so it means something. --- */
+  --color-accent: #a94d08; /*  4.8:1 on canvas-sunk, 5.6:1 white-on-accent */
+  --color-accent-strong: #8a3d06; /* hover / pressed */
+  --color-accent-on-deep: #e8a33d; /*  8.2:1 on deep */
+  --color-accent-wash: #fbeada; /* tinted fill, never a text colour */
+
+  /* --- Sage: "sudah terisi / aktif". Keeps amber from carrying
+         every semantic at once. --- */
+  --color-sage: #4f6b44; /*  5.6:1 on canvas */
+  --color-sage-wash: #e9efe4;
+
+  /* --- Signals --- */
+  --color-warning: #8a5a10; /*  5.3:1 on canvas */
+  --color-warning-wash: #fbf0d9;
+  --color-danger: #a02c2c; /*  5.9:1 on canvas */
+  --color-danger-wash: #f8e3e3;
+
+  /* --- Rules & hairlines --- */
+  --color-rule: #ded4c6; /* visible hairline */
+  --color-rule-soft: #ece5da; /* barely-there divider */
+
+  /* --- Compatibility aliases ---------------------------------
+     The dashboard was built against the previous token names.
+     Mapping them here means every existing page picks up the
+     corrected contrast values without being rewritten. Prefer the
+     names above for new work. --------------------------------- */
+  --color-accent-hover: #8a3d06;
+  --color-accent-light: #fbeada;
+  --color-border: #ded4c6;
+  --color-border-light: #ece5da;
+  --color-divider: #ece5da;
+  --color-success: #4f6b44;
+  --color-glow: rgba(180, 83, 9, 0.05);
+  --color-glow-strong: rgba(180, 83, 9, 0.09);
+
+  --font-serif: var(--font-fraunces), "Iowan Old Style", Georgia, serif;
+  --font-sans: var(--font-geist-sans), "Inter", system-ui, sans-serif;
+  --font-mono: ui-monospace, "SF Mono", "Roboto Mono", "DejaVu Sans Mono",
+    Menlo, Consolas, monospace;
+
+  --radius-sm: 4px;
+  --radius-md: 8px;
+  --radius-lg: 14px;
+  --radius-xl: 22px;
+}
+
+/* ============================================================
+   Base
+   ============================================================ */
+
+html {
+  -webkit-text-size-adjust: 100%;
+  scroll-behavior: smooth;
+}
+
+body {
+  background-color: var(--color-canvas);
+  color: var(--color-ink);
+  font-family: var(--font-sans);
+  font-size: 16px;
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+}
+
+::selection {
+  background: var(--color-accent-wash);
+  color: var(--color-ink);
+}
+
+/* Keyboard focus must always be visible and must never be clipped.
+   Applied globally so no new component can forget it. */
+:where(a, button, input, select, textarea, summary, [tabindex]):focus-visible {
+  outline: 2px solid var(--color-accent);
+  outline-offset: 3px;
+  border-radius: var(--radius-sm);
+}
+
+/* Skip link — first tab stop on every page. */
+.skip-link {
+  position: absolute;
+  left: 0.75rem;
+  top: -100%;
+  z-index: 100;
+  background: var(--color-ink);
+  color: var(--color-canvas);
+  padding: 0.75rem 1.25rem;
+  border-radius: var(--radius-md);
+  font-size: 0.875rem;
+  font-weight: 500;
+  transition: top 0.15s ease;
+}
+
+.skip-link:focus {
+  top: 0.75rem;
+}
+
+/* ============================================================
+   Paper texture
+   A single inline SVG grain (~250 bytes, zero network requests).
+   This is what makes "paper" a material rather than a claim.
+   ============================================================ */
+
+.paper {
+  background-color: var(--color-canvas);
+  position: relative;
+}
+
+.paper::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 0;
+  opacity: 0.5;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='140' height='140' filter='url(%23n)' opacity='0.05'/%3E%3C/svg%3E");
+}
+
+.paper > * {
+  position: relative;
+  z-index: 1;
+}
+
+/* ============================================================
+   Typography scale
+   Fraunces carries an optical-size axis. Pushing opsz high on
+   display sizes is what makes the serif read as *printed*
+   rather than as a webfont scaled up.
+   ============================================================ */
+
+.t-display {
+  font-family: var(--font-serif);
+  font-weight: 600;
+  font-variation-settings: "opsz" 144;
+  font-size: clamp(2.5rem, 1.4rem + 4.6vw, 5rem);
+  line-height: 1.02;
+  letter-spacing: -0.03em;
+}
+
+.t-title {
+  font-family: var(--font-serif);
+  font-weight: 600;
+  font-variation-settings: "opsz" 72;
+  font-size: clamp(1.75rem, 1.2rem + 2.1vw, 2.75rem);
+  line-height: 1.12;
+  letter-spacing: -0.02em;
+}
+
+.t-subtitle {
+  font-family: var(--font-serif);
+  font-weight: 600;
+  font-variation-settings: "opsz" 32;
+  font-size: clamp(1.25rem, 1.05rem + 0.85vw, 1.6rem);
+  line-height: 1.25;
+  letter-spacing: -0.012em;
+}
+
+.t-lead {
+  font-size: clamp(1.0625rem, 1rem + 0.3vw, 1.2rem);
+  line-height: 1.65;
+  color: var(--color-ink-muted);
+}
+
+/* The recurring editorial device: a mono, letterspaced kicker
+   above every section. Cheap to render, and it is what gives the
+   page its "bulletin" cadence. */
+.kicker {
+  font-family: var(--font-mono);
+  font-size: 0.6875rem;
+  font-weight: 500;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--color-ink-faint);
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.kicker::after {
+  content: "";
+  flex: 1;
+  height: 1px;
+  background: var(--color-rule);
+}
+
+.kicker-num {
+  font-family: var(--font-mono);
+  font-size: 0.6875rem;
+  letter-spacing: 0.1em;
+  color: var(--color-accent);
+  font-weight: 600;
+}
+
+.num {
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: "tnum";
+}
+
+/* ============================================================
+   Components
+   ============================================================ */
+
+.rule {
+  height: 1px;
+  background: var(--color-rule);
+  border: 0;
+}
+
+.card {
+  background: var(--color-surface);
+  border: 1px solid var(--color-rule-soft);
+  border-radius: var(--radius-lg);
+}
+
+/* Only cards that are genuinely a link get lift on hover.
+   Static cards must not pretend to be interactive. */
+a.card,
+button.card {
+  transition:
+    border-color 0.2s ease,
+    box-shadow 0.2s ease,
+    transform 0.2s ease;
+}
+
+a.card:hover,
+button.card:hover {
+  border-color: var(--color-rule);
+  box-shadow: 0 10px 28px -18px rgba(36, 31, 27, 0.45);
+  transform: translateY(-2px);
+}
+
+.card-sunk {
+  background: var(--color-canvas-sunk);
+  border: 1px solid var(--color-rule-soft);
+  border-radius: var(--radius-lg);
+}
+
+/* All interactive controls clear the 44x44 CSS-px touch target
+   (WCAG 2.5.5). min-height does the work; padding tunes the look.
+   Each variant is self-sufficient so it works with or without .btn. */
+.btn,
+.btn-primary,
+.btn-outline,
+.btn-quiet,
+.btn-ghost,
+.btn-on-deep {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  min-height: 44px;
+  padding: 0.625rem 1.375rem;
+  border-radius: var(--radius-xl);
+  border: 1px solid transparent;
+  font-family: var(--font-sans);
+  font-size: 0.9375rem;
+  font-weight: 500;
+  line-height: 1.2;
+  cursor: pointer;
+  text-align: center;
+  transition:
+    background-color 0.18s ease,
+    border-color 0.18s ease,
+    color 0.18s ease;
+}
+
+.btn-primary {
+  background: var(--color-accent);
+  color: #ffffff; /* 5.0:1 on accent */
+}
+
+.btn-primary:hover {
+  background: var(--color-accent-strong);
+}
+
+.btn-outline {
+  background: transparent;
+  color: var(--color-ink);
+  border-color: var(--color-rule);
+}
+
+.btn-outline:hover {
+  border-color: var(--color-ink);
+  background: var(--color-surface);
+}
+
+.btn-quiet,
+.btn-ghost {
+  background: transparent;
+  color: var(--color-accent);
+  padding-inline: 0.75rem;
+}
+
+.btn-quiet:hover,
+.btn-ghost:hover {
+  background: var(--color-accent-wash);
+}
+
+.btn-on-deep {
+  background: var(--color-on-deep);
+  color: var(--color-deep);
+}
+
+.btn-on-deep:hover {
+  background: #ffffff;
+}
+
+.tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.375rem;
+  font-family: var(--font-mono);
+  font-size: 0.6875rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  padding: 0.25rem 0.5rem;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--color-rule);
+  color: var(--color-ink-faint);
+  white-space: nowrap;
+}
+
+.tag-accent {
+  background: var(--color-accent-wash);
+  border-color: transparent;
+  color: var(--color-accent);
+}
+
+.tag-sage {
+  background: var(--color-sage-wash);
+  border-color: transparent;
+  color: var(--color-sage);
+}
+
+.tag-warning {
+  background: var(--color-warning-wash);
+  border-color: transparent;
+  color: var(--color-warning);
+}
+
+/* ============================================================
+   Motion
+   Entrance only, above the fold, CSS-only (no JS bundle cost).
+   Fully removed under prefers-reduced-motion.
+   ============================================================ */
+
+@keyframes rise {
+  from {
+    opacity: 0;
+    transform: translateY(14px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+.rise {
+  animation: rise 0.6s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+.rise-1 {
+  animation-delay: 0.06s;
+}
+.rise-2 {
+  animation-delay: 0.12s;
+}
+.rise-3 {
+  animation-delay: 0.18s;
+}
+.rise-4 {
+  animation-delay: 0.24s;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+
+  a.card:hover,
+  button.card:hover {
+    transform: none;
+  }
+}
+
+/* Respect users who force high contrast. */
+@media (prefers-contrast: more) {
+  .paper::before {
+    display: none;
+  }
+  .card,
+  .card-sunk,
+  .card-surface,
+  .card-glass {
+    border-color: var(--color-ink-faint);
+  }
+}
+
+/* ============================================================
+   Compatibility layer for the existing dashboard
+   These are the previous component classes, re-expressed in the
+   new system. Kept so the 13 dashboard pages inherit the fixed
+   palette, focus rings and reduced-motion handling without a
+   risky mass rewrite. New work should use .card / .btn-* above.
+   ============================================================ */
+
+.bg-sanctuary {
+  background-color: var(--color-canvas);
+}
+
+.card-surface,
+.card-glass {
+  background: var(--color-surface);
+  border: 1px solid var(--color-rule-soft);
+  border-radius: var(--radius-lg);
+}
+
+/* Lift only where the card is genuinely a link or button.
+   Static divs no longer pretend to be clickable. */
+a.card-surface,
+button.card-surface,
+a.card-glass,
+button.card-glass {
+  transition:
+    border-color 0.2s ease,
+    box-shadow 0.2s ease,
+    transform 0.2s ease;
+}
+
+a.card-surface:hover,
+button.card-surface:hover,
+a.card-glass:hover,
+button.card-glass:hover {
+  border-color: var(--color-rule);
+  box-shadow: 0 10px 28px -18px rgba(36, 31, 27, 0.45);
+  transform: translateY(-2px);
+}
+
+.section-heading {
+  font-family: var(--font-serif);
+  font-weight: 600;
+  font-variation-settings: "opsz" 48;
+  line-height: 1.15;
+  letter-spacing: -0.02em;
+  color: var(--color-ink);
+}
+
+.section-number {
+  font-family: var(--font-mono);
+  font-size: 0.6875rem;
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--color-accent);
+  display: inline-flex;
+  align-items: center;
+}
+
+.steward-avatar-ring {
+  border: 2px solid var(--color-canvas);
+  border-radius: 9999px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  a.card-surface:hover,
+  button.card-surface:hover,
+  a.card-glass:hover,
+  button.card-glass:hover {
+    transform: none;
+  }
+}

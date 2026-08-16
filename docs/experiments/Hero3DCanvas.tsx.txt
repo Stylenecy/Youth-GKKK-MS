@@ -1,0 +1,409 @@
+"use client";
+
+import { useEffect, useRef, useState } from "react";
+import * as THREE from "three";
+import { EffectComposer } from "three/examples/jsm/postprocessing/EffectComposer.js";
+import { RenderPass } from "three/examples/jsm/postprocessing/RenderPass.js";
+import { UnrealBloomPass } from "three/examples/jsm/postprocessing/UnrealBloomPass.js";
+import { Reflector } from "three/examples/jsm/objects/Reflector.js";
+import { Volume2, VolumeX, Sparkles, Compass } from "lucide-react";
+
+export function Hero3DCanvas() {
+  const containerRef = useRef<HTMLDivElement>(null);
+  const [isPlayingAudio, setIsPlayingAudio] = useState(false);
+  const audioCtxRef = useRef<AudioContext | null>(null);
+  const masterGainRef = useRef<GainNode | null>(null);
+  const oscillatorsRef = useRef<OscillatorNode[]>([]);
+
+  // ---------------------------------------------------------------------------
+  // Three.js 3D Scene Initialization
+  // ---------------------------------------------------------------------------
+  useEffect(() => {
+    const container = containerRef.current;
+    if (!container) return;
+
+    const width = container.clientWidth;
+    const height = container.clientHeight;
+
+    // 1. Scene & Camera & Fog
+    const scene = new THREE.Scene();
+    scene.background = new THREE.Color(0x131110); // Sanctuary Deep Dark
+    scene.fog = new THREE.FogExp2(0x131110, 0.045);
+
+    const camera = new THREE.PerspectiveCamera(50, width / height, 0.1, 100);
+    camera.position.set(0, 1.8, 7.5);
+
+    // 2. Renderer
+    const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: false });
+    renderer.setSize(width, height);
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+    renderer.toneMapping = THREE.ACESFilmicToneMapping;
+    renderer.toneMappingExposure = 1.25;
+    container.appendChild(renderer.domElement);
+
+    // 3. Post-Processing Bloom (UnrealBloomPass)
+    const renderScene = new RenderPass(scene, camera);
+    const bloomPass = new UnrealBloomPass(
+      new THREE.Vector2(width, height),
+      1.4, // bloom strength
+      0.6, // bloom radius
+      0.15 // bloom threshold
+    );
+
+    const composer = new EffectComposer(renderer);
+    composer.addPass(renderScene);
+    composer.addPass(bloomPass);
+
+    // 4. Lighting
+    const ambientLight = new THREE.AmbientLight(0xffeedd, 0.8);
+    scene.add(ambientLight);
+
+    const mainLight = new THREE.PointLight(0xd97706, 3, 20); // Warm Amber
+    mainLight.position.set(0, 4, 3);
+    scene.add(mainLight);
+
+    const cyanLight = new THREE.PointLight(0x059669, 2, 15); // Sage accent
+    cyanLight.position.set(-4, -1, 2);
+    scene.add(cyanLight);
+
+    // 5. Centerpiece: 3D Emissive Cross & Sanctuary Ring
+    const centerpieceGroup = new THREE.Group();
+    centerpieceGroup.position.set(0, 1.2, 0);
+    scene.add(centerpieceGroup);
+
+    // Outer Glowing Ring (Torus)
+    const ringGeo = new THREE.TorusGeometry(1.6, 0.04, 32, 100);
+    const ringMat = new THREE.MeshStandardMaterial({
+      color: 0xf59e0b,
+      emissive: 0xd97706,
+      emissiveIntensity: 2.5,
+      metalness: 0.8,
+      roughness: 0.2,
+    });
+    const ringMesh = new THREE.Mesh(ringGeo, ringMat);
+    ringMesh.rotation.x = Math.PI / 3;
+    centerpieceGroup.add(ringMesh);
+
+    // Inner Glowing Cross Emblem
+    const verticalGeo = new THREE.BoxGeometry(0.24, 2.2, 0.24);
+    const horizontalGeo = new THREE.BoxGeometry(1.4, 0.24, 0.24);
+    const crossMat = new THREE.MeshStandardMaterial({
+      color: 0xfbefd5,
+      emissive: 0xd97706,
+      emissiveIntensity: 3.2,
+      metalness: 0.9,
+      roughness: 0.1,
+    });
+
+    const vertMesh = new THREE.Mesh(verticalGeo, crossMat);
+    const horizMesh = new THREE.Mesh(horizontalGeo, crossMat);
+    horizMesh.position.y = 0.35;
+    centerpieceGroup.add(vertMesh);
+    centerpieceGroup.add(horizMesh);
+
+    // Inner Core Orb
+    const coreGeo = new THREE.SphereGeometry(0.35, 32, 32);
+    const coreMat = new THREE.MeshStandardMaterial({
+      color: 0xffffff,
+      emissive: 0xfbefd5,
+      emissiveIntensity: 4.5,
+    });
+    const coreMesh = new THREE.Mesh(coreGeo, coreMat);
+    coreMesh.position.y = 0.35;
+    centerpieceGroup.add(coreMesh);
+
+    // 6. Floating Particle Field (THREE.Points)
+    const particleCount = 450;
+    const particleGeo = new THREE.BufferGeometry();
+    const particlePositions = new Float32Array(particleCount * 3);
+    const particleScales = new Float32Array(particleCount);
+
+    for (let i = 0; i < particleCount; i++) {
+      particlePositions[i * 3] = (Math.random() - 0.5) * 14;
+      particlePositions[i * 3 + 1] = Math.random() * 8 - 1;
+      particlePositions[i * 3 + 2] = (Math.random() - 0.5) * 14;
+      particleScales[i] = Math.random() * 0.05 + 0.02;
+    }
+
+    particleGeo.setAttribute("position", new THREE.BufferAttribute(particlePositions, 3));
+
+    const particleMat = new THREE.PointsMaterial({
+      color: 0xfbefd5,
+      size: 0.08,
+      transparent: true,
+      opacity: 0.75,
+      blending: THREE.AdditiveBlending,
+    });
+
+    const particleSystem = new THREE.Points(particleGeo, particleMat);
+    scene.add(particleSystem);
+
+    // 7. Reflector Plane (Wet Floor Mirror)
+    const reflectorGeo = new THREE.PlaneGeometry(30, 30);
+    const reflectorFloor = new Reflector(reflectorGeo, {
+      clipBias: 0.003,
+      textureWidth: Math.floor(width * 0.75),
+      textureHeight: Math.floor(height * 0.75),
+      color: 0x221e1a,
+    });
+    reflectorFloor.rotation.x = -Math.PI / 2;
+    reflectorFloor.position.y = -0.8;
+    scene.add(reflectorFloor);
+
+    // Mouse tilt tracking
+    let mouseX = 0;
+    let mouseY = 0;
+    let targetX = 0;
+    let targetY = 0;
+
+    const handleMouseMove = (e: MouseEvent) => {
+      const rect = container.getBoundingClientRect();
+      mouseX = (e.clientX - rect.left) / rect.width - 0.5;
+      mouseY = (e.clientY - rect.top) / rect.height - 0.5;
+    };
+
+    window.addEventListener("mousemove", handleMouseMove);
+
+    // Handle Resize
+    const handleResize = () => {
+      if (!container) return;
+      const w = container.clientWidth;
+      const h = container.clientHeight;
+      camera.aspect = w / h;
+      camera.updateProjectionMatrix();
+      renderer.setSize(w, h);
+      composer.setSize(w, h);
+    };
+
+    window.addEventListener("resize", handleResize);
+
+    // 8. Animation Loop
+    let animationFrameId: number;
+    let clock = new THREE.Clock();
+
+    const animate = () => {
+      animationFrameId = requestAnimationFrame(animate);
+      const elapsedTime = clock.getElapsedTime();
+
+      // Slow rotation of 3D centerpiece
+      centerpieceGroup.rotation.y = elapsedTime * 0.35;
+      ringMesh.rotation.z = elapsedTime * 0.25;
+      ringMesh.rotation.y = Math.sin(elapsedTime * 0.5) * 0.3;
+
+      // Gentle floating Y bounce
+      centerpieceGroup.position.y = 1.2 + Math.sin(elapsedTime * 1.2) * 0.15;
+
+      // Particle rotation & drift
+      particleSystem.rotation.y = elapsedTime * 0.05;
+
+      // Smooth mouse parallax
+      targetX += (mouseX - targetX) * 0.05;
+      targetY += (mouseY - targetY) * 0.05;
+
+      camera.position.x = targetX * 1.5;
+      camera.position.y = 1.8 - targetY * 1.2;
+      camera.lookAt(0, 1.2, 0);
+
+      composer.render();
+    };
+
+    animate();
+
+    // Cleanup
+    return () => {
+      window.removeEventListener("mousemove", handleMouseMove);
+      window.removeEventListener("resize", handleResize);
+      cancelAnimationFrame(animationFrameId);
+      if (container && renderer.domElement) {
+        container.removeChild(renderer.domElement);
+      }
+      renderer.dispose();
+    };
+  }, []);
+
+  // ---------------------------------------------------------------------------
+  // Web Audio API Synthesizer (Ambient Pad & Interactive SFX)
+  // ---------------------------------------------------------------------------
+  const toggleAmbientAudio = () => {
+    if (isPlayingAudio) {
+      // Fade out and stop
+      if (masterGainRef.current && audioCtxRef.current) {
+        masterGainRef.current.gain.setTargetAtTime(0, audioCtxRef.current.currentTime, 0.4);
+        setTimeout(() => {
+          oscillatorsRef.current.forEach((osc) => osc.stop());
+          oscillatorsRef.current = [];
+          setIsPlayingAudio(false);
+        }, 500);
+      }
+    } else {
+      // Initialize Web Audio Context
+      const AudioCtx = window.AudioContext || (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext;
+      const ctx = new AudioCtx();
+      audioCtxRef.current = ctx;
+
+      const masterGain = ctx.createGain();
+      masterGain.gain.setValueAtTime(0.001, ctx.currentTime);
+      masterGain.gain.exponentialRampToValueAtTime(0.18, ctx.currentTime + 2.5); // Smooth fade in
+      masterGainRef.current = masterGain;
+
+      // Lowpass Filter for Warm Ambient Feel
+      const filter = ctx.createBiquadFilter();
+      filter.type = "lowpass";
+      filter.frequency.setValueAtTime(450, ctx.currentTime);
+
+      masterGain.connect(filter);
+      filter.connect(ctx.destination);
+
+      // Warm F# Minor / A Major Celestial Frequencies (110Hz, 164.81Hz, 220Hz, 277.18Hz)
+      const freqs = [110.0, 164.81, 220.0, 277.18];
+      const oscs: OscillatorNode[] = [];
+
+      freqs.forEach((f) => {
+        const osc = ctx.createOscillator();
+        osc.type = "sine";
+        osc.frequency.setValueAtTime(f, ctx.currentTime);
+
+        // Subtle LFO detune wobble for atmospheric space depth
+        const lfo = ctx.createOscillator();
+        lfo.type = "sine";
+        lfo.frequency.value = 0.2 + Math.random() * 0.15;
+        const lfoGain = ctx.createGain();
+        lfoGain.gain.value = 1.5;
+        lfo.connect(lfoGain);
+        lfoGain.connect(osc.frequency);
+        lfo.start();
+
+        osc.connect(masterGain);
+        osc.start();
+        oscs.push(osc);
+      });
+
+      oscillatorsRef.current = oscs;
+      setIsPlayingAudio(true);
+    }
+  };
+
+  const playHoverSound = () => {
+    if (!audioCtxRef.current || !isPlayingAudio) return;
+    try {
+      const ctx = audioCtxRef.current;
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+
+      osc.type = "sine";
+      osc.frequency.setValueAtTime(880, ctx.currentTime);
+      osc.frequency.exponentialRampToValueAtTime(1320, ctx.currentTime + 0.08);
+
+      gain.gain.setValueAtTime(0.04, ctx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.08);
+
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+
+      osc.start();
+      osc.stop(ctx.currentTime + 0.09);
+    } catch {
+      // Ignore audio glitches on browser policy
+    }
+  };
+
+  return (
+    <div className="relative h-[85vh] min-h-[580px] w-full overflow-hidden bg-[#131110]">
+      {/* 3D WebGL Canvas Container */}
+      <div ref={containerRef} className="absolute inset-0 z-0 h-full w-full" />
+
+      {/* Subtle Vignette Gradient Overlay */}
+      <div className="pointer-events-none absolute inset-0 z-10 bg-[radial-gradient(ellipse_at_center,transparent_0%,rgba(19,17,16,0.4)_70%,rgba(19,17,16,0.95)_100%)]" />
+
+      {/* Hero Content Overlay */}
+      <div className="relative z-20 mx-auto flex h-full max-w-6xl flex-col justify-between px-6 py-12 sm:px-8 sm:py-16">
+        {/* Top Header Tag */}
+        <div className="flex items-center justify-between">
+          <div className="inline-flex items-center gap-2 rounded-full border border-[#f59e0b]/30 bg-[#131110]/70 px-4 py-1.5 backdrop-blur-md">
+            <Sparkles className="h-4 w-4 text-[#f59e0b]" />
+            <span className="font-mono text-xs uppercase tracking-[0.18em] text-[#fbefd5]">
+              Space Youth · GKKK Yogyakarta
+            </span>
+          </div>
+
+          {/* Web Audio API Ambient Toggle Button */}
+          <button
+            onClick={toggleAmbientAudio}
+            onMouseEnter={playHoverSound}
+            className="flex items-center gap-2 rounded-full border border-white/20 bg-black/40 px-4 py-2 text-xs font-medium text-[#fbefd5] backdrop-blur-md transition-all hover:border-[#f59e0b] hover:bg-[#f59e0b]/20"
+            title="Toggle Web Audio API Ambient Soundscape"
+          >
+            {isPlayingAudio ? (
+              <>
+                <Volume2 className="h-4 w-4 text-[#f59e0b] animate-pulse" />
+                <span className="font-mono uppercase tracking-wider">Suara Ambient ON</span>
+              </>
+            ) : (
+              <>
+                <VolumeX className="h-4 w-4 text-white/60" />
+                <span className="font-mono uppercase tracking-wider text-white/70">Mulai Ambience 3D</span>
+              </>
+            )}
+          </button>
+        </div>
+
+        {/* Center Title & Kicker */}
+        <div className="my-auto max-w-2xl py-8">
+          <div className="inline-block rounded border border-amber-500/30 bg-amber-500/10 px-3 py-1 font-mono text-[0.7rem] uppercase tracking-[0.2em] text-amber-300">
+            Sabtu Besok · 8 Agustus 2026 · 17:00 WIB
+          </div>
+
+          <h1 className="mt-4 font-serif text-4xl font-extrabold tracking-tight text-[#fcfaf7] sm:text-6xl lg:text-7xl">
+            Unchained, <br />
+            <span className="bg-gradient-to-r from-amber-200 via-amber-400 to-amber-600 bg-clip-text text-transparent">
+              Not Unchecked.
+            </span>
+          </h1>
+
+          <p className="mt-5 text-base leading-relaxed text-[#d4ceb8] sm:text-lg lg:text-xl">
+            Merdeka di dalam Kristus — bebas, tetapi tidak tanpa arah. Ibadah Pemuda di Ruang Hermon GKKK Jogja. Latihan musik dimulai 15:00 WIB.
+          </p>
+
+          {/* Action CTAs */}
+          <div className="mt-8 flex flex-wrap items-center gap-4">
+            <a
+              href="#ritme"
+              onMouseEnter={playHoverSound}
+              className="inline-flex items-center gap-2.5 rounded-lg bg-[#d97706] px-6 py-3.5 font-serif text-base font-semibold text-white shadow-lg shadow-amber-900/40 transition-all hover:bg-[#b45309] hover:shadow-amber-600/50"
+            >
+              <Compass className="h-5 w-5" />
+              Lihat Ritme Ibadah Sabtu
+            </a>
+            <a
+              href="/login"
+              onMouseEnter={playHoverSound}
+              className="inline-flex items-center gap-2 rounded-lg border border-white/25 bg-white/10 px-6 py-3.5 font-serif text-base font-medium text-[#fcfaf7] backdrop-blur-md transition-all hover:bg-white/20"
+            >
+              Dashboard Pengurus
+            </a>
+          </div>
+        </div>
+
+        {/* Bottom Feature Badges */}
+        <div className="grid grid-cols-2 gap-4 border-t border-white/15 pt-6 sm:grid-cols-4">
+          <div>
+            <span className="block font-mono text-[0.625rem] uppercase tracking-[0.16em] text-white/50">Lokasi</span>
+            <span className="font-serif text-sm font-semibold text-white/90">Ruang Hermon, GKKK Jogja</span>
+          </div>
+          <div>
+            <span className="block font-mono text-[0.625rem] uppercase tracking-[0.16em] text-white/50">WL Sabtu Besok</span>
+            <span className="font-serif text-sm font-semibold text-white/90">Arion Sudibyo</span>
+          </div>
+          <div>
+            <span className="block font-mono text-[0.625rem] uppercase tracking-[0.16em] text-white/50">Pembicara</span>
+            <span className="font-serif text-sm font-semibold text-white/90">Ko Martin Luther</span>
+          </div>
+          <div>
+            <span className="block font-mono text-[0.625rem] uppercase tracking-[0.16em] text-white/50">Cross Aktif</span>
+            <span className="font-serif text-sm font-semibold text-amber-300">5 Kelompok Skema 1</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}

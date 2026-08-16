@@ -1,0 +1,25 @@
+node_modules
+.next
+.env.local
+.env.*.local
+out
+dist
+build
+coverage
+*.log
+.DS_Store
+.idea
+.vscode
+.vercel
+
+# TypeScript incremental build cache
+tsconfig.tsbuildinfo
+
+# Importer output: contains REAL phone numbers + birth dates, never commit
+scripts/import/output/
+__pycache__/
+
+# Raw source data: real names/phone/birth-date/WhatsApp exports, local-only, never commit
+database/
+Laporan_Kas_Pemuda_2026.xlsx
+.agent/Cross/Chat/

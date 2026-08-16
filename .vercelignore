@@ -1,0 +1,20 @@
+# Keep the deployment upload to what actually builds the app.
+#
+# These directories hold real member data — WhatsApp exports, the member
+# spreadsheet, meeting records, ministry notes. Nothing in src/ imports
+# them, so there is no reason to ship ~22 MB of personal information to
+# the build infrastructure on every deploy.
+.agent/
+database/
+
+# Working notes, not build inputs.
+*.md
+!README.md
+
+# Tests and archived experiments are not build inputs either.
+tests/
+docs/
+vitest.config.ts
+
+.next/
+node_modules/
