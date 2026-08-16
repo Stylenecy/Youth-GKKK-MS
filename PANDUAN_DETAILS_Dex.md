@@ -1,8 +1,13 @@
 # PANDUAN DETAIL — Sambungkan Supabase & Import Data YGMS
 
-> **Tanggal:** 11 Agustus 2026
+> **Tanggal:** 11 Agustus 2026 (langkah inti diperbarui 16 Ags — lihat catatan di bawah)
 > **Dari:** AI Pelaksana
 > **Untuk:** Dex
+>
+> ⚠️ **Pakai `CHECKLIST_Dex.md` sebagai checklist utama** (sudah digabung,
+> nomor anggota & jumlah tabel sudah dikoreksi ke kondisi 16 Ags). File ini
+> tetap berguna sebagai penjelasan lebih rinci per langkah kalau ada yang
+> kurang jelas di checklist.
 
 Panduan ini menjelaskan setiap langkah secara detail — apa yang diklik, apa yang dilihat, dan apa yang harus muncul. Ikuti berurutan, jangan loncat.
 

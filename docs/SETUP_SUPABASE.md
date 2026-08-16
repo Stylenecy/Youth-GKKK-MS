@@ -3,6 +3,10 @@
 > **Untuk:** Dex (pemilik kredensial)
 > **Terakhir diperbarui:** 11 Agustus 2026
 > **Status:** Menunggu Dex
+>
+> ⚠️ **Pakai `CHECKLIST_Dex.md` di root repo sebagai checklist utama** —
+> sudah digabung dengan panduan ini + koreksi kondisi 16 Ags (93 anggota,
+> 14 tabel, git remote). File ini referensi tambahan.
 
 Panduan ini memandu penyambungan Supabase langkah demi langkah. Setiap langkah ada cara memverifikasi bahwa langkah itu berhasil.
 

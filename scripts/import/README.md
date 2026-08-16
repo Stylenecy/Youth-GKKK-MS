@@ -17,7 +17,7 @@
 
 | File | Isi | Sheet/Tab |
 |------|-----|-----------|
-| `database/DATA-PEMUDA_GKKK.xlsx` | 92 anggota + absensi + ultah | ANGGOTA PEMUDA |
+| `database/DATA_PEMUDA-GKKK-YK.xlsx` | 93 anggota + absensi + ultah | ANGGOTA PEMUDA |
 | `database/Data Cross.md` | Susunan 5 Cross (Skema 1) | - |
 | `database/DATABASE_FINANCE.md` | Transaksi terverifikasi | - |
 | `database/Jadwal Penatalayan Pemuda_.xlsx` | Jadwal ibadah & penatalayan 2026 | 2026 |
@@ -74,10 +74,11 @@ Buka Supabase Dashboard → SQL Editor → paste isi `00_all.sql` → Run.
 | No | id | Format: `p001`, `p002`, ... (deterministik) |
 | Nama | full_name | Nama lengkap (bisa ada catatan dalam kurung) |
 | Nama Panggilan | nickname | Nama panggilan sehari-hari |
-| ~~No. Telepon~~ | ~~DI-SKIP~~ | Privasi — tidak masuk output |
+| No. Telepon | whatsapp | Dinormalisasi ke `628...`; gagal atau bukan format seluler → NULL, gated di DB lewat migrasi 0006 (lihat BRIEF Kontak WhatsApp) |
 | Asal/Domisili | hometown | Bisa NULL |
 | Tanggal Lahir | birth_date | Berbagai format tanggal di-normalize |
 | Bidang Pelayanan | skills (table) | Parsed per-kategori |
+| FYI | *(belum dipetakan)* | Kolom baru di file 16 Ags, isi bebas (mis. info kuliah). Belum ada kolom yang cocok di skema — putuskan sebelum dipetakan |
 
 ### Cross → crosses + cross_memberships
 
@@ -101,7 +102,7 @@ Buka Supabase Dashboard → SQL Editor → paste isi `00_all.sql` → Run.
 
 ## Aturan Privasi
 
-1. **No. telepon TIDAK PERNAH masuk output.** Kolom ini ada di Excel tapi di-skip oleh parser.
+1. **No. telepon masuk output HANYA dalam bentuk ternormalisasi (`628...`)**, dan hanya untuk keperluan fitur tombol WhatsApp — nomor mentah tidak pernah disimpan. Di database, kolom ini di-revoke dari akses langsung klien (migrasi 0006); cuma keluar lewat RPC `get_member_whatsapp()` yang gated per-role.
 2. **Tanggal lahir hanya di SQL ini** — TIDAK boleh masuk `src/lib/seed.ts` yang ter-commit.
 3. **Nama asli hanya di SQL ini** — hanya 8 nickname yang di-authorized untuk seed.ts.
 4. **File SQL ini TIDAK untuk di-commit ke repo** tanpa review Dex (berisi data sensitif).
