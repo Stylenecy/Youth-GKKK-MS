@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Import anggota pemuda dari DATA-PEMUDA_GKKK.xlsx ke format SQL INSERT.
+Import anggota pemuda dari DATA_PEMUDA-GKKK-YK.xlsx ke format SQL INSERT.
 
 Aturan privasi (sesuai BRIEF-AI_YGMS.md section1 & section4 dan
 BRIEF-AI_YGMS-Kontak-WhatsApp.md section2):
@@ -34,7 +34,7 @@ except ImportError:
     sys.exit("openpyxl belum terinstall: pip install openpyxl")
 
 DB_DIR = Path(__file__).resolve().parent.parent.parent / "database"
-XLSX_PATH = DB_DIR / "DATA-PEMUDA_GKKK.xlsx"
+XLSX_PATH = DB_DIR / "DATA_PEMUDA-GKKK-YK.xlsx"
 SHEET_NAME = "ANGGOTA PEMUDA"
 DEFAULT_OUTPUT_DIR = Path(__file__).resolve().parent / "output"
 
@@ -153,7 +153,7 @@ def generate_sql(members):
     """Generate SQL INSERT statements untuk tabel profiles & skills."""
     lines = [
         "-- Generated: " + datetime.now().isoformat(),
-        "-- Sumber: DATA-PEMUDA_GKKK.xlsx -> ANGGOTA PEMUDA",
+        "-- Sumber: DATA_PEMUDA-GKKK-YK.xlsx -> ANGGOTA PEMUDA",
         "-- Jumlah: " + str(len(members)) + " anggota",
         "--",
         "-- CATATAN PRIVASI:",
