@@ -42,6 +42,13 @@ describe("normalizePhoneNumber", () => {
     expect(normalizePhoneNumber(null)).toBeNull();
     expect(normalizePhoneNumber(undefined)).toBeNull();
   });
+
+  it("rejects landline/area-code numbers that aren't 628... mobile numbers", () => {
+    expect(normalizePhoneNumber("6219876543")).toBeNull();
+    expect(normalizePhoneNumber("6228123456")).toBeNull();
+    expect(normalizePhoneNumber("021-8765432")).toBeNull();
+    expect(normalizePhoneNumber("022-8123456")).toBeNull();
+  });
 });
 
 describe("buildWhatsAppLink", () => {

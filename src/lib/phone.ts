@@ -21,6 +21,9 @@ export const FAKE_NUMBER_PREFIX = "6280000";
  * - a leading 62 is kept
  * - a leading +62 becomes 62 (the + is stripped with the other non-digits)
  * - obviously-not-a-number input (too short, no digits) -> null
+ * - anything that doesn't end up as an Indonesian *mobile* number (628...)
+ *   -> null. A landline/area-code number normalizes to 62 + area code
+ *   (e.g. 6221... Jakarta, 6222... Bandung) and is not a WhatsApp number.
  */
 export function normalizePhoneNumber(
   raw: string | null | undefined
@@ -31,6 +34,7 @@ export function normalizePhoneNumber(
   let n = digits;
   if (n.startsWith("0")) n = n.slice(1);
   if (!n.startsWith("62")) n = "62" + n;
+  if (!n.startsWith("628")) return null;
   if (n.length < 10 || n.length > 15) return null;
   return n;
 }

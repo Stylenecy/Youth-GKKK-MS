@@ -53,6 +53,9 @@ def normalize_phone(raw):
 
     Buang semua non-digit -> 0 di depan jadi 62 -> 62 di depan dibiarkan ->
     +62 jadi 62. Hasil <10 atau >15 digit dianggap bukan nomor -> None.
+    Hasil yang tidak berawalan 628 (bukan nomor seluler Indonesia -- mis.
+    nomor rumah 6221.../6222...) juga -> None, karena tombol WhatsApp cuma
+    berguna untuk nomor seluler.
     Versi mentah sengaja TIDAK disimpan: brief melarang menambah kolom
     yang tidak diminta, dan nilai mentah tak berguna setelah normalisasi.
     """
@@ -65,6 +68,8 @@ def normalize_phone(raw):
         digits = digits[1:]
     if not digits.startswith("62"):
         digits = "62" + digits
+    if not digits.startswith("628"):
+        return None
     if len(digits) < 10 or len(digits) > 15:
         return None
     return digits
