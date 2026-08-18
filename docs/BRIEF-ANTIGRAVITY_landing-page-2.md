@@ -224,6 +224,15 @@ mengulang kalimat yang sama.
 melihat Act 1 (belum scroll lebih jauh) harus langsung tahu ini situs
 tentang apa, tanpa perlu menebak.
 
+**Tambahan 18 Ags (malam) — soal skala crest, bukan soal kata-katanya:**
+Dex sudah dikonfirmasi ulang: teks tetap plain ("Youth GKKK Yogyakarta"),
+**itu final, jangan dibalikin ke "Bara yang belum berkumpul".** Yang masih
+kurang: crest partikel (`EmberCrest.tsx`) di Act 1/2 dirasa belum cukup
+megah — ukuran & efeknya boleh dinaikkan (lebih besar, glow lebih kuat,
+gerakan lebih terasa "wow"), selama masih 60fps wajar dan tetap ikut
+`prefers-reduced-motion`. Jangan naikkan `COUNT` partikel sembarangan tanpa
+cek performa — kalau perlu pengukuran, laporkan FPS kasar di §7.
+
 ### 3.7 Section "Ritme Minggu" — pertahankan, jangan dirombak
 
 > *"Yang Ritme aku lumayan suka."*
