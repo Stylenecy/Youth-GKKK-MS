@@ -146,7 +146,7 @@ export function MobileNav() {
                 type="button"
                 onClick={() => setOpen(false)}
                 aria-label="Tutup menu"
-                className="flex h-11 w-11 items-center justify-center rounded-full text-ink-muted hover:bg-canvas-sunk hover:text-ink"
+                className="flex h-11 w-11 items-center justify-center rounded-full text-ink-muted hover:bg-surface-2 hover:text-ink"
               >
                 <X className="h-5 w-5" aria-hidden="true" />
               </button>
@@ -163,7 +163,7 @@ export function MobileNav() {
                       className={`flex min-h-[48px] items-center gap-3 rounded-md px-3 text-[0.9375rem] ${
                         active
                           ? "bg-accent-wash font-medium text-accent"
-                          : "text-ink-muted hover:bg-canvas-sunk hover:text-ink"
+                          : "text-ink-muted hover:bg-surface-2 hover:text-ink"
                       }`}
                     >
                       <Icon

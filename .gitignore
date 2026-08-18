@@ -23,3 +23,7 @@ __pycache__/
 database/
 Laporan_Kas_Pemuda_2026.xlsx
 .agent/Cross/Chat/
+
+# Discarded Canva font-exploration exports (61 MB) — not the final logo,
+# kept locally for reference only. See public/logo/BRAND-GUIDE_Youth-GKKK.md.
+public/logo/_archive-canva-exports/

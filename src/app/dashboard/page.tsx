@@ -127,11 +127,14 @@ export default async function DashboardPage() {
                   aria-valuemax={REQUIRED_ROLES}
                   aria-label="Jumlah penatalayan yang sudah terisi"
                 >
+                  {/* Incomplete fills with fire (maroon into gold) so it
+                      reads as still heating up; a complete team goes flat
+                      sage — done, nothing more to look at. */}
                   <div
                     className={
                       filled >= REQUIRED_ROLES
                         ? "h-full rounded-full bg-sage"
-                        : "h-full rounded-full bg-accent"
+                        : "meter-fill h-full rounded-full"
                     }
                     style={{ width: `${readiness}%` }}
                   />

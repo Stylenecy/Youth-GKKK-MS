@@ -34,26 +34,17 @@ export function Masthead() {
 }
 
 /**
- * Open book + cross, drawn as strokes rather than a filled glyph so it sits
- * as a hairline next to the wordmark instead of competing with it.
- * Matches the ministry's own logo premise (Alkitab terbuka + salib).
+ * The ministry's own crest: cross + flame inside the "U" of YOUTH, standing
+ * for the youth's burning spirit to glorify God, gathered as one body.
+ * Finalized by the pengurus 16 Aug 2026 (see public/logo/BRAND-GUIDE_Youth-GKKK.md).
  */
 export function Logomark({ className = "" }: { className?: string }) {
   return (
-    <svg
-      viewBox="0 0 28 28"
-      className={`h-7 w-7 shrink-0 ${className}`}
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="1.5"
-      strokeLinecap="round"
-      strokeLinejoin="round"
+    <img
+      src="/logo/derived/logo-crest-transparent-128.png"
+      alt=""
+      className={`h-7 w-7 shrink-0 object-contain ${className}`}
       aria-hidden="true"
-      focusable="false"
-    >
-      <path d="M14 9.5C11.8 7.8 9.2 7.2 5 7.2v13c4.2 0 6.8.6 9 2.3 2.2-1.7 4.8-2.3 9-2.3v-13c-4.2 0-6.8.6-9 2.3Z" />
-      <path d="M14 9.5v13" />
-      <path d="M14 1.8v4.6M11.9 4.1h4.2" className="text-accent" />
-    </svg>
+    />
   );
 }

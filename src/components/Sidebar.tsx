@@ -38,10 +38,13 @@ export function Sidebar() {
                 <Link
                   href={item.href}
                   aria-current={active ? "page" : undefined}
-                  className={`flex min-h-[44px] items-center gap-3 rounded-md px-3 text-[0.9375rem] transition-colors ${
+                  // On a dark rail, hover must add light, not remove it —
+                  // `hover:bg-canvas-sunk` was darker than the rail itself,
+                  // so pointing at a row made it recede.
+                  className={`nav-item ${active ? "is-active" : ""} flex min-h-[44px] items-center gap-3 rounded-md px-3 text-[0.9375rem] transition-colors ${
                     active
                       ? "bg-accent-wash font-medium text-accent"
-                      : "text-ink-muted hover:bg-canvas-sunk hover:text-ink"
+                      : "text-ink-muted hover:bg-surface-2 hover:text-ink"
                   }`}
                 >
                   <Icon
@@ -63,7 +66,7 @@ export function Sidebar() {
       <div className="border-t border-rule-soft p-3">
         <Link
           href="/"
-          className="flex min-h-[44px] items-center gap-2 rounded-md px-3 font-mono text-xs text-ink-faint transition-colors hover:bg-canvas-sunk hover:text-ink-muted"
+          className="flex min-h-[44px] items-center gap-2 rounded-md px-3 font-mono text-xs text-ink-faint transition-colors hover:bg-surface-2 hover:text-ink-muted"
         >
           <span aria-hidden="true">&larr;</span> Ke halaman depan
         </Link>

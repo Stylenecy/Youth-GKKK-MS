@@ -233,7 +233,7 @@ export function TransactionRowActions({
             type="button"
             onClick={handleDelete}
             disabled={pending}
-            className="min-h-[44px] rounded-md bg-danger px-4 text-sm font-medium text-white transition-colors hover:opacity-90 disabled:opacity-60"
+            className="min-h-[44px] rounded-md bg-danger px-4 text-sm font-semibold text-canvas transition-colors hover:opacity-90 disabled:opacity-60"
           >
             {pending ? "Menghapus…" : "Hapus"}
           </button>

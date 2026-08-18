@@ -36,7 +36,7 @@ export function CreateEventForm({ profiles }: { profiles: Profile[] }) {
         {success ? "Ibadah berhasil disimpan" : ""}
       </div>
       {success && (
-        <p className="fixed right-4 top-4 z-50 rounded-md bg-sage px-4 py-2.5 text-sm font-medium text-white shadow-lg">
+        <p className="fixed right-4 top-4 z-50 rounded-md bg-sage px-4 py-2.5 text-sm font-semibold text-canvas shadow-lg">
           Ibadah berhasil disimpan
         </p>
       )}

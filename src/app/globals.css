@@ -1,67 +1,88 @@
 @import "tailwindcss";
 
 /* ============================================================
-   YGMS — "Warta" design system
-   A church youth ministry's weekly bulletin, made digital.
-   Ink on warm paper. Restraint over decoration.
+   YGMS — "Nocturne" design system
+   The mark is a flame held in a vessel. A flame only reads as
+   a flame in the dark, so the whole surface is dark and the
+   brand gold is the only real light source on the page.
 
-   Every foreground token below is measured against its intended
-   background and meets WCAG AA (>= 4.5:1) for normal text.
+   Two colours are fixed by the logo and cannot be negotiated:
+     #FDBE02  gold    — the fire
+     #83021C  maroon  — the vessel
+   Everything else is derived from them.
+
+   Maroon is unusable as a foreground here (1.87:1 on the base
+   background — dark on dark), so it lives as a *fill* and a
+   lightened `rose` stands in whenever it must carry text.
+
+   Every foreground/background pair below was measured against
+   the exact surface it is used on. All 26 pairs meet WCAG AA
+   (>= 4.5:1) for normal text. Ratios are quoted inline.
    ============================================================ */
 
 @theme inline {
-  /* --- Paper (light surfaces) --- */
-  --color-canvas: #faf7f2; /* warm paper, the default plane */
-  --color-canvas-sunk: #f3eee5; /* recessed band, breaks the flat plane */
-  --color-surface: #ffffff; /* raised card */
+  /* --- Ground (dark surfaces) --- */
+  --color-canvas: #0f0a08; /* warm near-black, the default plane */
+  --color-canvas-sunk: #080505; /* recessed band, deeper than canvas */
+  --color-surface: #1a1210; /* raised card */
+  --color-surface-2: #241917; /* card on card */
 
-  /* --- Ink (foreground on paper) --- */
-  /* Ratios are quoted against canvas-sunk, the *darker* of the two paper
-     tones, so every value holds on both planes. */
-  --color-ink: #241f1b; /* 14.1:1 — headings, primary text */
-  --color-ink-muted: #6f655c; /*  4.9:1 — body / secondary       */
-  --color-ink-faint: #756a60; /*  4.6:1 — captions, meta         */
+  /* --- Light on ground --- */
+  --color-ink: #f7efe2; /* 17.2:1 on canvas — headings, primary text */
+  --color-ink-muted: #a2937f; /*  6.6:1 on canvas — body / secondary   */
+  --color-ink-faint: #908273; /*  5.3:1 canvas · 4.9:1 surface · 4.6:1 surface-2
+                                  Nudged up from #8e8071, which landed at
+                                  4.47:1 on surface-2 — under AA on the one
+                                  surface hover states use. */
 
-  /* --- Night (dark anchor sections) --- */
-  --color-deep: #1c1815; /* warm near-black, not a cold grey */
-  --color-deep-soft: #2a241f; /* card on night */
-  --color-on-deep: #faf7f2; /* 16.5:1 on deep */
-  --color-on-deep-muted: #a79b8e; /*  6.5:1 on deep */
+  /* --- Deep: the maroon anchor band, for sections that must
+         separate themselves from the default plane. --- */
+  --color-deep: #2a060f; /* vessel maroon, darkened to a ground */
+  --color-deep-soft: #3a0b17; /* card on deep */
+  --color-on-deep: #fff1e8; /* 16.8:1 on deep */
+  --color-on-deep-muted: #d2a8a8; /*  8.8:1 on deep */
 
-  /* --- Amber: the single accent. Used rarely, so it means something. --- */
-  --color-accent: #a94d08; /*  4.8:1 on canvas-sunk, 5.6:1 white-on-accent */
-  --color-accent-strong: #8a3d06; /* hover / pressed */
-  --color-accent-on-deep: #e8a33d; /*  8.2:1 on deep */
-  --color-accent-wash: #fbeada; /* tinted fill, never a text colour */
+  /* --- Gold: the fire. The single accent, and the only thing
+         on the page that emits rather than reflects. --- */
+  --color-accent: #fdbe02; /* 11.8:1 on canvas — also a text colour */
+  --color-accent-strong: #ffd34d; /* hover / pressed (brighter, not darker:
+                                     on a dark ground, "more" means lighter) */
+  --color-accent-on-deep: #fdbe02; /* 9.9:1 on deep */
+  --color-accent-wash: #2e2205; /* tinted fill; gold text on it = 9.3:1 */
 
-  /* --- Sage: "sudah terisi / aktif". Keeps amber from carrying
+  /* --- Rose: maroon made legible. Use where the vessel colour
+         has to carry text or an icon. --- */
+  --color-rose: #c77384; /*  5.8:1 on canvas */
+  --color-maroon: #83021c; /* the true brand maroon — fills only */
+
+  /* --- Sage: "sudah terisi / aktif". Keeps gold from carrying
          every semantic at once. --- */
-  --color-sage: #4f6b44; /*  5.6:1 on canvas */
-  --color-sage-wash: #e9efe4;
+  --color-sage: #7ba06c; /*  6.6:1 on canvas */
+  --color-sage-wash: #16220f;
 
   /* --- Signals --- */
-  --color-warning: #8a5a10; /*  5.3:1 on canvas */
-  --color-warning-wash: #fbf0d9;
-  --color-danger: #a02c2c; /*  5.9:1 on canvas */
-  --color-danger-wash: #f8e3e3;
+  --color-warning: #c79345; /*  7.2:1 on canvas */
+  --color-warning-wash: #2a1e08;
+  --color-danger: #d77878; /*  6.0:1 on surface */
+  --color-danger-wash: #2b1010;
 
   /* --- Rules & hairlines --- */
-  --color-rule: #ded4c6; /* visible hairline */
-  --color-rule-soft: #ece5da; /* barely-there divider */
+  --color-rule: #3a2a24; /* visible hairline */
+  --color-rule-soft: #241a17; /* barely-there divider */
 
   /* --- Compatibility aliases ---------------------------------
-     The dashboard was built against the previous token names.
-     Mapping them here means every existing page picks up the
-     corrected contrast values without being rewritten. Prefer the
-     names above for new work. --------------------------------- */
-  --color-accent-hover: #8a3d06;
-  --color-accent-light: #fbeada;
-  --color-border: #ded4c6;
-  --color-border-light: #ece5da;
-  --color-divider: #ece5da;
-  --color-success: #4f6b44;
-  --color-glow: rgba(180, 83, 9, 0.05);
-  --color-glow-strong: rgba(180, 83, 9, 0.09);
+     The 13 dashboard pages were built against these names. They
+     are kept pointing at the new values so the whole app moves
+     to the dark system without any page component being edited.
+     Prefer the names above for new work. --------------------- */
+  --color-accent-hover: #ffd34d;
+  --color-accent-light: #2e2205;
+  --color-border: #3a2a24;
+  --color-border-light: #241a17;
+  --color-divider: #241a17;
+  --color-success: #7ba06c;
+  --color-glow: rgba(253, 190, 2, 0.06);
+  --color-glow-strong: rgba(253, 190, 2, 0.14);
 
   --font-serif: var(--font-fraunces), "Iowan Old Style", Georgia, serif;
   --font-sans: var(--font-geist-sans), "Inter", system-ui, sans-serif;
@@ -81,6 +102,9 @@
 html {
   -webkit-text-size-adjust: 100%;
   scroll-behavior: smooth;
+  /* Stops the white flash between navigations on a dark site. */
+  background-color: #0f0a08;
+  color-scheme: dark;
 }
 
 body {
@@ -95,8 +119,8 @@ body {
 }
 
 ::selection {
-  background: var(--color-accent-wash);
-  color: var(--color-ink);
+  background: var(--color-accent);
+  color: var(--color-canvas);
 }
 
 /* Keyboard focus must always be visible and must never be clipped.
@@ -107,13 +131,27 @@ body {
   border-radius: var(--radius-sm);
 }
 
+/* Form controls do not inherit the dark ground on their own. */
+input,
+select,
+textarea {
+  background-color: var(--color-surface);
+  color: var(--color-ink);
+  border-color: var(--color-rule);
+}
+
+input::placeholder,
+textarea::placeholder {
+  color: var(--color-ink-faint);
+}
+
 /* Skip link — first tab stop on every page. */
 .skip-link {
   position: absolute;
   left: 0.75rem;
   top: -100%;
   z-index: 100;
-  background: var(--color-ink);
+  background: var(--color-accent);
   color: var(--color-canvas);
   padding: 0.75rem 1.25rem;
   border-radius: var(--radius-md);
@@ -127,9 +165,10 @@ body {
 }
 
 /* ============================================================
-   Paper texture
-   A single inline SVG grain (~250 bytes, zero network requests).
-   This is what makes "paper" a material rather than a claim.
+   Ground texture
+   Same inline SVG grain as before (~250 bytes, zero requests),
+   plus a low gold bloom. On a dark page the grain is what stops
+   large flat areas from banding on cheap panels.
    ============================================================ */
 
 .paper {
@@ -143,8 +182,14 @@ body {
   inset: 0;
   pointer-events: none;
   z-index: 0;
-  opacity: 0.5;
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='140' height='140' filter='url(%23n)' opacity='0.05'/%3E%3C/svg%3E");
+  opacity: 0.55;
+  background-image:
+    radial-gradient(
+      ellipse 80% 50% at 50% -10%,
+      rgba(253, 190, 2, 0.07),
+      transparent 70%
+    ),
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='140' height='140' filter='url(%23n)' opacity='0.045'/%3E%3C/svg%3E");
 }
 
 .paper > * {
@@ -211,7 +256,12 @@ body {
   content: "";
   flex: 1;
   height: 1px;
-  background: var(--color-rule);
+  /* Fades out instead of stopping dead — reads as light falling off. */
+  background: linear-gradient(
+    to right,
+    var(--color-rule),
+    transparent
+  );
 }
 
 .kicker-num {
@@ -244,7 +294,9 @@ body {
 }
 
 /* Only cards that are genuinely a link get lift on hover.
-   Static cards must not pretend to be interactive. */
+   Static cards must not pretend to be interactive.
+   On a dark ground a drop shadow is invisible, so "raised" is
+   expressed as warmth from the gold rather than as darkness. */
 a.card,
 button.card {
   transition:
@@ -256,7 +308,7 @@ button.card {
 a.card:hover,
 button.card:hover {
   border-color: var(--color-rule);
-  box-shadow: 0 10px 28px -18px rgba(36, 31, 27, 0.45);
+  box-shadow: 0 10px 30px -18px rgba(253, 190, 2, 0.28);
   transform: translateY(-2px);
 }
 
@@ -292,16 +344,22 @@ button.card:hover {
   transition:
     background-color 0.18s ease,
     border-color 0.18s ease,
-    color 0.18s ease;
+    color 0.18s ease,
+    box-shadow 0.18s ease;
 }
 
+/* The label here used to be #ffffff. White on brand gold is
+   1.47:1 — it would have failed outright. The dark ground colour
+   on gold is 11.8:1. */
 .btn-primary {
   background: var(--color-accent);
-  color: #ffffff; /* 5.0:1 on accent */
+  color: var(--color-canvas);
+  font-weight: 600;
 }
 
 .btn-primary:hover {
   background: var(--color-accent-strong);
+  box-shadow: 0 6px 24px -10px rgba(253, 190, 2, 0.5);
 }
 
 .btn-outline {
@@ -311,8 +369,8 @@ button.card:hover {
 }
 
 .btn-outline:hover {
-  border-color: var(--color-ink);
-  background: var(--color-surface);
+  border-color: var(--color-accent);
+  color: var(--color-accent);
 }
 
 .btn-quiet,
@@ -370,6 +428,44 @@ button.card:hover {
 }
 
 /* ============================================================
+   Light — utilities that only make sense on a dark ground
+   ============================================================ */
+
+/* Gold text that actually looks lit rather than merely coloured. */
+.glow-gold {
+  color: var(--color-accent);
+  text-shadow: 0 0 22px rgba(253, 190, 2, 0.35);
+}
+
+/* A hairline that fades at both ends. Used to separate sections
+   without drawing a hard box around anything. */
+.hairline {
+  height: 1px;
+  border: 0;
+  background: linear-gradient(
+    to right,
+    transparent,
+    var(--color-rule) 18%,
+    var(--color-rule) 82%,
+    transparent
+  );
+}
+
+/* Ember bloom behind a hero element. Purely decorative. */
+.bloom {
+  position: absolute;
+  border-radius: 50%;
+  pointer-events: none;
+  background: radial-gradient(
+    circle,
+    rgba(253, 190, 2, 0.16) 0%,
+    rgba(131, 2, 28, 0.1) 42%,
+    transparent 70%
+  );
+  filter: blur(6px);
+}
+
+/* ============================================================
    Motion
    Entrance only, above the fold, CSS-only (no JS bundle cost).
    Fully removed under prefers-reduced-motion.
@@ -403,6 +499,56 @@ button.card:hover {
   animation-delay: 0.24s;
 }
 
+/* Blur-in: the reference designs' signature entrance. Text
+   resolves out of a haze rather than sliding in. */
+@keyframes blur-in {
+  from {
+    opacity: 0;
+    filter: blur(14px);
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    filter: blur(0);
+    transform: none;
+  }
+}
+
+.blur-in {
+  animation: blur-in 0.9s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+/* A slow breath, for anything that should feel alive but not busy. */
+@keyframes ember-breathe {
+  0%,
+  100% {
+    opacity: 0.55;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.04);
+  }
+}
+
+.ember-breathe {
+  animation: ember-breathe 4.5s ease-in-out infinite;
+}
+
+@keyframes drift-up {
+  from {
+    transform: translateY(0) scale(1);
+    opacity: 0;
+  }
+  12% {
+    opacity: 1;
+  }
+  to {
+    transform: translateY(-120px) scale(0.4);
+    opacity: 0;
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   html {
     scroll-behavior: auto;
@@ -434,12 +580,15 @@ button.card:hover {
   .card-glass {
     border-color: var(--color-ink-faint);
   }
+  .glow-gold {
+    text-shadow: none;
+  }
 }
 
 /* ============================================================
    Compatibility layer for the existing dashboard
    These are the previous component classes, re-expressed in the
-   new system. Kept so the 13 dashboard pages inherit the fixed
+   new system. Kept so the 13 dashboard pages inherit the dark
    palette, focus rings and reduced-motion handling without a
    risky mass rewrite. New work should use .card / .btn-* above.
    ============================================================ */
@@ -472,7 +621,7 @@ button.card-surface:hover,
 a.card-glass:hover,
 button.card-glass:hover {
   border-color: var(--color-rule);
-  box-shadow: 0 10px 28px -18px rgba(36, 31, 27, 0.45);
+  box-shadow: 0 10px 30px -18px rgba(253, 190, 2, 0.28);
   transform: translateY(-2px);
 }
 
@@ -499,6 +648,67 @@ button.card-glass:hover {
 .steward-avatar-ring {
   border: 2px solid var(--color-canvas);
   border-radius: 9999px;
+}
+
+/* ============================================================
+   Dashboard shell
+   The part committee members actually open every week. On a dark
+   ground the danger is everything reading as equally inert, so
+   the only two things that emit light are: where you are, and
+   what needs you.
+   ============================================================ */
+
+/* The current page gets a lit edge, not just a tinted pill. A colour
+   swap alone is easy to miss at a glance down a list of eight. */
+.nav-item {
+  position: relative;
+}
+
+.nav-item.is-active::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 50%;
+  height: 1.25rem;
+  width: 2px;
+  transform: translateY(-50%);
+  border-radius: 0 2px 2px 0;
+  background: var(--color-accent);
+  box-shadow: 0 0 10px rgba(253, 190, 2, 0.75);
+}
+
+/* Stat tiles: warm on approach. */
+a.card-surface:hover .lucide,
+a.card:hover .lucide {
+  color: var(--color-accent);
+}
+
+/* A progress meter that fills with fire rather than with a flat bar.
+   Apply to the filled element; the track keeps whatever background it
+   already had. */
+.meter-fill {
+  background: linear-gradient(
+    90deg,
+    var(--color-maroon) 0%,
+    var(--color-accent) 100%
+  );
+  box-shadow: 0 0 12px rgba(253, 190, 2, 0.35);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .nav-item.is-active::before {
+    box-shadow: none;
+  }
+}
+
+@media (prefers-contrast: more) {
+  .meter-fill {
+    box-shadow: none;
+  }
+  .nav-item.is-active::before {
+    box-shadow: none;
+    width: 3px;
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {

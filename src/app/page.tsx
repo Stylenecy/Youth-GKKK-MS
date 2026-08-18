@@ -2,6 +2,9 @@ import Link from "next/link";
 import { getUpcomingGathering, getEvents, getCrosses } from "@/lib/data";
 import type { StewardAssignment } from "@/lib/types";
 import { Masthead, Logomark } from "@/components/Masthead";
+import Preloader from "@/components/landing/Preloader";
+import HeroCinematic from "@/components/landing/HeroCinematic";
+import Reveal from "@/components/landing/Reveal";
 import {
   formatWeekdayDayMonth,
   formatDayNumber,
@@ -42,116 +45,128 @@ export default async function LandingPage() {
 
   return (
     <div className="flex min-h-screen flex-col bg-canvas">
+      <Preloader />
       <Masthead />
 
       <main id="main" className="flex-1">
+        {/* ── 00 · The mark, assembling ─────────────────────────── */}
+        <HeroCinematic />
+
         {/* ── 01 · Warta minggu ini ─────────────────────────────── */}
-        <section className="paper border-b border-rule">
+        <section id="warta" className="paper scroll-mt-20 border-y border-rule-soft">
           <div className="mx-auto w-full max-w-6xl px-5 py-14 sm:px-8 sm:py-20 lg:py-24">
-            <p className="kicker rise">
-              <span className="kicker-num">01</span> Warta Minggu Ini
-            </p>
+            <Reveal>
+              <p className="kicker">
+                <span className="kicker-num">01</span> Warta Minggu Ini
+              </p>
+            </Reveal>
 
             {upcoming ? (
               <div className="mt-8 grid gap-10 lg:grid-cols-[1.35fr_1fr] lg:gap-16">
                 <div>
-                  <div className="rise rise-1 flex flex-wrap items-center gap-2.5">
-                    <span className="tag tag-accent">
-                      {eventTypeLabel(upcoming.eventType)}
-                    </span>
-                    <span className="tag">{countdownLabel(upcoming.date)}</span>
-                  </div>
-
-                  {/* The theme is the headline. Not the product name. */}
-                  <h1 className="t-display rise rise-1 mt-5 text-balance text-ink">
-                    {upcoming.weeklyTheme}
-                  </h1>
-
-                  <p className="t-lead rise rise-2 mt-6 max-w-xl text-pretty">
-                    {upcoming.description}
-                  </p>
-
-                  <dl className="rise rise-2 mt-8 flex flex-wrap gap-x-10 gap-y-5">
-                    <div>
-                      <dt className="font-mono text-[0.625rem] uppercase tracking-[0.16em] text-ink-faint">
-                        Tanggal
-                      </dt>
-                      <dd className="mt-1.5 font-serif text-lg font-semibold text-ink">
-                        {formatWeekdayDayMonth(upcoming.date)}
-                      </dd>
+                  <Reveal delay={0.05}>
+                    <div className="flex flex-wrap items-center gap-2.5">
+                      <span className="tag tag-accent">
+                        {eventTypeLabel(upcoming.eventType)}
+                      </span>
+                      <span className="tag">{countdownLabel(upcoming.date)}</span>
                     </div>
-                    <div>
-                      <dt className="font-mono text-[0.625rem] uppercase tracking-[0.16em] text-ink-faint">
-                        Waktu
-                      </dt>
-                      <dd className="num mt-1.5 font-serif text-lg font-semibold text-ink">
-                        {formatTime(upcoming.date)}
-                      </dd>
-                    </div>
-                    <div>
-                      <dt className="font-mono text-[0.625rem] uppercase tracking-[0.16em] text-ink-faint">
-                        Tempat
-                      </dt>
-                      <dd className="mt-1.5 font-serif text-lg font-semibold text-ink">
-                        Ruang Hermon
-                      </dd>
-                    </div>
-                    {upcoming.speakerName && (
+
+                    {/* The theme is the headline. Not the product name. */}
+                    <h1 className="t-display mt-5 text-balance text-ink">
+                      {upcoming.weeklyTheme}
+                    </h1>
+                  </Reveal>
+
+                  <Reveal delay={0.12}>
+                    <p className="t-lead mt-6 max-w-xl text-pretty">
+                      {upcoming.description}
+                    </p>
+
+                    <dl className="mt-8 flex flex-wrap gap-x-10 gap-y-5">
                       <div>
                         <dt className="font-mono text-[0.625rem] uppercase tracking-[0.16em] text-ink-faint">
-                          Pembicara
+                          Tanggal
                         </dt>
                         <dd className="mt-1.5 font-serif text-lg font-semibold text-ink">
-                          {upcoming.speakerName}
+                          {formatWeekdayDayMonth(upcoming.date)}
                         </dd>
                       </div>
-                    )}
-                  </dl>
+                      <div>
+                        <dt className="font-mono text-[0.625rem] uppercase tracking-[0.16em] text-ink-faint">
+                          Waktu
+                        </dt>
+                        <dd className="num mt-1.5 font-serif text-lg font-semibold text-ink">
+                          {formatTime(upcoming.date)}
+                        </dd>
+                      </div>
+                      <div>
+                        <dt className="font-mono text-[0.625rem] uppercase tracking-[0.16em] text-ink-faint">
+                          Tempat
+                        </dt>
+                        <dd className="mt-1.5 font-serif text-lg font-semibold text-ink">
+                          Ruang Hermon
+                        </dd>
+                      </div>
+                      {upcoming.speakerName && (
+                        <div>
+                          <dt className="font-mono text-[0.625rem] uppercase tracking-[0.16em] text-ink-faint">
+                            Pembicara
+                          </dt>
+                          <dd className="mt-1.5 font-serif text-lg font-semibold text-ink">
+                            {upcoming.speakerName}
+                          </dd>
+                        </div>
+                      )}
+                    </dl>
 
-                  <div className="rise rise-3 mt-9 flex flex-wrap gap-3">
-                    <Link href="/login" className="btn btn-primary">
-                      Buka Dashboard Pengurus
-                    </Link>
-                    <a href="#ritme" className="btn btn-outline">
-                      Lihat Ritme Minggu
-                    </a>
-                  </div>
+                    <div className="mt-9 flex flex-wrap gap-3">
+                      <Link href="/login" className="btn btn-primary">
+                        Buka Dashboard Pengurus
+                      </Link>
+                      <a href="#ritme" className="btn btn-outline">
+                        Lihat Ritme Minggu
+                      </a>
+                    </div>
+                  </Reveal>
                 </div>
 
                 {/* Who serves — named, with their role. The whole point of
                     penatalayan is being named, so names get the space that
                     decorative avatar circles used to occupy. */}
-                <aside className="rise rise-3 card p-6 sm:p-7">
-                  <h2 className="font-mono text-[0.6875rem] uppercase tracking-[0.18em] text-ink-faint">
-                    Yang Melayani · {formatWeekdayDayMonth(upcoming.date)}
-                  </h2>
+                <Reveal delay={0.18}>
+                  <aside className="card p-6 sm:p-7">
+                    <h2 className="font-mono text-[0.6875rem] uppercase tracking-[0.18em] text-ink-faint">
+                      Yang Melayani · {formatWeekdayDayMonth(upcoming.date)}
+                    </h2>
 
-                  {stewards.length > 0 ? (
-                    <ul className="mt-5 divide-y divide-rule-soft">
-                      {stewards.map((s: StewardAssignment) => (
-                        <li
-                          key={s.id}
-                          className="flex items-baseline justify-between gap-4 py-3 first:pt-0 last:pb-0"
-                        >
-                          <span className="font-serif text-lg font-medium text-ink">
-                            {s.member?.nickname ?? s.member?.fullName ?? "Belum ditentukan"}
-                          </span>
-                          <span className="font-mono text-xs uppercase tracking-[0.1em] text-ink-muted">
-                            {s.role}
-                          </span>
-                        </li>
-                      ))}
-                    </ul>
-                  ) : (
-                    <p className="mt-5 text-sm text-ink-muted">
-                      Penatalayan untuk ibadah ini belum ditetapkan.
+                    {stewards.length > 0 ? (
+                      <ul className="mt-5 divide-y divide-rule-soft">
+                        {stewards.map((s: StewardAssignment) => (
+                          <li
+                            key={s.id}
+                            className="flex items-baseline justify-between gap-4 py-3 first:pt-0 last:pb-0"
+                          >
+                            <span className="font-serif text-lg font-medium text-ink">
+                              {s.member?.nickname ?? s.member?.fullName ?? "Belum ditentukan"}
+                            </span>
+                            <span className="font-mono text-xs uppercase tracking-[0.1em] text-ink-muted">
+                              {s.role}
+                            </span>
+                          </li>
+                        ))}
+                      </ul>
+                    ) : (
+                      <p className="mt-5 text-sm text-ink-muted">
+                        Penatalayan untuk ibadah ini belum ditetapkan.
+                      </p>
+                    )}
+
+                    <p className="mt-6 border-t border-rule-soft pt-4 text-sm leading-relaxed text-ink-muted">
+                      Berhalangan hadir? Kabari pengurus GKKK Jogja lebih awal supaya penggantinya sempat berlatih.
                     </p>
-                  )}
-
-                  <p className="mt-6 border-t border-rule-soft pt-4 text-sm leading-relaxed text-ink-muted">
-                    Berhalangan hadir? Kabari pengurus GKKK Jogja lebih awal supaya penggantinya sempat berlatih.
-                  </p>
-                </aside>
+                  </aside>
+                </Reveal>
               </div>
             ) : (
               <div className="mt-8 max-w-2xl">
@@ -173,15 +188,17 @@ export default async function LandingPage() {
         {/* ── 02 · Ritme minggu ─────────────────────────────────── */}
         <section
           id="ritme"
-          className="scroll-mt-20 border-b border-rule bg-canvas-sunk"
+          className="scroll-mt-20 border-b border-rule-soft bg-canvas-sunk"
         >
           <div className="mx-auto w-full max-w-6xl px-5 py-14 sm:px-8 sm:py-20">
-            <p className="kicker">
-              <span className="kicker-num">02</span> Ritme Minggu
-            </p>
+            <Reveal>
+              <p className="kicker">
+                <span className="kicker-num">02</span> Ritme Minggu
+              </p>
+            </Reveal>
 
             <div className="mt-8 grid gap-10 lg:grid-cols-[1fr_1.6fr] lg:gap-16">
-              <div>
+              <Reveal delay={0.05}>
                 <h2 className="t-title text-balance text-ink">
                   Pelayanan itu ritme, bukan acara
                 </h2>
@@ -189,12 +206,14 @@ export default async function LandingPage() {
                   Setiap minggu berjalan pada pola yang sama. Kalau kamu baru,
                   ini yang perlu kamu tahu untuk ikut.
                 </p>
-              </div>
+              </Reveal>
 
               <ol className="relative">
                 {RHYTHM.map((r, i) => (
-                  <li
+                  <Reveal
+                    as="li"
                     key={`${r.day}-${r.time}`}
+                    delay={0.06 * i}
                     className="relative flex gap-5 pb-7 last:pb-0 sm:gap-7"
                   >
                     {/* connector line */}
@@ -219,6 +238,11 @@ export default async function LandingPage() {
                       className={`relative z-10 mt-2 h-2.5 w-2.5 shrink-0 rounded-full ring-4 ring-canvas-sunk ${
                         r.highlight ? "bg-accent" : "bg-rule"
                       }`}
+                      style={
+                        r.highlight
+                          ? { boxShadow: "0 0 16px rgba(253,190,2,.6)" }
+                          : undefined
+                      }
                     />
 
                     <div className="min-w-0 pt-0.5">
@@ -233,7 +257,7 @@ export default async function LandingPage() {
                         {r.note}
                       </p>
                     </div>
-                  </li>
+                  </Reveal>
                 ))}
               </ol>
             </div>
@@ -241,17 +265,19 @@ export default async function LandingPage() {
         </section>
 
         {/* ── 03 · Agenda ───────────────────────────────────────── */}
-        <section className="paper border-b border-rule">
+        <section className="paper border-b border-rule-soft">
           <div className="mx-auto w-full max-w-6xl px-5 py-14 sm:px-8 sm:py-20">
-            <p className="kicker">
-              <span className="kicker-num">03</span> Agenda Berikutnya
-            </p>
+            <Reveal>
+              <p className="kicker">
+                <span className="kicker-num">03</span> Agenda Berikutnya
+              </p>
+            </Reveal>
 
             {agenda.length > 0 ? (
-              <ul className="mt-8 border-t border-rule">
-                {agenda.map((event) => (
-                  <li key={event.id}>
-                    <div className="flex flex-col gap-3 border-b border-rule py-6 sm:flex-row sm:items-center sm:gap-8">
+              <ul className="mt-8 border-t border-rule-soft">
+                {agenda.map((event, i) => (
+                  <Reveal as="li" key={event.id} delay={0.05 * i}>
+                    <div className="flex flex-col gap-3 border-b border-rule-soft py-6 sm:flex-row sm:items-center sm:gap-8">
                       {/* Date block — the calendar-tear device from printed bulletins */}
                       <div className="flex w-16 shrink-0 flex-row items-baseline gap-2 sm:flex-col sm:items-center sm:gap-0">
                         <span className="num font-serif text-3xl font-semibold leading-none text-ink">
@@ -282,48 +308,64 @@ export default async function LandingPage() {
                         </span>
                       </div>
                     </div>
-                  </li>
+                  </Reveal>
                 ))}
               </ul>
             ) : (
-              <p className="mt-8 border-t border-rule pt-8 text-ink-muted">
+              <p className="mt-8 border-t border-rule-soft pt-8 text-ink-muted">
                 Belum ada agenda lain setelah ibadah terdekat.
               </p>
             )}
 
             {crosses.length > 0 && (
-              <div className="mt-12">
-                <h3 className="font-mono text-[0.6875rem] uppercase tracking-[0.18em] text-ink-faint">
-                  {crosses.length} Kelompok Cross Aktif
-                </h3>
-                <ul className="mt-4 flex flex-wrap gap-2.5">
-                  {crosses.map((c) => (
-                    <li key={c.id} className="card-sunk px-4 py-2.5">
-                      <span className="font-serif text-base font-medium text-ink">
-                        {c.name}
-                      </span>
-                      <span className="ml-2.5 font-mono text-xs text-ink-faint">
-                        {c.meetingDay} {c.meetingTime}
-                      </span>
-                    </li>
-                  ))}
-                </ul>
-              </div>
+              <Reveal delay={0.1}>
+                <div className="mt-12">
+                  <h3 className="font-mono text-[0.6875rem] uppercase tracking-[0.18em] text-ink-faint">
+                    {crosses.length} Kelompok Cross Aktif
+                  </h3>
+                  <ul className="mt-4 flex flex-wrap gap-2.5">
+                    {crosses.map((c) => (
+                      <li key={c.id} className="card-sunk px-4 py-2.5">
+                        <span className="font-serif text-base font-medium text-ink">
+                          {c.name}
+                        </span>
+                        <span className="ml-2.5 font-mono text-xs text-ink-faint">
+                          {c.meetingDay} {c.meetingTime}
+                        </span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              </Reveal>
             )}
           </div>
         </section>
 
-        {/* ── 04 · Untuk pengurus (dark anchor) ─────────────────── */}
-        <section className="bg-deep text-on-deep">
-          <div className="mx-auto w-full max-w-6xl px-5 py-16 sm:px-8 sm:py-24">
-            <p className="kicker !text-on-deep-muted after:!bg-white/20">
-              <span className="kicker-num !text-accent-on-deep">04</span> Untuk
-              Pengurus
-            </p>
+        {/* ── 04 · Untuk pengurus (maroon anchor) ───────────────── */}
+        <section className="relative overflow-hidden bg-deep text-on-deep">
+          <div
+            aria-hidden="true"
+            className="bloom"
+            style={{
+              width: "min(900px, 140vw)",
+              height: "min(560px, 90vw)",
+              left: "50%",
+              top: "-30%",
+              transform: "translateX(-50%)",
+              opacity: 0.6,
+            }}
+          />
+          <div className="relative mx-auto w-full max-w-6xl px-5 py-16 sm:px-8 sm:py-24">
+            <Reveal>
+              <p className="kicker !text-on-deep-muted">
+                <span className="kicker-num !text-accent-on-deep">04</span> Untuk
+                Pengurus
+              </p>
 
-            <h2 className="t-title mt-7 max-w-2xl text-balance text-on-deep">
-              Satu tempat, supaya tidak ada yang jatuh di sela-sela
-            </h2>
+              <h2 className="t-title mt-7 max-w-2xl text-balance text-on-deep">
+                Satu tempat, supaya tidak ada yang jatuh di sela-sela
+              </h2>
+            </Reveal>
 
             <div className="mt-12 grid gap-x-10 gap-y-10 sm:grid-cols-2 lg:grid-cols-3">
               {[
@@ -357,8 +399,8 @@ export default async function LandingPage() {
                   title: "Riwayat yang utuh",
                   body: "Data tidak pernah dihapus permanen. Kepengurusan berikutnya mewarisi ingatan, bukan folder kosong.",
                 },
-              ].map((f) => (
-                <div key={f.n}>
+              ].map((f, i) => (
+                <Reveal key={f.n} delay={0.04 * i}>
                   <span className="font-mono text-[0.6875rem] tracking-[0.14em] text-accent-on-deep">
                     {f.n}
                   </span>
@@ -368,20 +410,73 @@ export default async function LandingPage() {
                   <p className="mt-2 text-[0.9375rem] leading-relaxed text-on-deep-muted">
                     {f.body}
                   </p>
-                </div>
+                </Reveal>
               ))}
             </div>
 
-            <div className="mt-14 border-t border-white/15 pt-8">
+            <div className="mt-14 border-t border-on-deep/15 pt-8">
               <Link href="/login" className="btn btn-on-deep">
                 Masuk sebagai pengurus
               </Link>
             </div>
           </div>
         </section>
+
+        {/* ── 05 · Penutup ──────────────────────────────────────────
+            Bookend to the hero: the same crest, now still. The page
+            opened with the mark assembling and closes with it at rest,
+            so the scroll has a shape rather than just an ending. */}
+        <section className="paper relative overflow-hidden">
+          <div className="relative mx-auto w-full max-w-3xl px-5 py-24 text-center sm:px-8 sm:py-32">
+            <div
+              aria-hidden="true"
+              className="bloom"
+              style={{
+                width: "min(680px, 130vw)",
+                height: "min(680px, 130vw)",
+                left: "50%",
+                top: "50%",
+                transform: "translate(-50%,-50%)",
+                opacity: 0.7,
+              }}
+            />
+
+            <Reveal>
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src="/logo/derived/logo-crest-vector.svg"
+                alt=""
+                aria-hidden="true"
+                width={64}
+                height={89}
+                className="ember-breathe mx-auto"
+                style={{ filter: "drop-shadow(0 0 28px rgba(253,190,2,.45))" }}
+              />
+            </Reveal>
+
+            <Reveal delay={0.1}>
+              <h2 className="t-title mt-8 text-balance text-ink">
+                Api tidak menyala sendirian
+              </h2>
+              <p className="t-lead mx-auto mt-5 max-w-lg text-pretty">
+                Setiap nama di jadwal itu orang yang menyediakan waktunya.
+                YGMS ada supaya tidak ada satu pun dari mereka yang terlupakan
+                — dan supaya angkatan berikutnya mewarisi ingatan, bukan folder
+                kosong.
+              </p>
+            </Reveal>
+
+            <Reveal delay={0.18}>
+              <hr className="hairline mx-auto mt-10 max-w-xs" />
+              <p className="mt-8 font-mono text-[0.625rem] uppercase tracking-[0.32em] text-ink-faint">
+                Api · Wadah · Satu kesatuan
+              </p>
+            </Reveal>
+          </div>
+        </section>
       </main>
 
-      <footer className="border-t border-rule bg-canvas">
+      <footer className="border-t border-rule-soft bg-canvas">
         <div className="mx-auto flex w-full max-w-6xl flex-col gap-5 px-5 py-10 sm:flex-row sm:items-center sm:justify-between sm:px-8">
           <div className="flex items-center gap-2.5 text-ink">
             <Logomark />

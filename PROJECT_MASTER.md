@@ -586,3 +586,295 @@ Creating the actual Supabase project + getting env keys is a Dex action (account
 ### BUKTI YANG HARUS DIBAWA BALIK
 - SELF-AUDIT (§9 Agent-Protocol) + build output.
 - Whatever env/schema was actually applied (redact secrets — anon key is public-safe, but don't paste `service_role`).
+
+---
+
+## 18 Ags 2026 malam — Vektor asli crest ketemu, folder logo dirapikan
+
+Dex ternyata **masih bisa ekspor SVG dari Canva** dan sudah coba beberapa kali, hasilnya taruh
+langsung di `public/logo/` (9 berkas, nama `v5*.svg`). Dicek satu-satu (decode isi, render
+vektornya, sample warna piksel — bukan cuma dilihat nama/ukuran berkas):
+
+- **3 berkas kecil (~10KB) = vektor asli beneran** — crest (salib+api) doang, 22 `<path>`,
+  nol gambar tertanam, warna cocok persis HEX resmi (`#FDBD01`/`#82011C` vs `#FDBE02`/`#83021C`,
+  selisih pembulatan). **Dipindah ke `derived/logo-crest-vector.svg` (warna) dan
+  `derived/logo-crest-vector-bw.svg` (hitam-putih)** — satu duplikat identik diarsipkan.
+- **6 berkas besar (6–17MB) = BUKAN logo final.** Di-decode isinya: papan eksplorasi font,
+  bukan logo — tulisan "youth" diulang ~20× dalam gaya brush-lettering berbeda-beda (kemungkinan
+  keekspor pas Dex masih pilih font di Canva). Secara teknis juga bukan vektor — isinya gambar
+  PNG dibungkus tag `<svg>` (34 tag `<image>`), bukan path asli. **Dipindah ke
+  `public/logo/_archive-canva-exports/`** (diarsipkan, bukan dihapus — sesuai prinsip
+  History-First proyek ini, dan ini punya Dex sendiri, bukan hasil kerja AI yang boleh dibuang
+  sepihak).
+- **Masih belum ada:** vektor asli untuk **wordmark penuh** ("YOUTH"+"GKKK JOGJA"+crest jadi
+  satu). Baru crest-nya yang berhasil keluar vektor bersih dari Canva — dugaan: efek
+  glow/bayangan di wordmark yang bikin Canva jatuh ke raster. `derived/logo-youth-gkkk.svg`
+  (hasil trace vtracer, dari sesi 17 Ags) masih satu-satunya opsi vektor wordmark penuh.
+
+`BRAND-GUIDE_Youth-GKKK.md` sudah diupdate reflect ini semua.
+
+---
+
+## 18 Ags 2026 — Handoff: DB/import dipindah ke sesi Claude Code lain
+
+Sesi ini (fokus logo) sempat menyentuh Supabase karena diminta lanjutin "web YGMS":
+- ✅ **Migrasi 0006 (whatsapp_access) sudah jalan di DB produksi** lewat MCP — aman, schema-only, tidak ada data pribadi.
+- ✅ **Bug nyata ditemukan & diperbaiki di kode**: `scripts/import/import_members.py`, `import_cross.py`, `import_events.py` generate pseudo-id teks (`p001`, `c1`, `e001`) padahal kolom `id` semua tabel bertipe `uuid`. Ditambal pakai `scripts/import/id_map.py` (uuid5 deterministik, idempotent). File `scripts/import/output/*.sql` sudah diregenerate dengan UUID valid.
+- 🔴 **Belum bisa dieksekusi ke DB** — ketemu blocker lebih dalam: `profiles.id uuid primary key references auth.users(id)` (`supabase/schema.sql:29`). Baris `profiles` **wajib** terhubung ke akun Auth Supabase asli — tidak bisa diisi bebas. Bulk-import 93 anggota butuh keputusan desain dulu (lepas FK / buat 93 akun Auth asli / jangan bulk-import). 3 opsi lengkap ada di transcript sesi ini, tanya Dex kalau perlu diulang.
+- **Dex bilang: database/import diurus di sesi Claude Code lain.** Sesi ini berhenti di sini, tidak lanjut eksekusi apa pun ke DB lagi. Kode fix (id_map.py dkk) sudah aman ditinggal — tidak ada efek samping, tinggal dipakai atau diabaikan sesi lain.
+
+---
+
+## 18 Ags 2026 (siang) — Audit & perbaikan 4 berkas SQL impor
+
+Sesi lanjutan yang dimaksud handoff di atas. **Belum ada SQL yang dijalankan ke Supabase** —
+akses DB dipakai **baca-saja** (izin eksplisit Dex) untuk memastikan bentuk DB nyata, bukan menebak.
+
+### Keadaan DB produksi per 18 Ags (diverifikasi lewat SELECT, bukan asumsi)
+
+| Tabel | Baris |
+|---|---|
+| `profiles` | **1** (Dex, dari login Google; nickname masih `dex.bennett28`) |
+| `crosses` | **8** ← bukan 5 |
+| `cross_memberships` · `events` · `steward_assignments` · `finance_transactions` · `skills` | **0** |
+| `auth.users` | 1 |
+
+Praktis masih kosong → impor pertama, tidak ada data lama yang bisa rusak.
+
+### 🔴 Blocker fatal DIKONFIRMASI masih hidup
+
+`profiles_id_fkey FOREIGN KEY (id) REFERENCES auth.users(id) ON DELETE CASCADE` **masih ada**,
+dan `profiles.id` **tidak punya DEFAULT**. Dua akibat, satu di antaranya belum pernah dicatat:
+
+1. Impor 93 anggota gagal total di baris pertama.
+2. **RPC `add_cross_member` (migrasi 0004) mustahil jalan** — dia insert ke `profiles` tanpa `id`.
+   Artinya tombol "tambah anggota" di web YGMS **rusak sejak dibuat**, belum ketahuan karena
+   belum pernah ada anggota nyata ditambahkan.
+
+➡️ Ditulis **`supabase/migrations/0007_profiles_standalone.sql`** (lepas FK + kasih DEFAULT).
+**Belum dijalankan** — menunggu Dex. Sisa keputusan (orang yang login nanti bisa dapat baris
+profil kedua) didokumentasikan di dalam berkas migrasi itu, 3 opsi, belum dipilih.
+
+### 8 grup Cross = sudah duplikat sebelum impor
+
+Dua gelombang: 8 Ags 09:29 (5 grup, `meeting_time` 19:00) + 11 Ags 07:44 (3 grup dari migrasi
+0003, 17:00). Nama beda tipis (`Cross Dex` vs `Cross TAMBALBAND`, `Cross Wangke & Arion` vs
+`Cross Wangke-Arion`, `Cross Nita, Grace & Erica` vs `Cross Nita-Grace-Erica`) jadi
+`on conflict (name)` tidak menangkapnya. `cross.sql` lama akan menambah 5 lagi → **13 grup**.
+
+➡️ Keputusan Dex: pakai nama yang sudah ada. Dipakai 5 grup batch 8 Ags (19:00, cocok dengan
+Data Cross.md), 3 duplikat di-`is_active = false` (tidak dihapus).
+
+### Akar masalah semua berkas: pencarian orang pakai `WHERE nickname = '...'`
+
+265 pencarian di 3 berkas. Hasil audit:
+
+| Token | Cocok | Akibat kalau dijalankan apa adanya |
+|---|---|---|
+| `'Nathan'` (13×) | 2 orang | Cross 4 dapat 2 leader · transaksi Rp350rb masuk 2× · 11 penatalayan tidak menentu orangnya |
+| `'Dian'` | 2 orang | Cross 5 dapat 2 anggota |
+| `'Ding Ding'` | **0** | Andrea Elita L diam-diam tidak masuk Cross 2 sama sekali |
+| `'echa'`, `'valen'` (huruf kecil) | **0** | 2 penatalayan hilang diam-diam |
+| `'Joshua A'` | **0** | 1 penatalayan hilang |
+| `'SEMINAR'`, `'Pengurus'` ×2, `'Minggu Paskah'`, `'LPP Kaliurang'` | **0** | catatan kolom WL di spreadsheet ikut terparsing sebagai nama orang |
+
+**Temuan paling halus — `'Valen'` cocok tepat 1 baris tapi ORANGNYA SALAH.** 13 baris
+(11 penatalayan + Cross 2 + 1 transaksi) tertuju ke Maria Valensia T, padahal 3 bukti
+independen menunjuk **Valentia Anggoro**: (a) `DATABASE_MEMBERS.md` menaruh Valentia di C2 dan
+Maria Valensia tanpa Cross — Valentia satu-satunya orang C2 yang tidak pernah dimasukkan;
+(b) peran Sound/Singer/Pemusik/Multimedia persis skill Valentia, Maria Valensia nol skill;
+(c) Valentia tercatat layan 19/28 tapi nama `'Valentia'` **nol kali** muncul di `events.sql`.
+**Dikonfirmasi Dex 18 Ags.** Pengaman gagal-keras tidak akan pernah menangkap kelas kesalahan
+ini — ketemunya lewat verifikasi silang ke sumber lain.
+
+### Bug zona waktu: 29 dari 29 ibadah
+
+Semua tersimpan `'…T17:00:00Z'` di kolom `timestamptz` → dibaca 17:00 UTC = **00:00 WIB hari
+Minggu**. Setiap ibadah Sabtu sore akan tampil sebagai Minggu dini hari. Ibadah 17:00 WIB =
+`10:00:00Z`. Semua digeser −7 jam; tanggalnya sendiri tidak berubah.
+
+Ditemukan juga `description` = `'Minggu None bulan N'` di 26 baris — `None` Python bocor jadi teks.
+
+### Hasil: 5 berkas baru, berkas asli tidak disentuh
+
+`scripts/import/output/{members,cross,finance,events}_fixed.sql` + `00_all_fixed.sql`
+(+ migrasi `0007`). Semua pencarian pindah ke **nama lengkap** (93/93 unik) lewat dua fungsi
+pengaman `_ygms_import_person()` / `_ygms_import_cross()` yang **`RAISE EXCEPTION` kalau hasilnya
+bukan tepat 1 baris** — dibuat di awal transaksi, di-`DROP` di akhir.
+
+Nickname kembar **tetap dipertahankan** (`Dian` ×2, `Nathan` ×2) sesuai keinginan Dex — yang
+berubah cuma cara mencarinya.
+
+### Verifikasi — dijalankan, bukan diklaim
+
+- **45/45 asersi lolos**: jumlah profil 93→93 · 0 kurung tersisa di `full_name` · 0 tanggal
+  lahir palsu · 0 tahun >2010 · **0 `WHERE nickname =` di keempat berkas** · semua 44 nama yang
+  dicari cocok tepat 1 profil · keanggotaan Cross **cocok 100%** dengan kolom Cross di
+  `DATABASE_MEMBERS.md` (0 beda, 0 orang terlewat) · 8 Cross Leader · 29 ibadah semuanya jatuh
+  **Sabtu 17:00 WIB** setelah konversi · 216 penatalayan (221 − 5 baris bukan-orang).
+- **Parse ulang dengan parser PostgreSQL asli** (`pglast` v8.4 / libpg_query): 6 berkas,
+  **595 statement di `00_all_fixed.sql`, 0 gagal parse**; 7 blok plpgsql tervalidasi terpisah.
+
+### Yang sengaja TIDAK diubah
+
+Generator Python (`import_*.py`) dan `DATA_PEMUDA-GKKK-YK.xlsx` — instruksi Dex: perbaiki SQL
+saja, karena Supabase yang jadi sumber kebenaran setelah ini. **Konsekuensi: regenerate dari
+xlsx akan mengembalikan semua bug.** Berkas `_fixed.sql` adalah artefak sekali-pakai, bukan
+keluaran pipeline.
+
+---
+
+## 17 Ags 2026 — Logo Youth GKKK: kelengkapan berkas selesai
+
+Dex tidak bisa lagi edit logo di Canva (locked). Semua perbaikan dikerjakan terprogram dari
+3 PNG sumber Dex (`public/logo/Logo-Main.png`, `Logo-BnW.png`, `Logo-WnB.png` — tersimpan
+16 Ags 23:01 malam, tepat setelah polling 6 opsi logo di grup "Pengurus Pemuda 2026/2028").
+**Ketiga berkas asli tidak diubah.** Semua hasil di `public/logo/derived/` (16 berkas) +
+`public/logo/BRAND-GUIDE_Youth-GKKK.md` (rujukan lengkap: daftar berkas, HEX, aturan pakai,
+kekurangan jujur — jangan diringkas ulang di sini, baca langsung berkas itu).
+
+**Filosofi logo (sumber baru, lebih kuat dari premis lama):** chat WA 16 Ags 22:31–22:42,
+Dex sendiri ke Ko Martin Luther dkk — **Api** = semangat pemuda membara memuliakan Tuhan
+(salib), **Wadah** ("U") = tempat pemuda bertumbuh bersama dalam Tuhan sebagai satu kesatuan.
+Ko Martin: *"Koko suka v5"* → itu `Logo-Main.png`. Premis lama di dokumen ini ("Alkitab Terbuka
++ Salib Pohon Pertumbuhan + Kompas", poll 24 Jul) **sudah digantikan** oleh poll 16 Ags ini.
+
+**Angka, bukan perkiraan:** kontras merah-di-kuning (`#83021C` atas `#FDBE02`) = **6,30:1**,
+lulus WCAG AA 4,5:1. Logo penuh (dengan "GKKK JOGJA") tidak terbaca di bawah 64px — dibuatkan
+`logo-compact.png` (wordmark YOUTH+crest saja) sebagai gantinya untuk favicon/profile.
+SVG trace (`logo-youth-gkkk.svg`, vtracer) kualitasnya baik tapi bukan vektor asli.
+
+**Situs sudah dipasangi:** `favicon.ico` (16/32/48px, crest+latar emas) dan `Masthead.tsx`
+→ `Logomark` (dipakai di 6 halaman: Masthead, Sidebar, MobileNav, login, not-found, hero)
+sekarang render crest asli, ganti SVG hairline lama yang masih pakai premis "Alkitab
+terbuka+salib". Dites jalan di `npm run dev` + `tsc --noEmit` bersih.
+
+**🟡 Masih menunggu Dex:** (1) status final polling 6 opsi logo 16 Ags — sudah ditutup resmi
+atau belum (`Logo-Main.png` dipakai sebagai asumsi karena itu yang "v5" favorit Ko Martin,
+tapi belum ada konfirmasi eksplisit poll selesai); (2) vektor asli dari Canva kalau butuh
+skala besar sempurna (spanduk/baliho) — trace vtracer cukup untuk cutting sticker, tidak
+untuk itu. Detail penuh + [TANYA DEX] lainnya ada di `BRAND-GUIDE_Youth-GKKK.md`.
+
+---
+
+## 18 Ags 2026 (malam) — Perombakan desain: "Nocturne" + hero 3D
+
+Dex: *"masih ngga puas sama desainnya, apalagi landing page yang aku harap bisa wow banget."*
+Keputusan Dex sesi ini: **gelap total di seluruh situs** (bukan hibrida), dan
+**Three.js prosedural dulu**, image-sequence menyusul.
+
+### Kenapa desain lama terasa "belum dapet esensinya"
+
+Ketemu akar masalahnya, bukan soal selera: **design system lama tidak memuat
+satu pun warna brand.** Logo = gold `#FDBE02` + maroon `#83021C`; situs =
+accent `#a94d08` (coklat-amber) di atas kertas krem. Logo dan situs praktis
+dua brand berbeda.
+
+### Palet gelap — dihitung, bukan dikira
+
+Maroon `#83021C` di atas latar `#0F0A08` cuma **1,87:1** — mustahil jadi warna
+teks. Jadi maroon dipakai sebagai *fill*, dan diturunkan varian `rose #C77384`
+(5,8:1) untuk saat harus membawa teks. **26 pasangan warna yang benar-benar
+dipakai di CSS diuji satu per satu; semuanya lulus WCAG AA.** Termasuk satu
+jebakan: `.btn-primary` lama menulis `#ffffff` di atas accent — putih di atas
+emas = **1,47:1, gagal telak**. Diganti jadi warna latar gelap di atas emas
+(11,8:1).
+
+Seluruh dashboard ikut gelap **tanpa satu pun komponen halaman disentuh**,
+karena `globals.css` sudah punya compatibility layer — cukup ganti nilai token.
+
+### Hero: bara membentuk crest asli
+
+3.600 partikel berhamburan lalu berkumpul membentuk **crest sungguhan** —
+posisinya di-sampling dari `logo-crest-transparent.png` (skrip sampling +
+pratinjau render dipakai untuk memastikan bentuknya terbaca, bukan diasumsikan).
+Panas partikel mengikuti ketinggian: emas di api, maroon di wadah.
+
+Seluruh animasi (drift, kedip, ukuran, warna) dijalankan **di GPU lewat
+ShaderMaterial**, jadi biaya CPU per frame cuma 2 penulisan uniform, bukan
+menulis ulang 10.800 float.
+
+### Tiga dosa Three.js versi 8 Ags — ditutup semua
+
+| Dosa lama | Sekarang |
+|---|---|
+| 561 KB di-import langsung | dynamic import, **tidak ada di 9 chunk awal** (diverifikasi dari HTML prerender) |
+| rAF jalan terus | IntersectionObserver menghentikan loop saat kanvas keluar layar |
+| `prefers-reduced-motion` diabaikan | reduced motion = 1 frame diam, loop tidak pernah start |
+| buffer GPU bocor saat unmount | geometry/material/renderer di-dispose, listener dilepas |
+
+Tambahan: namespace import (`THREE.*`) diganti named import → tree-shaking
+memangkas **184,6 → 131,7 KB gzip (−29%)**, sekarang di bawah 139 KB yang dulu
+jadi alasan pembuangan.
+
+### Yang ditemukan tes, bukan mata
+
+Tes koreografi (`tests/motion.test.ts`, 15 tes baru) menangkap **celah kosong
+di tengah scroll**: act 1 sudah habis di progress 0,30 sementara act 2 baru
+0,20 — layar nyaris blank, terbaca rusak bukan sinematik. Timing dirapatkan
+dan sekarang dijaga asersi "tidak pernah ada momen layar kosong".
+
+### Angka verifikasi
+
+| Yang diukur | Hasil |
+|---|---|
+| Pasangan warna lulus WCAG AA | **26/26** |
+| Tes | **85/85** lulus (dari 70) |
+| `tsc --noEmit` | bersih |
+| `npm run build` | hijau, 19 rute |
+| JS awal halaman depan (gzip) | **188,9 KB** (sebelumnya 197 KB — turun, padahal bertambah hero 3D) |
+| Chunk Three.js | 131,7 KB gzip, **lazy**, tidak di muat awal |
+| WebGL di browser | konteks hidup, `glError: 0` |
+
+### Belum selesai
+
+- 🟡 **Belum diverifikasi mata.** Pane browser tidak bisa ditampilkan di sesi
+  ini (`rAF` tidak jalan saat pane tersembunyi, jadi screenshot & uji scroll
+  interaktif mustahil). Matematika koreografi sudah diuji unit test, tapi
+  **tampilan visualnya belum pernah dilihat siapa pun.**
+- 🟡 Dashboard sudah ikut gelap lewat token, tapi **belum ditinjau halaman per
+  halaman** — mungkin ada tempat yang mengandalkan latar terang.
+- 🔲 Image-sequence: komponen `FrameSequence` siap, spesifikasi + prompt ada di
+  `docs/ASSET-SPEC_landing-3d.md`. Aset belum dibuat.
+- 🔲 Fix login (`src/app/auth/callback/route.ts`) **belum di-commit/push**.
+
+### Susulan 18 Ags — "upgrade seluruhnya" (dashboard + penutup landing)
+
+Dex: *"itu kan bagian atas, gimana dengan bagian bawah dan bagian lain? Bagian Pengurusnya?"*
+
+**Bug kontras nyata yang cuma muncul setelah pindah gelap.** `bg-danger` dan
+`bg-sage` berubah jadi fill *terang* di tema gelap, tapi teksnya masih
+`text-white` — yaitu tombol hapus transaksi, dialog konfirmasi, dan toast
+"tersimpan". Diukur: **3,07:1 dan 2,96:1, dua-duanya gagal.** Diganti ke
+`text-canvas` (6,42:1 dan 6,64:1). 4 berkas.
+
+**Arah hover terbalik.** Sidebar & MobileNav pakai `hover:bg-canvas-sunk`
+(#080505) padahal rail-nya `bg-surface` (#1A1210) — menyentuh baris justru
+membuatnya **lebih gelap**, jadi terasa mundur. Di permukaan gelap, hover harus
+menambah cahaya. Diganti ke `bg-surface-2`. 4 tempat.
+
+**Audit kontras otomatis seluruh kode.** Skrip membaca token langsung dari
+`globals.css` (bukan diketik ulang), memindai tiap `className` yang memasangkan
+`text-*` dengan `bg-*` di 30+ berkas tsx, lalu menghitung rasionya. Menemukan
+sisa terakhir: `ink-faint` di `surface-2` = **4,47:1**, meleset 0,03. Token
+dinaikkan ke `#908273` supaya lolos di keempat permukaan (canvas, surface,
+surface-2, canvas-sunk). **Sekarang 0 pasangan gagal, 0 warna hardcoded.**
+
+**Cahaya untuk area pengurus** — sebelumnya bidang gelap datar yang terbaca
+"mati":
+- wash emas rendah di puncak area kerja (dekoratif, di belakang semua),
+- halaman aktif di sidebar dapat **rusuk emas menyala**, bukan cuma pil warna
+  (perbedaan warna saja gampang terlewat di daftar 8 item),
+- meter kesiapan tim mengisi dengan gradien maroon→emas ("masih memanas");
+  begitu tim lengkap jadi sage rata — selesai, tidak perlu dilihat lagi,
+- ikon kartu statistik menghangat ke emas saat didekati.
+
+**Penutup landing (section 05).** Halaman dulu berhenti mendadak setelah
+section 04. Sekarang ditutup crest yang sama dengan hero tapi diam — pembuka
+merakit, penutup istirahat, jadi scroll-nya punya bentuk.
+
+Semua efek baru punya jalur `prefers-reduced-motion` dan `prefers-contrast: more`.
+
+Verifikasi: **85/85 tes · tsc bersih · build hijau 19 rute · 26/26 pasangan token
+AA · 0 kegagalan di audit seluruh kode · 0 warna hardcoded.**
+
