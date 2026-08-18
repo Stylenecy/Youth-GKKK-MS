@@ -878,3 +878,34 @@ Semua efek baru punya jalur `prefers-reduced-motion` dan `prefers-contrast: more
 Verifikasi: **85/85 tes · tsc bersih · build hijau 19 rute · 26/26 pasangan token
 AA · 0 kegagalan di audit seluruh kode · 0 warna hardcoded.**
 
+### Susulan 18 Ags (malam) — batas kartu/kotak nyaris tak kelihatan, diperbaiki
+
+Dex: *"border tiap-tiap objek itu nggak kentara banget, seakan-akan langsung
+background dan tulisan... susah banget bedain objek kotak berisi kata-kata."*
+
+Diukur, ternyata benar: `.card`/`.tag`/chip pakai `--color-rule-soft` sebagai
+border — **1,16:1 terhadap fill kartunya sendiri**, nyaris tak kelihatan
+(ambang WCAG 1.4.11 untuk batas komponen UI itu 3:1). Ditambah, fill kartu
+(`--color-surface` #1A1210) cuma **1,07:1** terhadap latar halaman — dua-duanya
+lemah, kartu melebur jadi latar.
+
+**Border diperbaiki penuh:** token baru `--color-line` (`#776859`, dipilih
+lewat solver, bukan tebak-tebakan) — **3,17–3,66:1 di SEMUA permukaan** yang
+dipakai (canvas/surface/surface-2), plus `--color-line-accent` (`#946e14`)
+untuk kartu terpilih/aktif. Dipasang ke `.card`, `.card-sunk`, `.card-surface`,
+`.card-glass`, `.tag`, dan 1 chip anggota di `dashboard/cross/mine`.
+
+**Fill kartu naik secukupnya, jujur soal batasnya:** `--color-surface`
+dinaikkan ke `#211B17` (1,07→1,16:1) — itu **plafon maksimal**, karena
+`ink-faint` yang sudah lulus AA di atas kartu jadi pembatas keras (dicoba naik
+lebih, langsung 4 pasangan teks gagal AA — dihitung, bukan ditebak, lihat
+transcript). Konsekuensinya: `--color-surface-2` sekarang **sama** dengan
+`--color-surface` — tidak ada headroom lagi buat kartu-di-dalam-kartu punya
+warna beda; pembeda satu-satunya adalah border.
+
+Verifikasi ulang **semua 26+ pasangan warna** yang pernah lulus AA (bukan cuma
+yang baru diubah) — 0 gagal. `tsc` bersih, 85/85 tes, build hijau.
+
+Ditambahkan juga ke `docs/BRIEF-ANTIGRAVITY_landing-page-2.md` §4.2b supaya
+putaran desain berikutnya tidak mengulang pola lama.
+

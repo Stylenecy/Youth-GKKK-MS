@@ -24,8 +24,15 @@
   /* --- Ground (dark surfaces) --- */
   --color-canvas: #0f0a08; /* warm near-black, the default plane */
   --color-canvas-sunk: #080505; /* recessed band, deeper than canvas */
-  --color-surface: #1a1210; /* raised card */
-  --color-surface-2: #241917; /* card on card */
+  --color-surface: #211b17; /* raised card. 1.16:1 on canvas — the ceiling
+                                before ink-faint (the tightest text token on
+                                this surface) drops under AA. A card fill
+                                can't get much lighter without also relighting
+                                ink-faint, which is used sitewide. */
+  --color-surface-2: #211b17; /* card on card — same ceiling as surface, so
+                                  a nested card is told apart by its border
+                                  (--color-line), not by a fill step that
+                                  doesn't exist. */
 
   /* --- Light on ground --- */
   --color-ink: #f7efe2; /* 17.2:1 on canvas — headings, primary text */
@@ -66,9 +73,21 @@
   --color-danger: #d77878; /*  6.0:1 on surface */
   --color-danger-wash: #2b1010;
 
-  /* --- Rules & hairlines --- */
+  /* --- Rules & hairlines: full-bleed section dividers. Deliberately quiet
+         — these mark editorial rhythm between page bands, not object
+         boundaries, so they stay a whisper. --- */
   --color-rule: #3a2a24; /* visible hairline */
   --color-rule-soft: #241a17; /* barely-there divider */
+
+  /* --- Line: card/pill/chip BOUNDARIES. A different job from --color-rule
+         above — this has to read as "this is a distinct object" at a
+         glance, which a hairline near canvas-luminance cannot do (the old
+         --color-rule-soft border on .card measured 1.16:1 against its own
+         fill — functionally invisible). Solved for >=3:1 (WCAG 1.4.11,
+         the UI-component-boundary threshold) against every surface it can
+         sit on. --- */
+  --color-line: #776859; /* 3.66:1 canvas · 3.17:1 surface/surface-2 */
+  --color-line-accent: #946e14; /* selected/active card border. 4.22:1 canvas */
 
   /* --- Compatibility aliases ---------------------------------
      The 13 dashboard pages were built against these names. They
@@ -289,7 +308,7 @@ textarea::placeholder {
 
 .card {
   background: var(--color-surface);
-  border: 1px solid var(--color-rule-soft);
+  border: 1px solid var(--color-line);
   border-radius: var(--radius-lg);
 }
 
@@ -307,14 +326,14 @@ button.card {
 
 a.card:hover,
 button.card:hover {
-  border-color: var(--color-rule);
+  border-color: var(--color-accent);
   box-shadow: 0 10px 30px -18px rgba(253, 190, 2, 0.28);
   transform: translateY(-2px);
 }
 
 .card-sunk {
   background: var(--color-canvas-sunk);
-  border: 1px solid var(--color-rule-soft);
+  border: 1px solid var(--color-line);
   border-radius: var(--radius-lg);
 }
 
@@ -404,7 +423,7 @@ button.card:hover {
   text-transform: uppercase;
   padding: 0.25rem 0.5rem;
   border-radius: var(--radius-sm);
-  border: 1px solid var(--color-rule);
+  border: 1px solid var(--color-line);
   color: var(--color-ink-faint);
   white-space: nowrap;
 }
@@ -600,7 +619,7 @@ button.card:hover {
 .card-surface,
 .card-glass {
   background: var(--color-surface);
-  border: 1px solid var(--color-rule-soft);
+  border: 1px solid var(--color-line);
   border-radius: var(--radius-lg);
 }
 
@@ -620,7 +639,7 @@ a.card-surface:hover,
 button.card-surface:hover,
 a.card-glass:hover,
 button.card-glass:hover {
-  border-color: var(--color-rule);
+  border-color: var(--color-accent);
   box-shadow: 0 10px 30px -18px rgba(253, 190, 2, 0.28);
   transform: translateY(-2px);
 }

@@ -130,7 +130,7 @@ export default async function MyCrossPage() {
                       {members.map((m) => (
                         <li
                           key={m.id}
-                          className="flex items-center gap-2.5 rounded-md border border-rule-soft px-3 py-2"
+                          className="flex items-center gap-2.5 rounded-md border border-line px-3 py-2"
                         >
                           <Monogram name={m.nickname} size="sm" />
                           <span className="truncate text-sm text-ink">

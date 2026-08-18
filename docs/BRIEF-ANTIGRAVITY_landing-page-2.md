@@ -30,8 +30,8 @@ lapor di akhir, bukan tanya di tengah jalan kecuali benar-benar di §6.
 
 **Boleh disentuh:**
 - `src/app/page.tsx`
-- `src/components/landing/*` (HeroCinematic, Preloader, EmberCrest,
-  FrameSequence, Reveal)
+- `src/components/landing/*` (HeroCinematic, Preloader, EmberCrest, Reveal)
+  — **KECUALI `FrameSequence.tsx`, lihat larangan di bawah**
 - `src/app/globals.css` — **hanya kalau perlu token baru**, bukan hex baru
   di tengah komponen
 - Sitewide: mengganti teks "Space Youth" → "Youth" di berkas manapun ia
@@ -39,6 +39,16 @@ lapor di akhir, bukan tanya di tengah jalan kecuali benar-benar di §6.
   boleh keluar dari `page.tsx`/`landing/*`
 
 **JANGAN disentuh sama sekali:**
+- `src/components/landing/FrameSequence.tsx` dan folder `public/sequence/`
+  (belum ada) — ini komponen image-sequence yang nunggu aset 3D render.
+  Speknya lengkap di `docs/ASSET-SPEC_landing-3d.md` (60 frame, prompt
+  generate, cara potong video, cara pasang). **Aset itu digenerate Dex
+  sendiri secara manual** (pakai AI image/video generator + prompt yang
+  sudah ditulis khusus, lalu dipotong pakai ffmpeg) — bukan pekerjaan
+  Antigravity. Jangan mencoba generate asetnya sendiri walau kamu punya
+  akses ke tool image-gen, dan jangan mengubah komponen `FrameSequence.tsx`
+  atau menyambungkannya ke `page.tsx`. Komponennya sengaja diam
+  (`frameCount={0}`) sampai Dex sendiri yang memasangnya nanti.
 - `src/app/dashboard/**` — sudah diupgrade sesi ini juga (kontras gelap,
   hover, meter kesiapan), jangan diapa-apakan
 - `src/lib/data.ts`, `src/lib/supabase/**`, `supabase/**`, `scripts/**` —
@@ -361,6 +371,26 @@ dependency baru (tidak ada `lenis`, tidak ada Framer runtime).
    token `--color-*` di `globals.css`. Kalau perlu token baru, hitung
    kontrasnya dulu (lihat pola komentar di `globals.css`, ada rumus dan
    alasan tiap angka).
+2b. **Setiap elemen kotak (card, chip, pill, panel) WAJIB pakai
+   `border-line` (`--color-line`, ≥3:1 di setiap permukaan), BUKAN
+   `border-rule-soft`.** Ini bukan selera — ditemukan bug nyata 18 Ags:
+   `.card`/`.tag`/chip lama pakai `--color-rule-soft`, yang cuma **1,16:1**
+   terhadap fill-nya sendiri — nyaris tidak kelihatan, semua kotak
+   melebur jadi satu dengan latar. Sudah diperbaiki di seluruh dashboard +
+   komponen bersama (`--color-line` = `#776859`, `--color-line-accent` =
+   `#946e14` untuk kartu terpilih/aktif). Kalau kamu bikin elemen kotak
+   BARU di landing (kartu Warta, chip Cross, footer, dll.) — pakai token
+   ini dari awal, jangan reproduksi pola lama.
+   **Catatan jujur soal fill:** `--color-surface`/`--color-surface-2`
+   TIDAK bisa dinaikkan banyak dari nilai sekarang — teks `ink-faint` yang
+   sudah lulus AA di atasnya jadi batas atasnya (lihat komentar di
+   `globals.css`). Jadi pembeda utama antar-kotak itu **border**, bukan
+   beda warna isi yang kentara. Kalau butuh efek "kaca" yang lebih jelas
+   (istilah Dex: glassmorphism) — itu cuma masuk akal di area yang ADA
+   sesuatu di baliknya untuk di-blur (mis. kartu yang mengambang di atas
+   hero/bloom), bukan di kartu polos di atas latar rata. Jangan pasang
+   `backdrop-filter: blur()` di kartu yang latarnya cuma warna solid —
+   itu boros GPU tanpa hasil kelihatan.
 3. **Tidak ada dependency npm baru** kecuali benar-benar tidak terhindarkan
    — dan kalau iya, jelaskan kenapa di laporan §7 sebelum menginstal.
 4. **Three.js (kalau disentuh sama sekali) HARUS tetap dynamic import**
