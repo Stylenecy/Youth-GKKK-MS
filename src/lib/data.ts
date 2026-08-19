@@ -240,7 +240,7 @@ export async function getDashboardStats(): Promise<DashboardStats> {
     const nextMonthStart = new Date(now.getFullYear(), now.getMonth() + 1, 1);
 
     const [members, events, crossGroups, finance] = await Promise.all([
-      supabase.from("profiles").select("id", { count: "exact", head: true }),
+      supabase.from("profiles").select("id", { count: "exact", head: true }).eq("is_active", true),
       // Bounded to the calendar month. `gte` alone had no upper bound, so an
       // event scheduled for December counted towards "Bulan Ini" in August.
       supabase.from("events").select("id", { count: "exact" })
@@ -397,7 +397,10 @@ export async function getProfiles(): Promise<Profile[]> {
     const { createClient } = await import("./supabase/server");
     const supabase = await createClient();
     const [{ data }, counts] = await Promise.all([
-      supabase.from("profiles").select(PROFILE_COLUMNS).order("full_name"),
+      // is_active marks "on the roster", separate from `status` ("are they
+      // attending"). A login that was never a member of Pemuda is is_active
+      // false, so it never shows up in the directory or the member count.
+      supabase.from("profiles").select(PROFILE_COLUMNS).eq("is_active", true).order("full_name"),
       serviceCounts30d(supabase),
     ]);
     return (data ?? []).map((row) => ({
@@ -581,6 +584,61 @@ export async function getCurrentProfile(): Promise<Profile | null> {
   if (!profile) return null;
 
   return { ...mapProfileRow(profile), appRole: (appRole as Profile["appRole"]) ?? "member" };
+}
+
+export type AccountStatus = "pending" | "approved" | "rejected";
+
+export interface AccountApproval {
+  userId: string;
+  email: string;
+  displayName: string | null;
+  status: AccountStatus;
+  requestedAt: string;
+  note: string | null;
+}
+
+/**
+ * Whether the signed-in account has been let in by an admin.
+ *
+ * Signing in with Google is a *request*, not membership — an outside account
+ * reached the whole database on 19 Ags 2026 purely by completing OAuth. RLS
+ * (migration 0010) is what actually stops that; this is the app-layer read so
+ * the dashboard can explain the situation instead of rendering empty tables.
+ *
+ * Returns "approved" in demo mode: with no Supabase there is no real data to
+ * protect, and the seed pages are meant to be browsable.
+ */
+export async function getMyAccountStatus(): Promise<AccountStatus> {
+  if (!isSupabaseConfigured()) return "approved";
+
+  const { createClient } = await import("./supabase/server");
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return "pending";
+
+  const { data } = await supabase.rpc("am_i_approved");
+  return data === true ? "approved" : "pending";
+}
+
+/** The approval queue. Empty for non-admins — RLS decides, not this code. */
+export async function getAccountApprovals(): Promise<AccountApproval[]> {
+  if (!isSupabaseConfigured()) return [];
+
+  const { createClient } = await import("./supabase/server");
+  const supabase = await createClient();
+  const { data } = await supabase
+    .from("account_approvals")
+    .select("user_id,email,display_name,status,requested_at,note")
+    .order("requested_at", { ascending: false });
+
+  return (data ?? []).map((r: any) => ({
+    userId: r.user_id,
+    email: r.email,
+    displayName: r.display_name,
+    status: r.status as AccountStatus,
+    requestedAt: r.requested_at,
+    note: r.note,
+  }));
 }
 
 /** Cross ids the signed-in user actively leads. Empty outside a real session. */

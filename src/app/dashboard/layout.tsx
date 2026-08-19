@@ -1,11 +1,22 @@
 import { Sidebar } from "@/components/Sidebar";
 import { MobileNav } from "@/components/MobileNav";
+import { getMyAccountStatus } from "@/lib/data";
+import { PendingApproval } from "@/components/PendingApproval";
 
-export default function DashboardLayout({
+export default async function DashboardLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
+  // A session is not permission. Anyone can complete Google OAuth, so an
+  // account only sees the dashboard once an admin has approved it. RLS
+  // (migration 0010) enforces this at the database; this gate exists so an
+  // unapproved visitor gets an explanation instead of rows of empty tables.
+  const accountStatus = await getMyAccountStatus();
+  if (accountStatus !== "approved") {
+    return <PendingApproval />;
+  }
+
   return (
     <div className="flex min-h-screen bg-canvas text-ink selection:bg-accent selection:text-canvas">
       <Sidebar />

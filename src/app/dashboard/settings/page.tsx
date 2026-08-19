@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { isSupabaseConfigured } from "@/lib/supabase/env";
 import { PageHeader, DataPoint } from "@/components/page-parts";
+import { AccountApprovals } from "@/components/AccountApprovals";
 import { Settings, Shield, Database, Lock, Globe, CheckCircle2 } from "lucide-react";
 
 export const metadata: Metadata = { title: "Pengaturan Sistem" };
@@ -13,10 +14,12 @@ export default function SettingsPage() {
       <PageHeader
         kicker="INFRASTRUKTUR"
         title="Pengaturan & Status Sistem"
-        meta="Status koneksi basis data, konfigurasi autentikasi Google, dan panduan deployment produksi."
+        meta="Persetujuan akses akun, status koneksi basis data, dan konfigurasi autentikasi."
       />
 
       <div className="mt-8 space-y-6">
+        {/* Admin-only: empty for everyone else, because RLS returns no rows. */}
+        <AccountApprovals />
         {/* Connection Status Card */}
         <section
           className="rounded-2xl border border-line/40 bg-surface/75 p-6 backdrop-blur-xl shadow-sm sm:p-7"
@@ -85,7 +88,7 @@ export default function SettingsPage() {
               {[
                 "Aktifkan Google sebagai provider login di dashboard Supabase (Authentication → Providers → Google).",
                 "Salin nilai NEXT_PUBLIC_SUPABASE_URL dan NEXT_PUBLIC_SUPABASE_ANON_KEY ke dalam Environment Variables di Vercel atau .env.local.",
-                "Deploy ulang aplikasi — anggota pengurus yang masuk via Google OAuth akan otomatis terdaftar dan memiliki profil.",
+                "Deploy ulang aplikasi. Pengurus yang masuk via Google akan muncul di daftar 'Akses Akun' di atas sebagai menunggu persetujuan — mereka tidak melihat data apa pun sampai admin menyetujuinya.",
               ].map((step, i) => (
                 <li key={step} className="flex items-start gap-3.5">
                   <span className="num mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-full border border-line-accent/50 bg-accent-wash font-mono text-xs font-bold text-accent">
