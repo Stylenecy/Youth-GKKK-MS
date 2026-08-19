@@ -49,6 +49,10 @@ git push -u origin master
     `get_member_whatsapp()`). **Wajib dijalankan**, terlepas dari apakah kamu
     langsung mengisi tim ibadah di Langkah 2B atau tidak — tabelnya tetap
     dibuat, cuma kosong kalau belum diisi.
+- [ ] Copy-paste isi `supabase/migrations/0007_profiles_standalone.sql` → **Run**
+  - 🔴 **WAJIB sebelum Fase 3 (impor).** Tanpa ini, `profiles.id` masih terkunci
+    ke `auth.users(id)` tanpa DEFAULT — INSERT anggota manapun akan gagal
+    dengan foreign key violation.
 
 **Verifikasi:**
 ```sql
@@ -124,25 +128,42 @@ anggota — tidak ada yang rusak kalau dilewati.
 
 ## FASE 3: Import Data Asli
 
-### Langkah 7: Generate & Jalankan SQL Impor
+### Langkah 7: Jalankan SQL Impor — PAKAI VERSI `_fixed`, BUKAN YANG POLOS
 
-File `scripts/import/output/00_all.sql` **sudah digenerate** (93 anggota, dari
-`database/DATA_PEMUDA-GKKK-YK.xlsx`). Kalau kamu update file Excel-nya lagi
-nanti, generate ulang dulu:
-```bash
-python scripts/import/run_all.py --execute
-```
+🔴 **`scripts/import/output/00_all.sql` (dan `members.sql`/`cross.sql`/`finance.sql`/
+`events.sql` tanpa akhiran) MASIH PUNYA BUG YANG SUDAH DITEMUKAN** (nickname ganda
+salah orang, 'Ding-Ding' hilang, zona waktu ibadah geser 7 jam, dst — daftar
+lengkap di `PROJECT_MASTER.md` §"18 Ags 2026 — Audit & perbaikan"). **Berkas yang
+BENAR untuk dijalankan adalah yang berakhiran `_fixed.sql`.**
 
-- [ ] Supabase SQL Editor → buka `scripts/import/output/00_all.sql` di repo → copy semua isi → paste → **Run**
-  - Kalau terlalu besar/error, jalankan satu-satu: `members.sql` → `cross.sql` → `finance.sql` → `events.sql`
+- [ ] Supabase SQL Editor → buka `scripts/import/output/00_all_fixed.sql` di repo → copy semua isi → paste → **Run**
+  - Kalau terlalu besar/error, jalankan satu-satu **dalam urutan ini**:
+    `members_fixed.sql` → `cross_fixed.sql` → `finance_fixed.sql` → `events_fixed.sql`
+  - Semua 4 berkas ini aman diulang (idempotent) — kalau ragu apakah sudah
+    pernah jalan, jalankan lagi saja, tidak akan bikin data dobel.
+
+⚠️ **Kalau kamu SUDAH pernah menjalankan versi polos** (`00_all.sql` dkk) sebelum
+membaca peringatan ini: tetap jalankan `00_all_fixed.sql` / 4 berkas `_fixed.sql`
+di atas — sudah ditambahkan pembersih otomatis di dalamnya untuk menimpa/membuang
+data yang salah dari jalannya versi polos. Setelahnya, jalankan verifikasi di
+bawah seperti biasa.
+
+Kalau kamu update file Excel sumbernya lagi nanti, `python scripts/import/run_all.py
+--execute` HANYA meregenerasi versi polos (`members.sql` dkk) — versi `_fixed`
+adalah artefak manual, **tidak diregenerasi otomatis**. Minta AI pelaksana
+membuat ulang `_fixed.sql` dari versi polos yang baru kalau itu terjadi.
 
 **Verifikasi (jalankan satu-satu):**
 ```sql
-SELECT count(*) FROM public.profiles;              -- Harusnya: 93
-SELECT count(*) FROM public.crosses;                -- Harusnya: 5
-SELECT count(*) FROM public.cross_memberships;      -- Harusnya: 44 (5 leader + 39 anggota)
-SELECT count(*) FROM public.events;                 -- Harusnya: 29
-SELECT count(*) FROM public.finance_transactions;   -- Harusnya: 5
+SELECT count(*) FROM public.profiles;                              -- Harusnya: 93
+SELECT count(*) FROM public.crosses;                                -- Harusnya: 8 (5 aktif Skema 1 + 3 nonaktif duplikat migrasi 0003 -- ditinggal, bukan dihapus)
+SELECT count(*) FROM public.crosses WHERE is_active;                -- Harusnya: 5
+SELECT count(*) FROM public.crosses WHERE name LIKE 'Cross _';      -- Harusnya: 0 (kalau >0, bikinan cross.sql lama masih nyangkut, cross_fixed.sql belum jalan sampai selesai)
+SELECT count(*) FROM public.cross_memberships;                      -- Harusnya: 39 (8 leader + 31 anggota, termasuk Arion/Nita/Grace sebagai co-lead)
+SELECT count(*) FROM public.events;                                 -- Harusnya: 29
+SELECT count(*) FROM public.steward_assignments;                    -- Harusnya: 216 (221 baris sumber − 5 yang isinya bukan nama orang, dipindah ke description event)
+SELECT count(*) FROM public.finance_transactions;                   -- Harusnya: 5 (kalau sempat 6 karena bug 'Nathan' ganda dari finance.sql lama, finance_fixed.sql sudah membersihkannya)
+SELECT full_name FROM public.profiles WHERE full_name LIKE '%(%';   -- Harusnya: 0 baris (kurung sudah dibuang)
 ```
 
 **Soal nomor WhatsApp:** dari 93 anggota, **1 nomor gagal dinormalisasi**
