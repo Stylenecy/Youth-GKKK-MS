@@ -6,6 +6,11 @@
 # the build infrastructure on every deploy.
 .agent/
 database/
+scripts/import/output/
+
+# Local tool binaries / raw footage — not build inputs, would just bloat upload.
+bin/
+public/video/
 
 # Working notes, not build inputs.
 *.md

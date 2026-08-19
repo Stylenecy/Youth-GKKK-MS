@@ -982,3 +982,154 @@ tersendiri; build belum dijalankan di sesi ini.
 *Catatan metode: laporan Antigravity ini akurat pada bagian yang bisa diukur (tes, versi,
 rute, keberadaan berkas). Yang perlu diwaspadai adalah kata **"production-ready"** — di
 laporan itu artinya "kode di laptop lengkap dan hijau", bukan "sudah terkirim ke produksi".*
+
+---
+
+## 19 Ags 2026 (siang) — Commit diselamatkan, bug checklist impor ditemukan, deploy ulang
+
+Lanjutan langsung dari entri di atas. Dex kabar: seluruh `CHECKLIST_Dex.md` sudah dijalankan
+(Supabase tersambung, migrasi jalan, email peran diisi, env var terpasang). Sesi ini mengaudit
+hasilnya — dan menemukan checklist yang Dex ikuti punya dua bug nyata.
+
+### T1 — Commit + push (selesai, terbukti)
+
+43 berkas termodifikasi + sisanya di-commit dalam **2 commit** (`e440b72`, `a25055d`), push ke
+`origin/master` (remote sudah ada — GitHub `Stylenecy/Youth-GKKK-MS`, private). `tsc --noEmit`
+bersih, **85/85 tes lulus** sebelum commit.
+
+**Dikeluarkan dari commit (dan alasannya):**
+- `bin/ffmpeg/` (296 MB, tool binary lokal) — bukan kode proyek.
+- `public/video/` (20 MB, rekaman mentah) — tidak direferensi kode manapun, cuma
+  `public/sequence/` (hasil ekstraknya) yang dipakai `FrameSequence.tsx`. Dex konfirmasi exclude.
+- `.claude/settings.local.json` — pengaturan lokal mesin, bukan config bersama.
+- `.agent/Idea/elsye-residence.html` — **berkas proyek LAIN** (Webflow export "Elyse Residence"),
+  ketemu nyasar di repo ini. 🟡 Belum dihapus (bukan punya AI ini, prinsip History-First) — geser
+  ke folder proyeknya sendiri kalau sempat.
+- `public/logo/derived/_temp_render.html` — sisa scratch render SVG, bukan deliverable.
+
+Ketiganya (kecuali elsye-residence.html) ditambahkan ke `.gitignore`.
+
+### T3 — 🔴 Checklist impor menunjuk ke berkas yang SALAH
+
+Audit sesi 18 Ags sudah memperbaiki **keempat** berkas SQL (`members_fixed.sql`,
+`cross_fixed.sql`, `finance_fixed.sql`, `events_fixed.sql` — bukan cuma members seperti dugaan
+awal). Tapi **`CHECKLIST_Dex.md` Langkah 7 menyuruh Dex menjalankan `00_all.sql` / `members.sql`
+dkk — versi POLOS yang masih punya semua bug** (nickname ambigu, 'Ding-Ding' hilang, zona waktu
+ibadah geser 7 jam, dst). Berkas `_fixed.sql` ada di disk tapi **tidak pernah disebut** di
+checklist yang Dex ikuti. Kalau Dex menjalankan checklist apa adanya, kemungkinan besar data live
+sekarang punya semua bug lama itu — **inilah kemungkinan besar jawaban untuk "penugasan salah
+karena nickname ganda?"**.
+
+Checklist juga **tidak menyebut migrasi `0007_profiles_standalone.sql`** — tanpa itu, INSERT
+anggota manapun gagal FK violation total (`profiles.id` masih terkunci ke `auth.users(id)`, tanpa
+DEFAULT). Kalau Dex sempat kena ini, impor tidak akan jalan sama sekali sampai dia entah bagaimana
+menemukan migrasi 0007 sendiri (ada di folder tapi tidak di checklist).
+
+**Sudah diperbaiki sesi ini** (`CHECKLIST_Dex.md` — di-commit; `scripts/import/output/*_fixed.sql`
+— gitignored, tidak ter-commit, tapi diperbarui di disk):
+1. Migrasi 0007 ditambahkan ke Langkah 1.
+2. Langkah 7 diarahkan ke `_fixed.sql`, dengan peringatan tebal.
+3. **`cross_fixed.sql`**: ditambah pembersih eksplisit untuk 5 baris `'Cross 1'..'Cross 5'` bikinan
+   `cross.sql` lama (UUID+nama persis diketahui, DELETE bertarget aman) kalau itu sempat jalan
+   duluan. Insert keanggotaan diubah dari `ON CONFLICT DO NOTHING` (no-op — tabel tidak punya
+   unique constraint, jadi jalan 2× = dobel) jadi `WHERE NOT EXISTS` — aman diulang.
+4. **`events_fixed.sql`**: insert penatalayan diubah dari `ON CONFLICT (id) DO NOTHING` jadi
+   `DO UPDATE SET profile_id`. id per baris = hash deterministik (event+role), sama persis di
+   kedua versi — jadi kalau versi lama sempat salah pilih orang (Nathan/Valen ambigu), `DO NOTHING`
+   TIDAK PERNAH memperbaikinya. Sekarang menimpa `profile_id` yang salah; `status` sengaja tidak
+   ditimpa (kalau pengurus sudah ubah jadi 'confirmed' lewat aplikasi, itu dihormati).
+5. **`finance_fixed.sql`**: ditambah `DELETE` bertarget presisi untuk baris "Bensin Ko Yudha"
+   (350rb) kalau `recorded_by` bukan Nathanael Sugianto — sebelumnya kalau `finance.sql` lama
+   sempat jalan (nickname 'Nathan' cocok 2 orang), `WHERE NOT EXISTS` yang sudah ada tidak akan
+   mengoreksinya (fingerprint deskripsi+jumlah+tanggal sudah cocok walau orangnya salah).
+6. `00_all_fixed.sql` diregenerasi dari keempat berkas di atas.
+7. Semua 5 berkas diparse-ulang dengan `pglast` v8.4 (parser Postgres asli) — **0 gagal parse**.
+8. Angka verifikasi Langkah 7 diperbaiki: `crosses` harusnya **8** (bukan 5 — 3 duplikat migrasi
+   0003 ditinggal nonaktif, bukan dihapus), `cross_memberships` **39** (bukan 44 — 8 leader
+   termasuk Arion/Nita/Grace sebagai co-lead + 31 anggota), ditambah cek `steward_assignments`
+   (216) dan sisa kurung di `full_name` (harus 0) yang sebelumnya tidak pernah dicek.
+
+**🔴 Masih menunggu Dex** — sesi ini TIDAK punya kredensial Supabase (tidak ada `.env.local`, tidak
+ada akses DB), jadi **tidak bisa memverifikasi angka asli di database** atau tahu file mana yang
+sebenarnya Dex jalankan. Jalankan blok `SELECT count(*)...` di `CHECKLIST_Dex.md` §Langkah 7 dan
+laporkan hasilnya. Kalau angkanya tidak cocok (terutama `cross_memberships` ≠ 39 atau ada baris
+`name LIKE 'Cross _'`), jalankan `00_all_fixed.sql` yang sudah diperbaiki — aman diulang, tidak
+akan menggandakan data.
+
+### T4 — Uji peran: belum bisa dikerjakan sesi ini
+
+Sama seperti T2, butuh login Google asli (admin/Nathan/Cross Leader/anggota biasa) yang cuma Dex
+bisa lakukan. Checklist Langkah 8-11 sudah berisi langkah persisnya, termasuk cek eksplisit "field
+`whatsapp` tidak boleh ada di respons API" untuk anggota biasa lewat DevTools Network tab.
+
+### T5 — 🔴 Produksi belum di-deploy sejak 16 Agustus, sekarang sudah
+
+Temuan: deployment production TERAKHIR di Vercel sebelum sesi ini adalah commit `5413ec7a`
+(**16 Agustus**, "chore: point importer at updated roster file"). **Enam commit setelahnya**
+(termasuk seluruh redesign Nocturne, fix cookie OAuth, dan commit T1 sesi ini) **tidak pernah
+ter-deploy** — GitHub↔Vercel auto-deploy tidak aktif di proyek ini (semua deployment sebelumnya
+dibuat lewat CLI/agent secara manual, bukan dipicu git push).
+
+**Dikerjakan:** deploy manual lewat `vercel deploy --prod` (build sukses, Turbopack, 33 detik,
+TypeScript bersih). Production sekarang di commit `a25055d`.
+
+**Diverifikasi sendiri (bukan diklaim):**
+| Rute | Kode | Catatan |
+|---|---|---|
+| `/` | 200 | Konten Nocturne (Api/Wadah/Satu Tubuh) render benar, 0 error console, semua aset 200 |
+| `/login` | 200 | Render bersih, 0 error console |
+| `/dashboard` + 9 sub-rute (audit, cross, cross/mine, finance, finance/export, gatherings, meetings, members, settings) | 307 → `/login` | Auth gate jalan — tidak ada yang bocor tanpa login |
+| `/icon.svg`, `/opengraph-image`, `/robots.txt`, `/sitemap.xml` | 200 | — |
+| rute acak (`/nonexistent-route-xyz`) | 404 | benar |
+| `GET /auth/callback` tanpa kode | 307 | redirect graceful, bukan crash |
+
+**Google OAuth dicek langsung ke Supabase** (bukan lewat klik UI — browser automation sesi ini
+tidak berhasil memicu Server Action form dengan andal): `GET
+https://rbouxffjcqjwywyhbtqw.supabase.co/auth/v1/authorize?provider=google` → **302 ke
+accounts.google.com** dengan `client_id` valid. Provider Google **aktif dan terkonfigurasi
+benar**. Env var `NEXT_PUBLIC_SUPABASE_URL`/`NEXT_PUBLIC_SUPABASE_ANON_KEY` dicek lewat `vercel
+env ls production` — ada, benar (`rbouxffjcqjwywyhbtqw.supabase.co`), untuk Production+Preview+
+Development. Vercel runtime logs: **0 error** dalam 30 menit terakhir.
+
+🟡 Satu klik nyata "Lanjutkan dengan Google" oleh Dex sendiri di browser tetap dianjurkan untuk
+menutup loop sepenuhnya (curl membuktikan Supabase-nya benar, tapi tidak membuktikan tombol di UI
+memicu jalur itu — walau kodenya sudah dibaca dan jalurnya lurus).
+
+### 🟡 Temuan lama, di luar tugas — nama lengkap jemaat sudah ter-commit ke git history
+
+`PROJECT_MASTER.md` bagian audit 18 Ags (§"Akar masalah semua berkas") menyebut nama lengkap
+beberapa anggota (mis. "Valentia Anggoro") sebagai bagian pencatatan forensik bug. Itu **sudah
+ter-push ke `origin/master`** sejak commit `ebcf7bc` (sebelum sesi ini). Repo **private**, jadi
+bukan paparan publik, tapi tetap menyentuh larangan §0.4 BRIEF-AI ("nama lengkap ke repo").
+**Tidak diubah sesi ini** — mengubah butuh rewrite history (force-push, destruktif, perlu izin
+eksplisit Dex) atau menyensor entri yang sudah jadi catatan audit berguna. Keputusan Dex: terima
+karena repo private, atau minta di-scrub.
+
+---
+
+## Langkah rutin untuk pengurus (bukan cuma Dex)
+
+Tujuan: siapa pun pengurus bisa pakai sistem ini tanpa nanya ke Dex.
+
+**Tambah anggota baru ke Cross:**
+1. Login dengan akun Google → `/dashboard/cross/mine` (Cross Leader) atau `/dashboard/cross` (admin).
+2. Klik "Tambah anggota", isi nama lengkap + nickname. Sistem yang urus sisanya.
+
+**Catat transaksi keuangan (Bendahara/Nathan):**
+1. Login → `/dashboard/finance`.
+2. "Tambah transaksi" untuk satu-satu, atau tempel dari Google Sheets lewat kotak impor massal
+   (kalau ada satu baris salah, SEMUA baris ditolak — tidak ada data masuk setengah, perbaiki lalu
+   coba lagi).
+3. Ekspor CSV kapan saja lewat tombol di halaman yang sama.
+
+**Ubah/tambah jadwal ibadah & penatalayan:**
+1. Login (admin/pengurus) → `/dashboard/gatherings`.
+2. "Tambah ibadah" untuk jadwal baru, atau klik ibadah yang ada untuk mengatur WL/Singer/
+   Pemusik/Multimedia/Usher.
+
+**Lihat siapa CL, anggota Cross, dan Bendahara saat ini:** `/dashboard/settings` menunjukkan
+role akun yang sedang login.
+
+**Kalau ada yang tidak beres:** cek `CHECKLIST_Dex.md` §Troubleshooting Cepat dulu sebelum
+menghubungi Dex — sebagian besar masalah (data tidak muncul, tombol WhatsApp hilang, redirect
+loop) sudah ada solusinya di situ.
