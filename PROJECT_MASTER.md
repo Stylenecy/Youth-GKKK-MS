@@ -1133,3 +1133,89 @@ role akun yang sedang login.
 **Kalau ada yang tidak beres:** cek `CHECKLIST_Dex.md` §Troubleshooting Cepat dulu sebelum
 menghubungi Dex — sebagian besar masalah (data tidak muncul, tombol WhatsApp hilang, redirect
 loop) sudah ada solusinya di situ.
+
+---
+
+## 19 Ags 2026 (sore) — 8 bug data-layer diperbaiki setelah Dex memakai sistemnya
+
+Dex memakai sistem yang sudah berisi data asli dan mengirim **19 keluhan**. Ditriase dengan
+mengaudit database produksi + membaca kode, bukan menebak. **8 di antaranya bug nyata** dan
+dikerjakan di sesi ini; sisanya (visual/UX) diserahkan ke Antigravity lewat
+`docs/BRIEF-ANTIGRAVITY_dashboard-ux-3.md`.
+
+### 🔴 Akar masalah terbesar: 7 tempat mengecast baris DB, bukan memetakannya
+
+`getEvents`, `getEventById`, `getCrosses`, `getMeetings`, `getMeetingById`,
+`getFinanceTransactions`, `getStewardsByEvent` semuanya menulis `return data as Event[]`.
+**Cast itu janji, bukan pemeriksaan** — DB mengirim `snake_case`, tipe aplikasi `camelCase`,
+jadi setiap field camelCase diam-diam `undefined` sementara compiler tetap tenang.
+
+Akibat nyata yang Dex lihat:
+- **PIC tersimpan benar tapi tak pernah tampil** (`pic_id` ada isinya, `picId` undefined).
+- **Form "Ubah Ibadah" minta mengetik ulang data** yang sudah diisi — pre-fill-nya kosong.
+  Tanggal selamat hanya karena `date` kebetulan bernama sama di kedua sisi.
+- **Transaksi keuangan kehilangan `createdAt`** → tanggalnya Invalid Date.
+- **Penatalayan kehilangan `profileId`** → namanya tidak bisa di-resolve.
+
+Sekarang tiap tabel punya Row type + mapper eksplisit di sebelah `mapProfileRow` yang sudah
+ada. Kolom yang nullable **ditipekan nullable** — dan justru itu yang memunculkan null yang
+belum ditangani di `EditEventForm` dan daftar ibadah (compiler yang menunjukkan, bukan Dex
+yang menemukannya di produksi).
+
+**Aturan untuk siapa pun setelah ini: petakan barisnya, jangan di-cast.**
+
+### Tujuh perbaikan lain
+
+| Keluhan | Akar masalah | Perbaikan |
+|---|---|---|
+| "semua orang pelayanan 8x+ sebulan, [satu anggota] 13x?!" | `getFatigueAlerts` menyaring `steward_assignments.created_at` — itu **stempel waktu impor**, sama untuk semua 216 baris | Menyaring `events.date`. Angka nyata 30 hari terakhir: **0** |
+| Badge "N× bulan ini" di halaman anggota | `serviceCount30d` **di-hardcode `0`** di mapper padahal UI menampilkannya | Dihitung sungguhan lewat `serviceCounts30d()` |
+| "Kas Keuangan 0" | KPI menjumlah **hanya bulan berjalan**, padahal labelnya "Saldo Kas" | `monthlyBalance` → `totalBalance`, filter bulan dibuang. Saldo nyata: **−Rp720.875** |
+| "Ibadah Bulan Ini" | `gte` tanpa batas atas — ibadah Desember ikut terhitung di Agustus | Dibatasi ke bulan kalender |
+| "1 Agustus dilabeli Rencana tapi detailnya Sudah Lewat" | Dua sumber kebenaran: `status` tersimpan vs tanggal | Disatukan di `eventStateLabel()` — tanggal lampau menang, kecuali `completed`/`archived` (keputusan manusia). 7 tes baru |
+| "Cara audit tercatat bagaimana?" | **Nol kode menulis ke `audit_logs`**, dan tabelnya **tidak punya INSERT policy** sama sekali | Migrasi **0008**: `record_audit()` SECURITY DEFINER yang mengambil pelaku dari `auth.uid()` di SQL — pemanggil tidak bisa memalsukan atas nama orang lain. Semua aksi mutasi (ibadah, Cross, keuangan) sekarang memanggilnya |
+| "semua anggota aktif padahal di Excel sudah terpisah" | `import_members.py:185` — `status = "active" if num <= 93` (selalu benar). Kolom **"Keterangan"** ternyata ada di sheet **ABSENSI**, bukan ANGGOTA PEMUDA, jadi tidak pernah dibaca | Importer membaca sheet itu. Migrasi **0009** menambah `profiles.notes` untuk menyimpan kata aslinya |
+| 6 transaksi, harusnya 5 | Satu transaksi masuk dua kali dengan ejaan deskripsi beda tipis | **Soft delete** (bukan DELETE) — konsisten prinsip History-First, bisa dipulihkan |
+
+### Cara status anggota dipetakan — sengaja konservatif
+
+Hanya keterangan **"pindah gereja"** yang menurunkan seseorang jadi `inactive`. Semua alasan
+lain (kuliah di luar, kerja, skripsi, jarang datang) → **`away`**: masih anggota Pemuda,
+sedang tidak hadir rutin. *Menandai seseorang "tidak aktif" padahal masih jemaat jauh lebih
+merugikan daripada menandainya "berhalangan".*
+
+**Pencocokan nama sengaja TIDAK fuzzy.** Kedua sheet menulis nama berbeda ("Arion Sudibyo" vs
+"Arion Sudibyo (Arion)"), jadi dipakai kunci ternormalisasi (buang kurung, rapatkan spasi,
+samakan kapital) — naik dari 52 → **65 dari 93** cocok persis. Sisanya dibiarkan `active`.
+Fuzzy matching sempat dicoba dan **ditolak**: kandidat terdekat untuk satu anggota ternyata
+**orang yang berbeda** yang lolos ambang kemiripan 0,75 — persis kelas kesalahan yang merusak
+impor 18 Ags. Nama yang ambigu dibuang, bukan ditebak.
+
+### 🟡 Menunggu Dex
+
+1. **28 nama belum cocok** antara sheet ANGGOTA PEMUDA dan ABSENSI karena beda ejaan
+   (mis. "Ocvianty" vs "Octavianty", "Sugianto" vs "Sugiyanto"). Mereka tetap `active`.
+   ➡️ Rapikan ejaannya **di Excel** (sumber kebenaran), lalu jalankan
+   `python scripts/import/import_members.py --mode report` — daftar lengkapnya dicetak di situ.
+2. **Ejaan satu transaksi duplikat.** Yang dipertahankan cocok dengan `DATABASE_FINANCE.md`;
+   yang satunya di-soft-delete. Kalau ternyata ejaan yang dibuang yang benar, pulihkan lewat
+   halaman Keuangan (tombol pulihkan) lalu hapus yang satunya.
+3. **Verifikasi mata**: login sungguhan lalu buka Ibadah → PIC harus tampil, form Ubah harus
+   sudah terisi, Keuangan harus menampilkan 5 transaksi bertanggal benar, Audit harus mulai
+   terisi begitu ada perubahan pertama.
+
+### Angka verifikasi — diukur sendiri, bukan diklaim
+
+| Ukuran | Hasil |
+|---|---|
+| `npx tsc --noEmit` | bersih |
+| Tes | **92/92 lulus** (dari 85; 7 tes baru untuk `eventStateLabel`) |
+| `npm run build` | hijau, **20 rute** |
+| Rute produksi dicek sendiri | `/` 200 · `/login` 200 · 9 rute dashboard **307 → /login** · `robots.txt` 200 · `sitemap.xml` 200 · rute ngawur **404** |
+| Tugas penatalayan 30 hari terakhir | **0** (sebelumnya tampil 10–15 per orang) |
+| Saldo kas | **−Rp720.875** dari 5 transaksi aktif (sebelumnya Rp 0) |
+| Anggota | **65 aktif · 25 berhalangan · 4 pindah gereja** (sebelumnya 93 aktif) |
+| Anggota dengan keterangan | **29** |
+| Ibadah dengan PIC terisi | **2** (tersimpan sejak awal, sekarang akhirnya tampil) |
+| `record_audit()` di DB | terpasang |
+| Commit | `904b325`, ter-push ke `origin/master` |
