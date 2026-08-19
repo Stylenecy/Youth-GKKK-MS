@@ -14,7 +14,7 @@ export default function NotFound() {
             className="inline-flex min-h-[44px] items-center gap-2.5 text-ink"
           >
             <Logomark />
-            <span className="font-serif text-lg font-semibold">Space Youth</span>
+            <span className="font-serif text-lg font-semibold">Youth</span>
           </Link>
 
           <p className="kicker mt-8 justify-center before:hidden after:hidden">

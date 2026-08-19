@@ -1,20 +1,9 @@
 import type { Metadata, Viewport } from "next";
-import { Fraunces } from "next/font/google";
+import { Fraunces, Kaushan_Script } from "next/font/google";
 import { GeistSans } from "geist/font/sans";
 import { SITE_URL, SITE_NAME } from "@/lib/site";
 import "./globals.css";
 
-// Self-hosted at build time by next/font. This replaces the previous
-// render-blocking <link> to fonts.googleapis.com: two fewer DNS/TLS
-// round-trips on first paint, and next/font emits a size-adjusted
-// fallback so the swap no longer shifts layout.
-//
-// Only the optical-size axis is requested. SOFT and WONK were costing
-// bytes on every phone to alter a handful of display glyphs.
-//
-// Geist Mono is deliberately NOT loaded: it was 70 KB serving only the
-// 10-11px uppercase micro-labels, where the letterspacing carries the
-// character and a system mono is indistinguishable.
 const fraunces = Fraunces({
   subsets: ["latin"],
   display: "swap",
@@ -22,26 +11,41 @@ const fraunces = Fraunces({
   axes: ["opsz"],
 });
 
+const kaushan = Kaushan_Script({
+  weight: "400",
+  subsets: ["latin"],
+  display: "swap",
+  variable: "--font-handwriting",
+});
+
 export const metadata: Metadata = {
   // Required for the OG image and canonical URLs to resolve absolutely.
   metadataBase: new URL(SITE_URL),
   title: {
-    default: "Space Youth — Komisi Pemuda GKKK Yogyakarta",
-    template: "%s · Space Youth GKKK",
+    default: "Youth — Komisi Pemuda GKKK Yogyakarta",
+    template: "%s · Youth GKKK",
   },
   description:
     "Rumah digital Komisi Pemuda GKKK Yogyakarta. Jadwal ibadah Sabtu, penatalayan, kelompok Cross, dan catatan pelayanan — di satu tempat.",
-  applicationName: "Space Youth GKKK",
+  applicationName: "Youth GKKK",
   authors: [{ name: "Komisi Pemuda GKKK Yogyakarta" }],
   keywords: ["GKKK", "Pemuda", "Yogyakarta", "Cross", "ibadah", "penatalayan"],
   openGraph: {
-    title: "Space Youth — Komisi Pemuda GKKK Yogyakarta",
+    title: "Youth — Komisi Pemuda GKKK Yogyakarta",
     description:
       "Jadwal ibadah Sabtu, penatalayan, kelompok Cross, dan catatan pelayanan — di satu tempat.",
     locale: "id_ID",
     type: "website",
     siteName: SITE_NAME,
     url: SITE_URL,
+  },
+  icons: {
+    icon: [
+      { url: "/icon.svg", type: "image/svg+xml" },
+      { url: "/logo/derived/logo-super-transparent.svg", type: "image/svg+xml" },
+    ],
+    shortcut: "/icon.svg",
+    apple: "/logo/derived/logo-super-transparent.svg",
   },
   twitter: { card: "summary_large_image" },
   robots: {
@@ -67,7 +71,8 @@ export default function RootLayout({
   return (
     <html
       lang="id"
-      className={`${fraunces.variable} ${GeistSans.variable}`}
+      data-scroll-behavior="smooth"
+      className={`${fraunces.variable} ${kaushan.variable} ${GeistSans.variable}`}
     >
       <body className="min-h-screen">
         <a href="#main" className="skip-link">

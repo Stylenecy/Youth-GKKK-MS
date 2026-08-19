@@ -24,8 +24,12 @@ import { clamp, useReducedMotion, useScrollProgress } from "@/lib/motion";
  */
 
 type Props = {
-  /** `(i) => url`, i is 1-based. */
-  frameUrl: (i: number) => string;
+  /** Directory path where frames are located, e.g. "/sequence/ritme" (defaults to loading frame-001.webp, frame-002.webp, etc.) */
+  sequencePath?: string;
+  /** Custom pattern template with %03d or [index], e.g. "/sequence/ritme/frame-%03d.webp" */
+  framePattern?: string;
+  /** Optional custom URL generator function (only usable within Client Components) */
+  frameUrl?: (i: number) => string;
   /** Total frames. 0 disables the sequence and shows the poster only. */
   frameCount: number;
   /** Shown before frames load, under reduced motion, and on failure. */
@@ -39,6 +43,8 @@ type Props = {
 };
 
 export default function FrameSequence({
+  sequencePath,
+  framePattern,
   frameUrl,
   frameCount,
   posterUrl,
@@ -55,6 +61,18 @@ export default function FrameSequence({
   const [ready, setReady] = useState(false);
 
   const enabled = frameCount > 0 && !reduced;
+
+  const resolveFrameUrl = (index1Based: number) => {
+    if (frameUrl) return frameUrl(index1Based);
+    const pad = String(index1Based).padStart(3, "0");
+    if (framePattern) {
+      return framePattern.replace("%03d", pad).replace("[index]", pad);
+    }
+    if (sequencePath) {
+      return `${sequencePath.replace(/\/$/, "")}/frame-${pad}.webp`;
+    }
+    return `/sequence/frame-${pad}.webp`;
+  };
 
   // ---- fetch frames, in scroll order, only when near the viewport --------
   useEffect(() => {
@@ -78,7 +96,7 @@ export default function FrameSequence({
         const index = i++;
         const img = new Image();
         img.decoding = "async";
-        img.src = frameUrl(index + 1);
+        img.src = resolveFrameUrl(index + 1);
         img.onload = () => {
           if (cancelled) return;
           framesRef.current[index] = img;
@@ -103,7 +121,7 @@ export default function FrameSequence({
       io.disconnect();
       framesRef.current = [];
     };
-  }, [enabled, frameCount, frameUrl]);
+  }, [enabled, frameCount, sequencePath, framePattern, frameUrl]);
 
   // ---- draw the frame for the current scroll position -------------------
   useEffect(() => {

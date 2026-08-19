@@ -28,6 +28,9 @@ import sys
 from datetime import datetime
 from pathlib import Path
 
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+from id_map import pid
+
 try:
     import openpyxl
 except ImportError:
@@ -180,9 +183,10 @@ def generate_sql(members):
         bd_sql = f"'{bd}'" if bd != "NULL" else "NULL"
         wa_sql = f"'{wa}'" if wa else "NULL"
         status = "active" if m["num"] <= 93 else "inactive"
+        row_id = pid(f"p{m['num']:03d}")
         lines.append(
             f"INSERT INTO public.profiles (id, full_name, nickname, birth_date, hometown, whatsapp, status, is_active) "
-            f"VALUES ('p{m['num']:03d}', '{fn}', '{nn}', {bd_sql}, {ht_sql}, {wa_sql}, '{status}', true) "
+            f"VALUES ('{row_id}', '{fn}', '{nn}', {bd_sql}, {ht_sql}, {wa_sql}, '{status}', true) "
             f"ON CONFLICT (id) DO UPDATE SET "
             f"full_name = EXCLUDED.full_name, nickname = EXCLUDED.nickname, "
             f"birth_date = EXCLUDED.birth_date, hometown = EXCLUDED.hometown, "
@@ -192,13 +196,14 @@ def generate_sql(members):
     lines.append("")
     lines.append("-- 2. Skills (hapus dulu yang lama, insert yang baru -- idempotent)")
     for m in members:
+        row_id = pid(f"p{m['num']:03d}")
         lines.append(
-            f"DELETE FROM public.skills WHERE profile_id = 'p{m['num']:03d}';"
+            f"DELETE FROM public.skills WHERE profile_id = '{row_id}';"
         )
         for skill in m["skills"]:
             lines.append(
                 f"INSERT INTO public.skills (profile_id, category, skill_name, proficiency_level) "
-                f"VALUES ('p{m['num']:03d}', '{skill}', '{skill}', 'intermediate');"
+                f"VALUES ('{row_id}', '{skill}', '{skill}', 'intermediate');"
             )
     lines.append("")
     lines.append("COMMIT;")
@@ -215,7 +220,7 @@ def generate_json(members):
         bd = m["birth_date"]
         status = "active" if m["num"] <= 93 else "inactive"
         output.append({
-            "id": f"p{m['num']:03d}",
+            "id": pid(f"p{m['num']:03d}"),
             "full_name": fn,
             "nickname": nn,
             "birth_date": bd,

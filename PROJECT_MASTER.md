@@ -909,3 +909,76 @@ yang baru diubah) — 0 gagal. `tsc` bersih, 85/85 tes, build hijau.
 Ditambahkan juga ke `docs/BRIEF-ANTIGRAVITY_landing-page-2.md` §4.2b supaya
 putaran desain berikutnya tidak mengulang pola lama.
 
+
+---
+
+## 19 Ags 2026 — Laporan audit Antigravity dicatat + diverifikasi ulang
+
+**Sumber:** `C:\Users\ASUS\.gemini\antigravity-ide\brain\bf39594d-a257-454d-97f1-da5ef2f703b3\audit_and_progress_report.md`
+(judul: *"Laporan Audit & Dokumentasi Progres Sistem YGMS"*, bertanggal 19 Ags 2026).
+Dicatat ke sini atas permintaan Dex. **Bukan salinan** — ini ringkasan + hasil pengecekan
+ulang terhadap kondisi repo yang sebenarnya.
+
+### Apa yang diklaim laporan itu
+
+Sistem dinyatakan **"SIAP PRODUKSI (production-ready & verified)"** setelah dua fase:
+
+1. **Landing page publik** — desain *Nocturne* (kanvas `#0f0a08`, api emas `#FDBE02`, maroon
+   liturgis `#83021C`, serif `Fraunces`), `HeroCinematic` + countdown ibadah Sabtu,
+   `EmberCrest`/`LivingHearth` (partikel bara, responsif kursor), `StewardVault`,
+   `RhythmTimeline`, plus SEO dinamis (opengraph-image, sitemap, robots, favicon).
+2. **Dashboard pengurus dirombak total** — primitives (`page-parts.tsx`, `Modal.tsx`,
+   `ConfirmAction.tsx`), shell (`Sidebar`, `MobileNav`, `layout`), lalu seluruh modul:
+   Overview (KPI + spotlight ibadah + *flame readiness meter* + peringatan kelelahan
+   pelayan >3× / 30 hari), Ibadah & Penatalayan, Cross + Kelompokku (QuickAdd, Claim),
+   Anggota + WhatsApp action, Keuangan (kas besar/kecil, impor tempel-dari-Sheets, ekspor
+   CSV), Notulen Rapat, Log Audit, Pengaturan, dan Login (Google OAuth + demo).
+
+### Hasil verifikasi terhadap repo — apa yang benar
+
+Dicek langsung, bukan diterima mentah:
+
+| Klaim laporan | Hasil cek | Status |
+|---|---|---|
+| 85/85 tes Vitest lulus, 8 test suite | `npx vitest run` → **`PASS (85) FAIL (0)`**, `tests/` berisi tepat 8 berkas | ✅ **BENAR** |
+| Next.js 16.2.9 + TS 5.x + Turbopack | `package.json`: `next 16.2.9`, `typescript ^5`, `vitest ^3.2.7`, `three ^0.180.0` | ✅ **BENAR** |
+| "20/20 rute terkompilasi" | 20 entri rute nyata di `src/app` (18 `page.tsx`/`route.ts` + `sitemap.ts` + `robots.ts` + `opengraph-image.tsx`) | ✅ **cocok** — catatan 18 Ags di berkas ini menulis "19 rute", itu hitungan sebelum Nocturne |
+| Semua berkas kunci yang didaftar ada | Semua path di §5 laporan ada di disk | ✅ **BENAR** |
+
+### Yang laporan itu TIDAK sebutkan — dan ini yang penting
+
+🔴 **Seluruh pekerjaan ini belum di-commit.** `git log` berhenti di `456a32c`
+(*"docs: clarify hero copy is final…"*, **18 Ags 22:14**), sementara working tree berisi
+**43 berkas termodifikasi + 22 berkas baru belum terlacak** — termasuk hampir seluruh
+`src/app/dashboard/**`, `globals.css`, dan `layout.tsx`.
+
+➡️ Artinya sama persis dengan **Temuan #1 audit 8 Ags** (sesi 7 Ags tidak pernah di-commit,
+produksi tetap versi lama). Polanya berulang. Label *"production-ready"* di laporan itu
+menggambarkan **layar lokal**, bukan apa yang dilihat jemaat. Sebelum di-commit, satu
+`git checkout` yang salah menghapus semuanya.
+
+🟡 **Belum ada `.env.local`** — hanya `.env.example`. Jadi Supabase live memang belum
+tersambung, konsisten dengan rekomendasi laporan sendiri (§6 langkah 1). Mode yang jalan
+sekarang = demo.
+
+🟡 **Google OAuth masih belum diaktifkan** di Supabase (project `rbouxffjcqjwywyhbtqw`) —
+ini utang yang sama dengan catatan **8 Ags**, belum berubah.
+
+⚠️ **Klaim yang tidak diverifikasi di sesi ini** (bukan berarti salah — hanya belum dicek):
+"WCAG 2.2 AA lulus", "RLS & SECURITY DEFINER aman", "responsif teruji mulus di
+mobile/tablet/desktop", dan "build Turbopack code 0". Ketiga yang pertama butuh audit
+tersendiri; build belum dijalankan di sesi ini.
+
+### Sisa pekerjaan nyata (urut risiko)
+
+1. 🔴 **Commit 43+22 berkas itu.** Bukan fitur — ini penyelamatan kerja. ~10 menit.
+2. 🟡 Isi `NEXT_PUBLIC_SUPABASE_URL` + `NEXT_PUBLIC_SUPABASE_ANON_KEY` di Vercel.
+3. 🟡 Aktifkan Google OAuth di Supabase (Authentication → Providers → Google).
+4. 🟡 Deploy + cek ulang rute di produksi (pola audit 8 Ags: jangan percaya "READY" tanpa buka rutenya).
+5. ⚪ Baru setelah itu: kabari pengurus inti & CL bahwa login Google sudah bisa dipakai.
+6. ⚪ Tunggakan lama yang belum tersentuh laporan ini: **C21** — cek Google Sheet
+   *Kas Pemuda (Baru)* punya Nathan (buku besar masih error).
+
+*Catatan metode: laporan Antigravity ini akurat pada bagian yang bisa diukur (tes, versi,
+rute, keberadaan berkas). Yang perlu diwaspadai adalah kata **"production-ready"** — di
+laporan itu artinya "kode di laptop lengkap dan hijau", bukan "sudah terkirim ke produksi".*

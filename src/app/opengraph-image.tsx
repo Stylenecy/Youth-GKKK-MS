@@ -1,7 +1,7 @@
 import { ImageResponse } from "next/og";
 import { SITE_TAGLINE } from "@/lib/site";
 
-export const alt = "Space Youth — Komisi Pemuda GKKK Yogyakarta";
+export const alt = "Youth — Komisi Pemuda GKKK Yogyakarta";
 export const size = { width: 1200, height: 630 };
 export const contentType = "image/png";
 
@@ -57,7 +57,7 @@ export default function Image() {
               fontWeight: 600,
             }}
           >
-            Space Youth
+            Youth
           </div>
           <div
             style={{

@@ -186,14 +186,14 @@ export default function EmberCrest({
           const x = (qx / 1023) * 2 - 1;
           const y = (qy / 1023) * 2 - 1;
 
-          positions[i * 3] = x * 1.45;
-          positions[i * 3 + 1] = y * 1.45;
-          positions[i * 3 + 2] = (Math.random() - 0.5) * 0.12;
+          positions[i * 3] = x * 1.65;
+          positions[i * 3 + 1] = y * 1.65;
+          positions[i * 3 + 2] = (Math.random() - 0.5) * 0.15;
 
           // Scatter origin: a wide shell around the shape, so they fly in
           // from everywhere rather than from one side.
           const a = Math.random() * Math.PI * 2;
-          const r = 3.2 + Math.random() * 4.5;
+          const r = 3.4 + Math.random() * 4.8;
           scatter[i * 3] = Math.cos(a) * r * 0.85;
           scatter[i * 3 + 1] = (Math.random() - 0.5) * 8.5;
           scatter[i * 3 + 2] = Math.sin(a) * r * 0.5 - 1.5;
@@ -221,7 +221,7 @@ export default function EmberCrest({
           uniforms: {
             uProgress: { value: progressRef.current },
             uTime: { value: 0 },
-            uSize: { value: 5.2 },
+            uSize: { value: 6.8 },
             uPixelRatio: { value: dpr },
             uCold: { value: new Color(...COLD) },
             uHot: { value: new Color(...HOT) },
@@ -242,7 +242,7 @@ export default function EmberCrest({
           // On a narrow screen the crest has to sit further back or it
           // overflows the viewport and gets cropped at the flame.
           camera.updateProjectionMatrix();
-          material.uniforms.uSize.value = w < 640 ? 3.8 : 5.2;
+          material.uniforms.uSize.value = w < 640 ? 4.8 : 6.8;
         };
         resize();
         const ro = new ResizeObserver(resize);

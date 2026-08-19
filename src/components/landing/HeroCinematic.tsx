@@ -90,41 +90,48 @@ export default function HeroCinematic() {
 
         {/* ── Act 1 ───────────────────────────────────────────── */}
         <div
-          className="pointer-events-none absolute inset-x-0 top-[16%] px-6 text-center"
+          className="pointer-events-none absolute inset-x-0 top-[12%] sm:top-[14%] px-6 text-center"
           style={{
             opacity: reduced ? 1 : act1,
             transform: `translateY(${(1 - act1) * -26}px)`,
           }}
         >
-          <p className="font-mono text-[0.6875rem] uppercase tracking-[0.42em] text-ink-faint">
+          <p className="font-mono text-[0.7500rem] uppercase tracking-[0.42em] text-ink-faint">
             Komisi Pemuda GKKK Yogyakarta
           </p>
-          <p className="t-display mx-auto mt-5 max-w-3xl text-balance text-ink">
-            Bara yang belum
-            <span className="glow-gold"> berkumpul</span>
-          </p>
+          <h1 className="mx-auto mt-3 flex flex-col items-center justify-center leading-none text-balance text-ink">
+            <span className="font-handwriting text-6xl sm:text-8xl lg:text-[7.5rem] text-accent tracking-wide drop-shadow-[0_0_40px_rgba(253,190,2,0.5)] -rotate-3 transition-transform">
+              Youth
+            </span>
+            <span className="font-serif text-3xl sm:text-5xl lg:text-6xl font-bold tracking-tight text-ink mt-2 sm:mt-3">
+              GKKK
+            </span>
+            <span className="font-serif text-lg sm:text-2xl lg:text-3xl font-semibold tracking-[0.25em] sm:tracking-[0.35em] uppercase text-accent glow-gold mt-2 sm:mt-3 drop-shadow-[0_0_24px_rgba(253,190,2,0.5)]">
+              Yogyakarta
+            </span>
+          </h1>
         </div>
 
-        {/* ── Act 2 — the two halves of the mark, named ────────── */}
+        {/* -- Act 2: the two halves of the mark, named -- */}
         {!reduced && (
           <div
-            className="pointer-events-none absolute inset-0 flex items-center justify-between px-6 sm:px-16"
+            className="pointer-events-none absolute inset-0 flex items-center justify-between px-6 sm:px-12 lg:px-20"
             style={{ opacity: act2 }}
           >
-            <div className="max-w-[9rem] text-left sm:max-w-[13rem]">
-              <p className="font-mono text-[0.625rem] uppercase tracking-[0.3em] text-accent">
+            <div className="max-w-[12rem] text-left sm:max-w-[18rem] lg:max-w-[22rem]">
+              <span className="inline-block font-mono text-xs sm:text-sm font-bold uppercase tracking-[0.32em] text-accent border-b border-accent/40 pb-1">
                 Api
-              </p>
-              <p className="mt-2 text-[0.8125rem] leading-relaxed text-ink-muted">
-                Semangat pemuda yang membara untuk memuliakan Tuhan.
+              </span>
+              <p className="mt-3 font-serif text-lg sm:text-1xl lg:text-2xl leading-snug text-ink drop-shadow-[0_0_20px_rgba(253,190,2,0.3)]">
+                Semangat membara untuk memuliakan Tuhan.
               </p>
             </div>
-            <div className="max-w-[9rem] text-right sm:max-w-[13rem]">
-              <p className="font-mono text-[0.625rem] uppercase tracking-[0.3em] text-rose">
+            <div className="max-w-[12rem] text-right sm:max-w-[18rem] lg:max-w-[22rem]">
+              <span className="inline-block font-mono text-xs sm:text-sm font-bold uppercase tracking-[0.32em] text-rose border-b border-rose/40 pb-1">
                 Wadah
-              </p>
-              <p className="mt-2 text-[0.8125rem] leading-relaxed text-ink-muted">
-                Tempat bertumbuh bersama di dalam Tuhan, sebagai satu kesatuan.
+              </span>
+              <p className="mt-3 font-serif text-lg sm:text-1xl lg:text-2xl leading-snug text-ink drop-shadow-[0_0_20px_rgba(224,86,36,0.3)]">
+                Tempat bertumbuh bersama sebagai satu kesatuan.
               </p>
             </div>
           </div>
@@ -143,15 +150,15 @@ export default function HeroCinematic() {
             Satu api, <span className="glow-gold">satu wadah</span>
           </p>
           <p className="t-lead mx-auto mt-3 max-w-md text-pretty">
-            Rumah digital pemuda GKKK Yogyakarta — jadwal, penatalayan, Cross,
-            dan ingatan pelayanan yang tidak hilang.
+            Rumah digital Pemuda GKKK Yogyakarta. Jadwal, penatalayan, grup Cross,
+            dan pelayanan yang utuh.
           </p>
           <div className="mt-7 flex flex-wrap justify-center gap-3">
             <a href="#warta" className="btn btn-primary">
               Warta minggu ini
             </a>
             <Link href="/login" className="btn btn-outline">
-              Masuk pengurus
+              Masuk Pengurus
             </Link>
           </div>
         </div>

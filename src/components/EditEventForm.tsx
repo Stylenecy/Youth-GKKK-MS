@@ -45,29 +45,30 @@ export function EditEventForm({
         {success ? "Perubahan ibadah tersimpan" : ""}
       </div>
       {success && (
-        <p className="fixed right-4 top-4 z-50 rounded-md bg-sage px-4 py-2.5 text-sm font-semibold text-canvas shadow-lg">
-          Perubahan tersimpan
-        </p>
+        <div className="fixed right-4 top-4 z-50 flex items-center gap-2 rounded-xl border border-sage/50 bg-sage-wash px-4 py-3 text-sm font-semibold text-sage shadow-2xl backdrop-blur-xl">
+          <span className="h-2 w-2 rounded-full bg-sage animate-pulse" />
+          Perubahan ibadah berhasil disimpan.
+        </div>
       )}
 
       <button
         type="button"
         onClick={() => setIsOpen(true)}
-        className="btn-outline text-sm"
+        className="btn-outline text-xs sm:text-sm"
       >
         <Pencil className="h-4 w-4" aria-hidden="true" />
-        Ubah
+        Ubah Ibadah
       </button>
 
       <Modal
         open={isOpen}
         onClose={() => setIsOpen(false)}
-        kicker="Jadwal"
-        title="Ubah ibadah"
+        kicker="EDIT JADWAL"
+        title="Ubah Detail Ibadah"
       >
         <form action={handleSubmit} className="space-y-4">
           <div className="grid gap-4 sm:grid-cols-2">
-            <Field name="date" label="Tanggal" error={errors.date?.[0]}>
+            <Field name="date" label="Tanggal Ibadah" error={errors.date?.[0]}>
               <input
                 id="date"
                 name="date"
@@ -78,7 +79,7 @@ export function EditEventForm({
               />
             </Field>
 
-            <Field name="time" label="Jam (WIB)" error={errors.time?.[0]}>
+            <Field name="time" label="Jam Mulai (WIB)" error={errors.time?.[0]}>
               <input
                 id="time"
                 name="time"
@@ -90,7 +91,7 @@ export function EditEventForm({
             </Field>
           </div>
 
-          <Field name="eventType" label="Jenis">
+          <Field name="eventType" label="Jenis Acara">
             <select
               id="eventType"
               name="eventType"
@@ -107,7 +108,7 @@ export function EditEventForm({
 
           <Field
             name="weeklyTheme"
-            label="Tema minggu ini"
+            label="Tema Ibadah Minggu Ini"
             error={errors.weeklyTheme?.[0]}
           >
             <input
@@ -120,7 +121,7 @@ export function EditEventForm({
           </Field>
 
           <div className="grid gap-4 sm:grid-cols-2">
-            <Field name="picId" label="Penanggung jawab" error={errors.picId?.[0]}>
+            <Field name="picId" label="Penanggung Jawab (PIC)" error={errors.picId?.[0]}>
               <select
                 id="picId"
                 name="picId"
@@ -128,10 +129,10 @@ export function EditEventForm({
                 defaultValue={event.picId}
                 className={fieldClass}
               >
-                <option value="">Pilih orang</option>
+                <option value="">Pilih pengurus PIC</option>
                 {profiles.map((p) => (
                   <option key={p.id} value={p.id}>
-                    {p.nickname}
+                    {p.nickname} ({p.fullName})
                   </option>
                 ))}
               </select>
@@ -152,7 +153,7 @@ export function EditEventForm({
             </Field>
           </div>
 
-          <Field name="description" label="Keterangan" hint="Boleh dikosongkan.">
+          <Field name="description" label="Keterangan / Deskripsi Acara" hint="Opsional — ringkasan nats atau petunjuk khusus.">
             <textarea
               id="description"
               name="description"
@@ -165,26 +166,26 @@ export function EditEventForm({
           {errors.form && (
             <p
               role="alert"
-              className="rounded-md bg-danger-wash px-3 py-2.5 text-sm text-danger"
+              className="rounded-xl border border-danger/40 bg-danger-wash px-3.5 py-2.5 text-xs text-danger"
             >
               {errors.form[0]}
             </p>
           )}
 
-          <div className="flex justify-end gap-2 pt-2">
+          <div className="flex justify-end gap-3 pt-3 border-t border-rule-soft">
             <button
               type="button"
               onClick={() => setIsOpen(false)}
-              className="btn-outline text-sm"
+              className="btn-outline text-xs sm:text-sm"
             >
               Batal
             </button>
             <button
               type="submit"
               disabled={pending}
-              className="btn-primary text-sm"
+              className="btn-primary text-xs sm:text-sm"
             >
-              {pending ? "Menyimpan…" : "Simpan perubahan"}
+              {pending ? "Menyimpan…" : "Simpan Perubahan"}
             </button>
           </div>
         </form>

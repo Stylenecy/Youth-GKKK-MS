@@ -1,8 +1,9 @@
 import { notFound } from "next/navigation";
 import type { Metadata } from "next";
 import { getMeetingById, getProfiles } from "@/lib/data";
-import { PageHeader, BackLink } from "@/components/page-parts";
+import { PageHeader, BackLink, Monogram } from "@/components/page-parts";
 import { formatFullDate, formatTime } from "@/lib/datetime";
+import { FileText, Users, CheckCircle2 } from "lucide-react";
 
 export async function generateMetadata({
   params,
@@ -11,7 +12,7 @@ export async function generateMetadata({
 }): Promise<Metadata> {
   const { id } = await params;
   const meeting = await getMeetingById(id);
-  return { title: meeting?.title ?? "Rapat" };
+  return { title: meeting?.title ? `${meeting.title} · Notulen` : "Notulen Rapat" };
 }
 
 export default async function MeetingDetailPage({
@@ -38,64 +39,90 @@ export default async function MeetingDetailPage({
 
   return (
     <div className="px-5 py-7 sm:px-8 sm:py-9">
-      <BackLink href="/dashboard/meetings">Kembali ke rapat</BackLink>
+      <BackLink href="/dashboard/meetings">Kembali ke daftar notulen</BackLink>
 
-      <div className="mt-2">
+      <div className="mt-3">
         <PageHeader
-          kicker="Notulen"
+          kicker="RISALAH RAPAT"
           title={meeting.title}
-          meta={`${formatFullDate(meeting.date)} · ${formatTime(meeting.date)}`}
+          meta={`${formatFullDate(meeting.date)} · Pukul ${formatTime(meeting.date)} WIB`}
         />
       </div>
 
-      <div className="mt-8 grid gap-8 lg:grid-cols-[1.5fr_1fr]">
-        <section aria-labelledby="agenda-heading">
-          <h2
-            id="agenda-heading"
-            className="font-mono text-[0.6875rem] uppercase tracking-[0.16em] text-ink-faint"
-          >
-            Agenda
-          </h2>
+      <div className="mt-8 grid gap-8 lg:grid-cols-[1.6fr_1fr]">
+        {/* Main Section: Agenda & Decisions */}
+        <section
+          aria-labelledby="agenda-heading"
+          className="rounded-2xl border border-line/40 bg-surface/75 p-6 backdrop-blur-xl shadow-sm"
+        >
+          <div className="flex items-center gap-2 border-b border-rule-soft pb-3 mb-4">
+            <span className="h-1.5 w-1.5 rounded-full bg-accent" />
+            <h2
+              id="agenda-heading"
+              className="font-mono text-xs font-bold uppercase tracking-[0.2em] text-accent"
+            >
+              ( POKOK BAHASAN & AGENDA )
+            </h2>
+          </div>
+
           {agenda.length === 0 ? (
-            <p className="mt-3 text-sm text-ink-muted">
-              Tidak ada agenda yang tercatat untuk rapat ini.
+            <p className="text-xs sm:text-sm text-ink-muted leading-relaxed">
+              Tidak ada rincian agenda poin khusus yang dicatat untuk pertemuan ini.
             </p>
           ) : (
-            <ol className="mt-3 border-t border-rule">
+            <ol className="divide-y divide-rule-soft/60">
               {agenda.map((item, i) => (
                 <li
                   key={item}
-                  className="flex gap-3.5 border-b border-rule py-3.5"
+                  className="flex items-start gap-4 py-4 first:pt-2 last:pb-2"
                 >
-                  <span className="num mt-0.5 font-mono text-[0.6875rem] text-accent">
+                  <span className="num font-mono text-xs font-bold text-accent rounded-full border border-line-accent/40 bg-accent-wash px-2.5 py-1 shrink-0">
                     {String(i + 1).padStart(2, "0")}
                   </span>
-                  <span className="text-[0.9375rem] leading-relaxed text-ink">
+                  <p className="text-sm sm:text-base leading-relaxed text-ink pt-0.5">
                     {item}
-                  </span>
+                  </p>
                 </li>
               ))}
             </ol>
           )}
         </section>
 
-        <aside>
-          <h2 className="font-mono text-[0.6875rem] uppercase tracking-[0.16em] text-ink-faint">
-            Peserta ({participants.length})
-          </h2>
-          {participants.length === 0 ? (
-            <p className="mt-3 text-sm text-ink-muted">
-              Peserta tidak tercatat.
-            </p>
-          ) : (
-            <ul className="mt-3 flex flex-wrap gap-2">
-              {participants.map((p) => (
-                <li key={p.id} className="card-sunk px-3 py-1.5 text-sm text-ink">
-                  {p.nickname}
-                </li>
-              ))}
-            </ul>
-          )}
+        {/* Aside: Participants list */}
+        <aside className="space-y-6">
+          <div className="rounded-2xl border border-line/40 bg-surface/75 p-6 backdrop-blur-xl shadow-sm">
+            <div className="flex items-center gap-2 border-b border-rule-soft pb-3 mb-4">
+              <span className="h-1.5 w-1.5 rounded-full bg-accent" />
+              <h2 className="font-mono text-xs font-bold uppercase tracking-[0.2em] text-accent">
+                ( PESERTA HADIR — {participants.length} ORANG )
+              </h2>
+            </div>
+
+            {participants.length === 0 ? (
+              <p className="text-xs text-ink-muted">
+                Daftar kehadiran peserta tidak tercatat.
+              </p>
+            ) : (
+              <ul className="grid gap-2.5">
+                {participants.map((p) => (
+                  <li
+                    key={p.id}
+                    className="flex items-center gap-3 rounded-xl border border-line/40 bg-canvas-sunk/60 p-2.5"
+                  >
+                    <Monogram name={p.nickname} size="sm" />
+                    <div>
+                      <p className="font-serif text-sm font-semibold text-ink">
+                        {p.nickname}
+                      </p>
+                      <p className="font-mono text-[0.625rem] text-ink-faint">
+                        {p.fullName}
+                      </p>
+                    </div>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </div>
         </aside>
       </div>
     </div>

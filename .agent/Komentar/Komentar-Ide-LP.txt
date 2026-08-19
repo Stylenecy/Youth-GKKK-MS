@@ -1,0 +1,57 @@
+Okey wow, masih ada lagi:
+
+
+
+
+
+Aku ngerasa aneh dengan landing page yang terbiasa menjelaskan begitu banyak hal, jadi berbagai penjelasan dan poin-poin yang ada apa bisa disingkatin atau bahkan dihilangin aja? 
+
+
+
+Menurutku anggota umum tidak perlu tau soal kelelahan pelayanan
+
+
+
+Kurangi em-dashes di penjelasan dong, logo yang dibawah dekat area footer tolong dibuat border nya jadi lingkaran, dan tolong dibuat lebih besar, menjadi background.
+
+
+
+Namanya sekarang tidak lagi Space Youth, tapi Youth aja.
+
+
+
+Data Pemuda bagaimana? Kenapa masih dummy aku ingin tau.
+
+
+
+Kenapa "Bara yang belum berkumpul"? What's that???
+
+
+
+Langsung kasih aja, Youth GKKK YK gitu atau bagaimana, daripada tagline tidak jelas
+
+
+
+Aku ingin bagian Warta Minggu Ini dibuat lebih keren lagi, bener-bener seperti dashboard canggih yang menunjukkan tema, tanggal, jam, dan detail lainnya (meskipun sebetulnya Sabtu ini tidak ada ibadah Pemuda (hari ini 18 Agustus, Selasa. Sabtu ini, 22 Agustus, tidak ada persekutuan.)
+
+
+
+Yang Ritme aku lumayan suka. 
+
+
+
+Setiap judul kecil itu terasa... terlalu AI slop, I've seen it so common. Gimana ya, aku senang itu jadi pembatasnya, tapi risih dengan tampilan yang selalu itu-itu, boleh dibuat jadi scroll animation? Jadi per nomor dan judul itu besar, per segmen itu jelas, dan semuanya jadi scroll-animation yang premium instead of just static segmen by segmen.
+
+
+
+Nah, somehow informasi Cross malah sudah sesuai dengan yang asli, meski aku masih bingung gunanya ada informasi Sabtu dan jam itu buat apa, karena Cross dimana kita berkumpul sebagai tempat kecil itu seharusnya bebas, itu cuman buat mengingatkan aja, ada grup apa saja, dan mungkin itu bisa menjadi MVP selanjutnya ketika para anggota bisa mengecek detail lebih mengenai Cross masing-masing, karena sekarang belum click-able, aku ingin hal itu ditunjukkan lebih jelas, bagian mana yang memang cuman read-only dan bagian yang clickable
+
+
+
+Bagian 4. Untuk Pengurus felt so off, aku masih bingung what's this for, in fact, it felt useless and out of place.
+
+
+
+Footer di landing page juga masih sangat biasa-biasa saja. Implemen ide footer ini: "D:\AT Kuliah\All of Project\dex-portfolio\.agent\FE-idea-v2\bohdan_design.html"
+
+That's all dulu untuk masalah landing page!

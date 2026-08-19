@@ -3,12 +3,10 @@
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { importTransactions, type ImportRowError } from "@/app/actions/finance";
+import { FileSpreadsheet, Check, AlertCircle } from "lucide-react";
 
 /**
- * Paste-and-validate import for Nathan's existing kas data — the safer
- * alternative to a fully automatic import. Nothing is inserted until every
- * pasted line passes validation, so a mistake can't leave a half-imported
- * cash book.
+ * Paste-and-validate import for legacy cash data with Nocturne styling.
  */
 export function BulkImportTransactionsForm() {
   const [open, setOpen] = useState(false);
@@ -38,62 +36,83 @@ export function BulkImportTransactionsForm() {
 
   if (!open) {
     return (
-      <button type="button" onClick={() => setOpen(true)} className="btn-outline mt-2 text-sm">
-        Tempel data dari spreadsheet lama
+      <button
+        type="button"
+        onClick={() => setOpen(true)}
+        className="btn-outline text-xs sm:text-sm font-semibold"
+      >
+        <FileSpreadsheet className="h-4 w-4 mr-1.5" />
+        Buka Format Tempel Data Spreadsheet
       </button>
     );
   }
 
   return (
-    <div className="card mt-2 p-5">
-      <p className="text-sm leading-relaxed text-ink-muted">
-        Satu baris satu transaksi, kolom dipisah TAB (hasil salin langsung dari
-        Excel/Sheets sudah begini). Urutan: <span className="font-mono text-ink">Tanggal</span> ·{" "}
-        <span className="font-mono text-ink">Kas Besar/Kas Kecil</span> ·{" "}
-        <span className="font-mono text-ink">Pemasukan/Pengeluaran</span> ·{" "}
-        <span className="font-mono text-ink">Kategori</span> (nama persis seperti di
-        Daftar Akun) · <span className="font-mono text-ink">Jumlah</span> ·{" "}
-        <span className="font-mono text-ink">Keterangan</span>. Tidak ada yang tersimpan
-        sampai semua baris lolos validasi.
+    <div className="rounded-2xl border border-line/40 bg-surface/75 p-6 backdrop-blur-xl shadow-sm">
+      <div className="flex items-center gap-2 mb-2">
+        <FileSpreadsheet className="h-4 w-4 text-accent" />
+        <p className="font-mono text-xs font-bold uppercase tracking-wider text-accent">
+          Format Salin Spreadsheet (Excel / Google Sheets)
+        </p>
+      </div>
+
+      <p className="text-xs sm:text-sm leading-relaxed text-ink-muted">
+        Satu baris mewakili satu transaksi, setiap kolom dipisahkan oleh TAB (otomatis terbentuk saat salin range dari Excel/Google Sheets). Urutan kolom:{" "}
+        <span className="font-mono text-ink font-semibold">Tanggal</span> ·{" "}
+        <span className="font-mono text-ink font-semibold">Kas Besar/Kas Kecil</span> ·{" "}
+        <span className="font-mono text-ink font-semibold">Pemasukan/Pengeluaran</span> ·{" "}
+        <span className="font-mono text-ink font-semibold">Kategori</span> ·{" "}
+        <span className="font-mono text-ink font-semibold">Jumlah</span> ·{" "}
+        <span className="font-mono text-ink font-semibold">Keterangan</span>.
       </p>
 
       <textarea
         value={text}
         onChange={(e) => setText(e.target.value)}
-        rows={8}
-        placeholder="2026-01-10&#9;Kas Kecil&#9;Pemasukan&#9;Persembahan Pemuda&#9;57000&#9;Persembahan Cash"
-        className="mt-3 min-h-[44px] w-full rounded-md border border-rule bg-surface px-3 py-2 font-mono text-sm text-ink transition-colors focus:border-accent"
+        rows={6}
+        placeholder="2026-01-10	Kas Kecil	Pemasukan	Persembahan Pemuda	57000	Persembahan Cash Ibadah"
+        className="mt-4 min-h-[120px] w-full rounded-xl border border-rule bg-canvas-sunk p-3.5 font-mono text-xs text-ink placeholder:text-ink-faint transition-all duration-200 focus:border-accent focus:bg-surface focus:outline-none focus:ring-1 focus:ring-accent"
       />
 
       {error && (
-        <p role="alert" className="mt-3 rounded-md bg-danger-wash px-3 py-2.5 text-sm text-danger">
-          {error}
-        </p>
+        <div role="alert" className="mt-3 flex items-start gap-2 rounded-xl border border-danger/40 bg-danger-wash p-3 text-xs text-danger">
+          <AlertCircle className="h-4 w-4 shrink-0 mt-0.5" />
+          <span>{error}</span>
+        </div>
       )}
+
       {errors.length > 0 && (
-        <ul className="mt-2 max-h-40 space-y-1 overflow-y-auto text-xs text-danger">
+        <ul className="mt-2 max-h-40 space-y-1.5 overflow-y-auto rounded-xl border border-danger/30 bg-danger-wash/50 p-3 text-xs text-danger">
           {errors.map((e) => (
-            <li key={e.line}>Baris {e.line}: {e.message}</li>
+            <li key={e.line}>
+              <strong>Baris {e.line}:</strong> {e.message}
+            </li>
           ))}
         </ul>
       )}
+
       {done !== null && (
-        <p className="mt-3 rounded-md bg-sage-wash px-3 py-2.5 text-sm text-sage">
-          {done} transaksi berhasil diimpor.
-        </p>
+        <div className="mt-3 flex items-center gap-2 rounded-xl border border-sage/40 bg-sage-wash p-3 text-xs font-semibold text-sage">
+          <Check className="h-4 w-4" />
+          {done} baris transaksi berhasil diimpor ke buku kas.
+        </div>
       )}
 
-      <div className="mt-4 flex justify-end gap-2">
-        <button type="button" onClick={() => setOpen(false)} className="btn-outline text-sm">
+      <div className="mt-4 flex justify-end gap-3 border-t border-rule-soft pt-3">
+        <button
+          type="button"
+          onClick={() => setOpen(false)}
+          className="btn-outline text-xs sm:text-sm"
+        >
           Tutup
         </button>
         <button
           type="button"
           onClick={handleSubmit}
           disabled={pending || !text.trim()}
-          className="btn-primary text-sm disabled:opacity-60"
+          className="btn-primary text-xs sm:text-sm disabled:opacity-60"
         >
-          {pending ? "Memeriksa…" : "Periksa & impor"}
+          {pending ? "Memvalidasi Data…" : "Periksa & Impor"}
         </button>
       </div>
     </div>

@@ -28,6 +28,9 @@ try:
 except ImportError:
     sys.exit("openpyxl belum terinstall: pip install openpyxl")
 
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+from id_map import pid
+
 DB_DIR = Path(__file__).resolve().parent.parent.parent / "database"
 XLSX_PATH = DB_DIR / "Jadwal Penatalayan Pemuda_.xlsx"
 SHEET_NAME = "2026"
@@ -103,9 +106,10 @@ def generate_sql(events):
     for i, ev in enumerate(events, 1):
         theme = (ev["theme"] or "Ibadah Pemuda").replace("'", "''")
         event_type = "cross" if ev["theme"] and "cross" in ev["theme"].lower() else "worship"
+        row_id = pid(f"e{i:03d}")
         lines.append(
             f"INSERT INTO public.events (id, date, weekly_theme, event_type, status, description) "
-            f"VALUES ('e{i:03d}', '{ev['date']}T17:00:00Z', '{theme}', '{event_type}', 'published', "
+            f"VALUES ('{row_id}', '{ev['date']}T17:00:00Z', '{theme}', '{event_type}', 'published', "
             f"'Minggu {ev['week']} bulan {ev['month']}') "
             f"ON CONFLICT (id) DO UPDATE SET "
             f"date = EXCLUDED.date, weekly_theme = EXCLUDED.weekly_theme, updated_at = now();"
@@ -114,12 +118,14 @@ def generate_sql(events):
     lines.append("-- 2. Steward assignments")
     s_id = 0
     for i, ev in enumerate(events, 1):
+        event_row_id = pid(f"e{i:03d}")
         for role, names in ev["stewards"].items():
             for name in names:
                 s_id += 1
+                sa_row_id = pid(f"s{s_id:04d}")
                 lines.append(
                     f"INSERT INTO public.steward_assignments (id, event_id, profile_id, role, status) "
-                    f"SELECT 's{s_id:04d}', 'e{i:03d}', id, '{role}', 'assigned' "
+                    f"SELECT '{sa_row_id}', '{event_row_id}', id, '{role}', 'assigned' "
                     f"FROM public.profiles WHERE nickname = '{name}' "
                     f"ON CONFLICT DO NOTHING;"
                 )

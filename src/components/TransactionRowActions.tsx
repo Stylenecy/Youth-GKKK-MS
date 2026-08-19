@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useTransition } from "react";
-import { Pencil, Trash2 } from "lucide-react";
+import { Pencil, Trash2, AlertTriangle } from "lucide-react";
 import { updateTransaction, deleteTransaction } from "@/app/actions/finance";
 import type { FinanceTransaction } from "@/lib/types";
 import { Modal, Field, fieldClass } from "./Modal";
@@ -11,11 +11,7 @@ import { INCOME_CATEGORIES, EXPENSE_CATEGORIES, ACCOUNT_LABEL } from "@/lib/fina
 type FieldErrors = Record<string, string[] | undefined>;
 
 /**
- * Edit + delete for one cash-book row.
- *
- * Both live behind icon buttons with visible labels for screen readers, sized
- * to the 44px touch target the rest of the app uses. Delete is a soft delete —
- * see `deleteTransaction`.
+ * Edit + delete actions for a cash-book row with Nocturne modals.
  */
 export function TransactionRowActions({
   transaction,
@@ -53,15 +49,16 @@ export function TransactionRowActions({
   }
 
   const iconBtn =
-    "flex h-11 w-11 shrink-0 items-center justify-center rounded-md text-ink-muted transition-colors hover:bg-canvas-sunk hover:text-ink";
+    "flex h-9 w-9 shrink-0 items-center justify-center rounded-xl text-ink-muted transition-all hover:bg-canvas-sunk hover:text-accent hover:border hover:border-line-accent/40";
 
   return (
     <>
-      <div className="flex shrink-0 items-center">
+      <div className="flex shrink-0 items-center gap-1">
         <button
           type="button"
           onClick={() => setEditOpen(true)}
           className={iconBtn}
+          title="Ubah transaksi"
         >
           <Pencil className="h-4 w-4" aria-hidden="true" />
           <span className="sr-only">Ubah transaksi {transaction.description}</span>
@@ -69,7 +66,8 @@ export function TransactionRowActions({
         <button
           type="button"
           onClick={() => setDeleteOpen(true)}
-          className={iconBtn}
+          className={`${iconBtn} hover:text-danger hover:border-danger/40`}
+          title="Hapus transaksi"
         >
           <Trash2 className="h-4 w-4" aria-hidden="true" />
           <span className="sr-only">
@@ -78,14 +76,15 @@ export function TransactionRowActions({
         </button>
       </div>
 
+      {/* Edit Modal */}
       <Modal
         open={editOpen}
         onClose={() => setEditOpen(false)}
-        kicker="Keuangan"
-        title="Ubah transaksi"
+        kicker="EDIT BUKU KAS"
+        title="Ubah Rincian Transaksi"
       >
         <form action={handleSubmit} className="space-y-4">
-          <Field name="amount" label="Jumlah (Rp)" error={errors.amount?.[0]}>
+          <Field name="amount" label="Nominal (Rp)" error={errors.amount?.[0]}>
             <input
               id="amount"
               name="amount"
@@ -99,19 +98,19 @@ export function TransactionRowActions({
           </Field>
 
           <div className="grid gap-4 sm:grid-cols-2">
-            <Field name="type" label="Jenis">
+            <Field name="type" label="Jenis Transaksi">
               <select
                 id="type"
                 name="type"
                 defaultValue={transaction.type}
                 className={fieldClass}
               >
-                <option value="income">Pemasukan</option>
-                <option value="expense">Pengeluaran</option>
+                <option value="income">Pemasukan (+)</option>
+                <option value="expense">Pengeluaran (−)</option>
               </select>
             </Field>
 
-            <Field name="account" label="Kas">
+            <Field name="account" label="Pos Kas">
               <select
                 id="account"
                 name="account"
@@ -125,7 +124,7 @@ export function TransactionRowActions({
             </Field>
           </div>
 
-          <Field name="category" label="Kategori">
+          <Field name="category" label="Kategori Anggaran">
             <select
               id="category"
               name="category"
@@ -147,7 +146,7 @@ export function TransactionRowActions({
 
           <Field
             name="description"
-            label="Keterangan"
+            label="Keterangan / Uraian"
             error={errors.description?.[0]}
           >
             <input
@@ -161,8 +160,8 @@ export function TransactionRowActions({
 
           <Field
             name="eventId"
-            label="Tautkan ke ibadah"
-            hint="Opsional — kosongkan kalau transaksi ini berdiri sendiri."
+            label="Tautkan ke ID Ibadah"
+            hint="Opsional — isi jika transaksi ini bagian dari acara tertentu."
           >
             <input
               id="eventId"
@@ -175,57 +174,60 @@ export function TransactionRowActions({
           {errors.form && (
             <p
               role="alert"
-              className="rounded-md bg-danger-wash px-3 py-2.5 text-sm text-danger"
+              className="rounded-xl border border-danger/40 bg-danger-wash px-3.5 py-2.5 text-xs text-danger"
             >
               {errors.form[0]}
             </p>
           )}
 
-          <div className="flex justify-end gap-2 pt-2">
+          <div className="flex justify-end gap-3 pt-3 border-t border-rule-soft">
             <button
               type="button"
               onClick={() => setEditOpen(false)}
-              className="btn-outline text-sm"
+              className="btn-outline text-xs sm:text-sm"
             >
               Batal
             </button>
             <button
               type="submit"
               disabled={pending}
-              className="btn-primary text-sm"
+              className="btn-primary text-xs sm:text-sm"
             >
-              {pending ? "Menyimpan…" : "Simpan perubahan"}
+              {pending ? "Menyimpan…" : "Simpan Perubahan"}
             </button>
           </div>
         </form>
       </Modal>
 
+      {/* Delete Confirmation Modal */}
       <Modal
         open={deleteOpen}
         onClose={() => setDeleteOpen(false)}
-        kicker="Konfirmasi"
-        title="Hapus transaksi ini?"
+        kicker="KONFIRMASI HAPUS"
+        title="Hapus Transaksi Kas Ini?"
       >
-        <p className="text-sm leading-relaxed text-ink-muted">
-          <span className="font-medium text-ink">{transaction.description}</span>{" "}
-          senilai {formatRupiah(transaction.amount)} akan berhenti dihitung di
-          saldo. Barisnya tetap tersimpan untuk audit dan bisa dipulihkan.
-        </p>
+        <div className="flex items-start gap-3 rounded-xl border border-danger/30 bg-danger-wash/60 p-4">
+          <AlertTriangle className="h-5 w-5 text-danger shrink-0 mt-0.5" />
+          <p className="text-xs sm:text-sm leading-relaxed text-ink-muted">
+            Transaksi <strong className="text-ink font-semibold">&ldquo;{transaction.description}&rdquo;</strong> senilai{" "}
+            <span className="num font-bold text-accent">{formatRupiah(transaction.amount)}</span> akan berhenti dihitung pada saldo kas. Data tetap tersimpan untuk riwayat audit.
+          </p>
+        </div>
 
         {deleteError && (
           <p
             role="alert"
-            className="mt-4 rounded-md bg-danger-wash px-3 py-2.5 text-sm text-danger"
+            className="mt-3 rounded-xl bg-danger-wash p-3 text-xs text-danger"
           >
             {deleteError}
           </p>
         )}
 
-        <div className="mt-6 flex justify-end gap-2">
+        <div className="mt-6 flex justify-end gap-3 border-t border-rule-soft pt-3">
           <button
             type="button"
             onClick={() => setDeleteOpen(false)}
-            className="btn-outline text-sm"
+            className="btn-outline text-xs sm:text-sm"
           >
             Batal
           </button>
@@ -233,9 +235,9 @@ export function TransactionRowActions({
             type="button"
             onClick={handleDelete}
             disabled={pending}
-            className="min-h-[44px] rounded-md bg-danger px-4 text-sm font-semibold text-canvas transition-colors hover:opacity-90 disabled:opacity-60"
+            className="min-h-[44px] rounded-xl bg-danger px-4 text-xs sm:text-sm font-semibold text-canvas transition-colors hover:opacity-90 disabled:opacity-60"
           >
-            {pending ? "Menghapus…" : "Hapus"}
+            {pending ? "Menghapus…" : "Hapus Transaksi"}
           </button>
         </div>
       </Modal>

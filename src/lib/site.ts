@@ -10,5 +10,5 @@ export const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL
     ? `https://${process.env.VERCEL_PROJECT_PRODUCTION_URL}`
     : "http://localhost:3000";
 
-export const SITE_NAME = "Space Youth GKKK";
+export const SITE_NAME = "Youth GKKK";
 export const SITE_TAGLINE = "Komisi Pemuda GKKK Yogyakarta";

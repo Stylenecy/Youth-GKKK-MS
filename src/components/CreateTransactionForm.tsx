@@ -30,20 +30,20 @@ export function CreateTransactionForm() {
       <button
         type="button"
         onClick={() => setIsOpen(true)}
-        className="btn-primary text-sm"
+        className="btn-primary text-xs sm:text-sm shadow-[0_0_16px_rgba(253,190,2,0.25)]"
       >
         <Plus className="h-4 w-4" aria-hidden="true" />
-        Transaksi baru
+        Transaksi Baru
       </button>
 
       <Modal
         open={isOpen}
         onClose={() => setIsOpen(false)}
-        kicker="Keuangan"
-        title="Catat transaksi"
+        kicker="BUKU KAS"
+        title="Catat Transaksi Baru"
       >
         <form action={handleSubmit} className="space-y-4">
-          <Field name="amount" label="Jumlah (Rp)" error={errors.amount?.[0]}>
+          <Field name="amount" label="Nominal Transaksi (Rp)" error={errors.amount?.[0]}>
             <input
               id="amount"
               name="amount"
@@ -51,20 +51,20 @@ export function CreateTransactionForm() {
               inputMode="numeric"
               min="0"
               required
-              placeholder="0"
+              placeholder="Contoh: 150000"
               className={fieldClass}
             />
           </Field>
 
           <div className="grid gap-4 sm:grid-cols-2">
-            <Field name="type" label="Jenis">
+            <Field name="type" label="Jenis Transaksi">
               <select id="type" name="type" className={fieldClass}>
-                <option value="income">Pemasukan</option>
-                <option value="expense">Pengeluaran</option>
+                <option value="income">Pemasukan (+)</option>
+                <option value="expense">Pengeluaran (−)</option>
               </select>
             </Field>
 
-            <Field name="account" label="Kas">
+            <Field name="account" label="Pos Kas">
               <select id="account" name="account" className={fieldClass}>
                 {Object.entries(ACCOUNT_LABEL).map(([value, label]) => (
                   <option key={value} value={value}>
@@ -75,7 +75,7 @@ export function CreateTransactionForm() {
             </Field>
           </div>
 
-          <Field name="category" label="Kategori">
+          <Field name="category" label="Kategori Anggaran">
             <select id="category" name="category" className={fieldClass}>
               <optgroup label="Pemasukan">
                 {INCOME_CATEGORIES.map(([value, label]) => (
@@ -92,47 +92,47 @@ export function CreateTransactionForm() {
 
           <Field
             name="description"
-            label="Keterangan"
+            label="Keterangan / Uraian Transaksi"
             error={errors.description?.[0]}
           >
             <input
               id="description"
               name="description"
               required
-              placeholder="Misal: kabel HDMI pengganti"
+              placeholder="Contoh: Pembelian kabel mic & konsumsi pembicara"
               className={fieldClass}
             />
           </Field>
 
           <Field
             name="eventId"
-            label="Tautkan ke ibadah"
-            hint="Opsional — isi ID ibadah kalau transaksi ini bagian dari satu acara."
+            label="Tautkan ke ID Ibadah"
+            hint="Opsional — isi jika transaksi berkaitan dengan event tertentu."
           >
             <input
               id="eventId"
               name="eventId"
-              placeholder="Misal: e1"
+              placeholder="Contoh: e1"
               className={fieldClass}
             />
           </Field>
 
           {errors.form && (
-            <p role="alert" className="rounded-md bg-danger-wash px-3 py-2.5 text-sm text-danger">
+            <p role="alert" className="rounded-xl border border-danger/40 bg-danger-wash px-3.5 py-2.5 text-xs text-danger">
               {errors.form[0]}
             </p>
           )}
 
-          <div className="flex justify-end gap-2 pt-2">
+          <div className="flex justify-end gap-3 pt-3 border-t border-rule-soft">
             <button
               type="button"
               onClick={() => setIsOpen(false)}
-              className="btn-outline text-sm"
+              className="btn-outline text-xs sm:text-sm"
             >
               Batal
             </button>
-            <button type="submit" disabled={pending} className="btn-primary text-sm">
-              {pending ? "Menyimpan…" : "Simpan transaksi"}
+            <button type="submit" disabled={pending} className="btn-primary text-xs sm:text-sm">
+              {pending ? "Menyimpan…" : "Simpan Transaksi"}
             </button>
           </div>
         </form>

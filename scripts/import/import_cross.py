@@ -26,6 +26,9 @@ import sys
 from datetime import datetime
 from pathlib import Path
 
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+from id_map import pid
+
 SKEMA_1 = {
     "c1": {
         "name": "Cross 1",
@@ -73,18 +76,20 @@ def generate_sql():
     ]
     for cross_id, info in SKEMA_1.items():
         name = info["name"]
+        row_id = pid(cross_id)
         lines.append(
             f"INSERT INTO public.crosses (id, name, meeting_day, meeting_time, is_active) "
-            f"VALUES ('{cross_id}', '{name}', 'Sabtu', '19:00', true) "
+            f"VALUES ('{row_id}', '{name}', 'Sabtu', '19:00', true) "
             f"ON CONFLICT (id) DO UPDATE SET name = EXCLUDED.name, updated_at = now();"
         )
     lines.append("")
     lines.append("-- 2. Cross memberships (leader + members)")
     for cross_id, info in SKEMA_1.items():
+        row_id = pid(cross_id)
         leader = info["leader"]
         lines.append(
             f"INSERT INTO public.cross_memberships (profile_id, cross_id, role, start_date, is_active) "
-            f"SELECT id, '{cross_id}', 'leader', '2026-07-11T00:00:00Z', true "
+            f"SELECT id, '{row_id}', 'leader', '2026-07-11T00:00:00Z', true "
             f"FROM public.profiles WHERE nickname = '{leader}' "
             f"ON CONFLICT DO NOTHING;"
         )
@@ -93,7 +98,7 @@ def generate_sql():
                 continue
             lines.append(
                 f"INSERT INTO public.cross_memberships (profile_id, cross_id, role, start_date, is_active) "
-                f"SELECT id, '{cross_id}', 'member', '2026-07-11T00:00:00Z', true "
+                f"SELECT id, '{row_id}', 'member', '2026-07-11T00:00:00Z', true "
                 f"FROM public.profiles WHERE nickname = '{member}' "
                 f"ON CONFLICT DO NOTHING;"
             )

@@ -7,28 +7,47 @@ import Link from "next/link";
  */
 export function Masthead() {
   return (
-    <header className="sticky top-0 z-40 border-b border-rule bg-canvas/85 backdrop-blur-md">
-      <div className="mx-auto flex w-full max-w-6xl items-center justify-between gap-4 px-5 py-3.5 sm:px-8">
+    <header className="sticky top-3.5 sm:top-5 z-50 px-4 sm:px-6 pointer-events-none">
+      <nav className="pointer-events-auto mx-auto flex w-full max-w-4xl items-center justify-between gap-4 rounded-full border border-line-accent/40 bg-surface/75 px-4 py-2 sm:px-6 sm:py-2.5 shadow-[0_16px_40px_rgba(0,0,0,0.6),0_0_24px_rgba(253,190,2,0.12)] backdrop-blur-2xl transition-all duration-300 hover:border-accent/60 hover:bg-surface/85">
         <Link
           href="/"
-          className="group flex min-h-[44px] items-center gap-2.5"
-          aria-label="Space Youth GKKK — beranda"
+          className="group flex items-center gap-2.5 sm:gap-3"
+          aria-label="Youth GKKK — Beranda"
         >
-          <Logomark />
+          <div className="flex h-8 w-8 items-center justify-center rounded-full border border-line-accent/30 bg-surface/80 p-1 shadow-sm transition-transform group-hover:scale-110">
+            <Logomark className="h-full w-full" />
+          </div>
           <span className="leading-tight">
-            <span className="block font-serif text-[1.0625rem] font-semibold tracking-tight text-ink">
-              Space Youth
+            <span className="block font-serif text-sm sm:text-base font-bold tracking-tight text-ink group-hover:text-accent transition-colors">
+              Youth
             </span>
-            <span className="block font-mono text-[0.625rem] uppercase tracking-[0.16em] text-ink-faint">
+            <span className="block font-mono text-[0.5625rem] uppercase tracking-[0.2em] text-ink-faint">
               GKKK Yogyakarta
             </span>
           </span>
         </Link>
 
-        <Link href="/login" className="btn btn-outline text-sm">
-          Masuk
-        </Link>
-      </div>
+        <div className="flex items-center gap-2 sm:gap-3">
+          <Link
+            href="#warta"
+            className="hidden sm:inline-flex px-3.5 py-1.5 rounded-full text-xs font-mono text-ink-muted hover:text-accent transition-colors"
+          >
+            Warta
+          </Link>
+          <Link
+            href="#ritme"
+            className="hidden sm:inline-flex px-3.5 py-1.5 rounded-full text-xs font-mono text-ink-muted hover:text-accent transition-colors"
+          >
+            Ritme
+          </Link>
+          <Link
+            href="/login"
+            className="btn btn-primary text-xs px-4 py-1.5 sm:px-5 sm:py-2 rounded-full font-bold shadow-[0_0_16px_rgba(253,190,2,0.3)] hover:scale-105 transition-transform"
+          >
+            Masuk &rarr;
+          </Link>
+        </div>
+      </nav>
     </header>
   );
 }
@@ -41,8 +60,8 @@ export function Masthead() {
 export function Logomark({ className = "" }: { className?: string }) {
   return (
     <img
-      src="/logo/derived/logo-crest-transparent-128.png"
-      alt=""
+      src="/logo/derived/logo-super-transparent.svg"
+      alt="Youth GKKK Crest"
       className={`h-7 w-7 shrink-0 object-contain ${className}`}
       aria-hidden="true"
     />

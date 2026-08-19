@@ -2,14 +2,10 @@
 
 import { useState, useTransition } from "react";
 import { Modal } from "./Modal";
+import { AlertTriangle } from "lucide-react";
 
 /**
- * Destructive action behind a confirmation dialog.
- *
- * Nothing in this app deletes permanently, but archiving still removes an
- * event from the front page, so it deserves a deliberate second step rather
- * than a single mis-tap. Uses the same focus-trapped Modal as the forms, so
- * keyboard behaviour is identical everywhere.
+ * Destructive / critical action behind a confirmation dialog with Nocturne styling.
  */
 export function ConfirmAction({
   label,
@@ -49,8 +45,8 @@ export function ConfirmAction({
         onClick={() => setIsOpen(true)}
         className={
           variant === "danger"
-            ? "min-h-[44px] rounded-md border border-danger px-3.5 text-sm font-medium text-danger transition-colors hover:bg-danger-wash"
-            : "btn-outline text-sm"
+            ? "inline-flex min-h-[44px] items-center justify-center rounded-xl border border-danger/40 bg-danger-wash/60 px-4 py-2.5 text-xs sm:text-sm font-semibold text-danger transition-colors hover:bg-danger-wash hover:border-danger"
+            : "btn-outline text-xs sm:text-sm"
         }
       >
         {label}
@@ -59,25 +55,28 @@ export function ConfirmAction({
       <Modal
         open={isOpen}
         onClose={() => setIsOpen(false)}
-        kicker="Konfirmasi"
+        kicker="KONFIRMASI TINDAKAN"
         title={title}
       >
-        <p className="text-sm leading-relaxed text-ink-muted">{body}</p>
+        <div className="flex items-start gap-3 rounded-xl border border-warning/30 bg-warning-wash/60 p-4">
+          <AlertTriangle className="h-5 w-5 text-warning shrink-0 mt-0.5" />
+          <p className="text-xs sm:text-sm leading-relaxed text-ink-muted">{body}</p>
+        </div>
 
         {error && (
           <p
             role="alert"
-            className="mt-4 rounded-md bg-danger-wash px-3 py-2.5 text-sm text-danger"
+            className="mt-3 rounded-xl border border-danger/40 bg-danger-wash p-3 text-xs text-danger"
           >
             {error}
           </p>
         )}
 
-        <div className="mt-6 flex justify-end gap-2">
+        <div className="mt-6 flex justify-end gap-3 border-t border-rule-soft pt-3">
           <button
             type="button"
             onClick={() => setIsOpen(false)}
-            className="btn-outline text-sm"
+            className="btn-outline text-xs sm:text-sm"
           >
             Batal
           </button>
@@ -85,7 +84,7 @@ export function ConfirmAction({
             type="button"
             onClick={handleConfirm}
             disabled={pending}
-            className="min-h-[44px] rounded-md bg-danger px-4 text-sm font-semibold text-canvas transition-colors hover:opacity-90 disabled:opacity-60"
+            className="min-h-[44px] rounded-xl bg-danger px-4 text-xs sm:text-sm font-semibold text-canvas transition-colors hover:opacity-90 disabled:opacity-60"
           >
             {pending ? "Memproses…" : confirmLabel}
           </button>

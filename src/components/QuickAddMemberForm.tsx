@@ -2,19 +2,13 @@
 
 import { useMemo, useRef, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { UserPlus } from "lucide-react";
+import { UserPlus, Check, AlertCircle } from "lucide-react";
 import { addCrossMember } from "@/app/actions/cross";
 import { validateMemberName } from "@/lib/validation";
 
 /**
- * Name-only, inline, one row. Built for someone standing up mid-Cross
- * typing on a phone — no modal to open, no required fields beyond the
- * name, Enter submits and refocuses so the next name can go straight in.
- *
- * `existingNames` powers a soft duplicate warning: a second tap of Tambah
- * confirms it. It is a UX nicety against typos, not a uniqueness rule —
- * two real people can legitimately share a nickname, so this never
- * blocks the submit outright.
+ * Name-only, inline, high-speed input for phone/desktop.
+ * Enter submits and refocuses immediately for the next name.
  */
 export function QuickAddMemberForm({
   crossId,
@@ -45,7 +39,7 @@ export function QuickAddMemberForm({
         setName("");
         setConfirmingDuplicate(false);
         router.refresh();
-        setTimeout(() => setJustAdded(null), 2500);
+        setTimeout(() => setJustAdded(null), 3000);
         inputRef.current?.focus();
       } else {
         setError(result.error ?? "Gagal menambah anggota.");
@@ -83,34 +77,40 @@ export function QuickAddMemberForm({
           ref={inputRef}
           value={name}
           onChange={(e) => handleChange(e.target.value)}
-          placeholder="Nama anggota baru"
+          placeholder="Ketik nama panggilan anggota..."
           aria-label="Nama anggota baru"
           maxLength={80}
-          className="min-h-[44px] flex-1 rounded-md border border-rule bg-surface px-3 py-2 text-[0.9375rem] text-ink transition-colors focus:border-accent"
+          className="min-h-[44px] flex-1 rounded-xl border border-rule bg-canvas-sunk px-3.5 py-2.5 text-[0.9375rem] text-ink placeholder:text-ink-faint transition-all duration-200 focus:border-accent focus:bg-surface focus:outline-none focus:ring-1 focus:ring-accent"
         />
         <button
           type="submit"
           disabled={pending || !name.trim()}
-          className="btn-primary min-h-[44px] shrink-0 px-4 text-sm disabled:opacity-60"
+          className="btn-primary min-h-[44px] shrink-0 px-4 text-xs sm:text-sm shadow-sm disabled:opacity-60"
         >
           <UserPlus className="h-4 w-4" aria-hidden="true" />
-          <span className="hidden sm:inline">
-            {confirmingDuplicate ? "Yakin, tambah" : "Tambah"}
+          <span>
+            {confirmingDuplicate ? "Yakin, Tambah" : "Tambah"}
           </span>
         </button>
       </div>
 
-      <div aria-live="polite" className="min-h-[1.25rem] text-sm">
-        {error && <span className="text-danger">{error}</span>}
+      <div aria-live="polite" className="min-h-[1.5rem] text-xs">
+        {error && (
+          <span className="flex items-center gap-1.5 font-medium text-danger">
+            <AlertCircle className="h-3.5 w-3.5" />
+            {error}
+          </span>
+        )}
         {!error && confirmingDuplicate && (
-          <span className="text-warning">
-            Sudah ada anggota bernama itu. Tap &ldquo;Yakin, tambah&rdquo; kalau
-            memang orang berbeda.
+          <span className="flex items-center gap-1.5 font-medium text-warning">
+            <AlertCircle className="h-3.5 w-3.5" />
+            Sudah ada anggota bernama &quot;{name}&quot;. Tekan &ldquo;Yakin, Tambah&rdquo; jika memang orang berbeda.
           </span>
         )}
         {!error && !confirmingDuplicate && justAdded && (
-          <span className="text-sage">
-            &ldquo;{justAdded}&rdquo; ditambahkan. Ketik nama berikutnya.
+          <span className="flex items-center gap-1.5 font-semibold text-sage">
+            <Check className="h-3.5 w-3.5" />
+            &ldquo;{justAdded}&rdquo; berhasil ditambahkan ke kelompok.
           </span>
         )}
       </div>
