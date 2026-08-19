@@ -83,7 +83,7 @@ export default async function DashboardPage() {
     {
       kicker: "KAS KEUANGAN",
       label: "Saldo Kas",
-      value: formatRupiahCompact(stats.monthlyBalance),
+      value: formatRupiahCompact(stats.totalBalance),
       icon: Wallet,
       href: "/dashboard/finance",
       hint: "Kas besar & kecil",

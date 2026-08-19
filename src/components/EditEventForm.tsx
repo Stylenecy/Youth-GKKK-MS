@@ -126,7 +126,7 @@ export function EditEventForm({
                 id="picId"
                 name="picId"
                 required
-                defaultValue={event.picId}
+                defaultValue={event.picId ?? ""}
                 className={fieldClass}
               >
                 <option value="">Pilih pengurus PIC</option>
@@ -158,7 +158,7 @@ export function EditEventForm({
               id="description"
               name="description"
               rows={3}
-              defaultValue={event.description}
+              defaultValue={event.description ?? ""}
               className={`${fieldClass} resize-none`}
             />
           </Field>

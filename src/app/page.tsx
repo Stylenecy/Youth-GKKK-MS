@@ -10,6 +10,7 @@ import RhythmTimeline from "@/components/landing/RhythmTimeline";
 import StewardVault from "@/components/landing/StewardVault";
 import LivingHearth from "@/components/landing/LivingHearth";
 import EmberField from "@/components/landing/EmberField";
+import { eventStateLabel } from "@/lib/events";
 import {
   formatWeekdayDayMonth,
   formatDayNumber,
@@ -420,12 +421,8 @@ export default async function LandingPage() {
                         {/* Tags */}
                         <div className="flex shrink-0 flex-wrap items-center gap-2.5">
                           <span className="tag border-white/10 text-on-deep-muted">{eventTypeLabel(event.eventType)}</span>
-                          <span
-                            className={
-                              event.status === "published" ? "tag tag-sage" : "tag"
-                            }
-                          >
-                            {event.status === "published" ? "Terjadwal" : "Rencana"}
+                          <span className={eventStateLabel(event).cls}>
+                            {eventStateLabel(event).label}
                           </span>
                         </div>
                       </div>

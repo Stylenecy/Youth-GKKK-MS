@@ -22,6 +22,8 @@ export interface Profile {
   university: string | null;
   cohort: string | null;
   status: MemberStatus;
+  /** Roster "Keterangan" — why someone is away, e.g. "Kuliah di luar". */
+  notes: string | null;
   avatarUrl: string | null;
   serviceCount30d: number;
   createdAt: string;
@@ -51,12 +53,14 @@ export interface MonthlyTheme {
 export interface Event {
   id: string;
   date: string;
-  monthlyThemeId: string;
+  // Nullable in the database, and genuinely often empty: an event can be
+  // created before anyone is put in charge of it or a monthly theme exists.
+  monthlyThemeId: string | null;
   weeklyTheme: string;
   eventType: EventType;
-  picId: string;
+  picId: string | null;
   speakerName: string | null;
-  description: string;
+  description: string | null;
   status: EventStatus;
   archivedAt: string | null;
 }
@@ -136,7 +140,8 @@ export interface DashboardStats {
   totalMembers: number;
   activeCrossGroups: number;
   monthGatherings: number;
-  monthlyBalance: number;
+  /** Running balance over every non-deleted transaction, not just this month. */
+  totalBalance: number;
 }
 
 export interface FatigueAlert {

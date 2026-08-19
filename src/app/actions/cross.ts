@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { isSupabaseConfigured } from "@/lib/supabase/env";
 import { validateMemberName } from "@/lib/validation";
+import { recordAudit } from "@/lib/audit";
 
 /**
  * Postgres error messages from the RPCs in migration 0004, translated for
@@ -53,6 +54,8 @@ export async function claimCrossLeadership(crossId: string, code: string) {
     return { success: false, error: friendlyError(error.message) };
   }
 
+  await recordAudit("Mengklaim kepemimpinan Cross", "cross", crossId);
+
   revalidatePath("/dashboard/cross");
   revalidatePath("/dashboard/cross/mine");
   return { success: true };
@@ -88,6 +91,13 @@ export async function addCrossMember(crossId: string, name: string) {
   if (error) {
     return { success: false, error: friendlyError(error.message) };
   }
+
+  // Name is the point of the action, so it belongs in the log — this trail is
+  // visible only to signed-in pengurus, same audience that can already see the
+  // member directory.
+  await recordAudit("Menambah anggota Cross", "cross", crossId, {
+    after: { name: validated.value },
+  });
 
   revalidatePath("/dashboard/cross");
   revalidatePath(`/dashboard/cross/${crossId}`);

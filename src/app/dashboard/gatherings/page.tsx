@@ -4,6 +4,7 @@ import { ChevronRight, Calendar, Sparkles } from "lucide-react";
 import { getEvents, getProfiles } from "@/lib/data";
 import { CreateEventForm } from "@/components/CreateEventForm";
 import { PageHeader, EmptyState } from "@/components/page-parts";
+import { eventStateLabel } from "@/lib/events";
 import {
   formatWeekdayDayMonth,
   formatDayNumber,
@@ -13,13 +14,6 @@ import {
 } from "@/lib/datetime";
 
 export const metadata: Metadata = { title: "Jadwal Ibadah" };
-
-const STATUS: Record<string, { label: string; cls: string }> = {
-  published: { label: "Terjadwal", cls: "tag tag-sage font-medium" },
-  draft: { label: "Rencana", cls: "tag font-medium" },
-  completed: { label: "Selesai", cls: "tag font-medium opacity-80" },
-  archived: { label: "Arsip", cls: "tag font-medium opacity-60" },
-};
 
 export default async function GatheringsPage() {
   const [events, profiles] = await Promise.all([getEvents(), getProfiles()]);
@@ -33,8 +27,8 @@ export default async function GatheringsPage() {
     .reverse();
   const past = sorted.filter((e) => new Date(e.date).getTime() < now);
 
-  const nameOf = (id: string) =>
-    profiles.find((p) => p.id === id)?.nickname ?? "—";
+  const nameOf = (id: string | null) =>
+    (id ? profiles.find((p) => p.id === id)?.nickname : null) ?? "—";
 
   return (
     <div className="px-5 py-7 sm:px-8 sm:py-9">
@@ -92,7 +86,7 @@ function GatheringSection({
   kicker: string;
   title: string;
   events: Awaited<ReturnType<typeof getEvents>>;
-  nameOf: (id: string) => string;
+  nameOf: (id: string | null) => string;
   empty: string;
   muted?: boolean;
 }) {
@@ -119,7 +113,7 @@ function GatheringSection({
       ) : (
         <ul className="mt-4 divide-y divide-rule-soft/60 rounded-2xl border border-line/40 bg-surface/60 backdrop-blur-xl overflow-hidden shadow-sm">
           {events.map((event) => {
-            const s = STATUS[event.status] ?? STATUS.draft;
+            const s = eventStateLabel(event);
             return (
               <li key={event.id}>
                 <Link

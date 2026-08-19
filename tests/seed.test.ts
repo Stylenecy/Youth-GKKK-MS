@@ -185,7 +185,10 @@ describe("referential integrity", () => {
   it("names a real PIC for every event", () => {
     const profileIds = new Set(seedProfiles.map((p) => p.id));
     for (const e of seedEvents) {
-      expect(profileIds.has(e.picId), `event ${e.id} orphan PIC`).toBe(true);
+      // picId is nullable in the schema (an event can exist before anyone is
+      // put in charge), but every seeded event is expected to name someone.
+      expect(e.picId, `event ${e.id} has no PIC`).not.toBeNull();
+      expect(profileIds.has(e.picId!), `event ${e.id} orphan PIC`).toBe(true);
     }
   });
 
@@ -193,6 +196,6 @@ describe("referential integrity", () => {
     const stats = getDashboardStats();
     expect(stats.totalMembers).toBe(seedProfiles.length);
     expect(stats.activeCrossGroups).toBe(seedCrosses.length);
-    expect(Number.isFinite(stats.monthlyBalance)).toBe(true);
+    expect(Number.isFinite(stats.totalBalance)).toBe(true);
   });
 });

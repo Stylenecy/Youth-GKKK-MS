@@ -2,6 +2,7 @@ import { isSupabaseConfigured } from "./supabase/env";
 import type {
   Profile, Event, StewardAssignment, Cross, FinanceTransaction,
   Meeting, DashboardStats, FatigueAlert, RecentActivity, MemberStatus,
+  EventType, EventStatus, StewardStatus, FinanceType, FinanceAccount,
 } from "./types";
 
 // ============================================================
@@ -21,7 +22,7 @@ import type {
  * caller's role in SQL.
  */
 const PROFILE_COLUMNS =
-  "id,full_name,nickname,birth_date,hometown,university,cohort,status,avatar_url,is_active,created_at,updated_at";
+  "id,full_name,nickname,birth_date,hometown,university,cohort,status,notes,avatar_url,is_active,created_at,updated_at";
 
 /**
  * A profile row as the database ever sends it: snake_case, and — thanks to
@@ -40,6 +41,7 @@ interface ProfileRow {
   university: string | null;
   cohort: string | null;
   status: MemberStatus;
+  notes: string | null;
   avatar_url: string | null;
   is_active: boolean;
   created_at: string;
@@ -57,10 +59,148 @@ function mapProfileRow(row: ProfileRow): Profile {
     university: row.university,
     cohort: row.cohort,
     status: row.status,
+    notes: row.notes,
     avatarUrl: row.avatar_url,
     serviceCount30d: 0,
     createdAt: row.created_at,
     updatedAt: row.updated_at,
+  };
+}
+
+/*
+ * Row types + mappers for every table this file reads.
+ *
+ * These exist because `select("*")` returns snake_case and the app types are
+ * camelCase. Casting the raw row (`data as Event[]`) type-checks but silently
+ * produces objects whose camelCase fields are all `undefined` — the compiler
+ * cannot catch it because a cast is a promise, not a check. That is exactly
+ * how `picId` came back empty for events that had `pic_id` set in the
+ * database, and how finance rows lost `createdAt` and rendered Invalid Date.
+ *
+ * Rule for anything added later: map the row, never cast it.
+ */
+
+interface EventRow {
+  id: string;
+  date: string;
+  monthly_theme_id: string | null;
+  weekly_theme: string;
+  event_type: EventType;
+  pic_id: string | null;
+  speaker_name: string | null;
+  description: string | null;
+  status: EventStatus;
+  archived_at: string | null;
+}
+
+function mapEventRow(row: EventRow): Event {
+  return {
+    id: row.id,
+    date: row.date,
+    monthlyThemeId: row.monthly_theme_id,
+    weeklyTheme: row.weekly_theme,
+    eventType: row.event_type,
+    picId: row.pic_id,
+    speakerName: row.speaker_name,
+    description: row.description,
+    status: row.status,
+    archivedAt: row.archived_at,
+  };
+}
+
+interface StewardRow {
+  id: string;
+  event_id: string;
+  profile_id: string;
+  role: string;
+  status: StewardStatus;
+  reason: string | null;
+  created_at: string;
+}
+
+function mapStewardRow(row: StewardRow, member?: Profile): StewardAssignment {
+  return {
+    id: row.id,
+    eventId: row.event_id,
+    profileId: row.profile_id,
+    role: row.role,
+    status: row.status,
+    reason: row.reason,
+    createdAt: row.created_at,
+    member,
+  };
+}
+
+interface CrossRow {
+  id: string;
+  name: string;
+  leader_id: string | null;
+  description: string | null;
+  meeting_day: string | null;
+  meeting_time: string | null;
+}
+
+/** `memberCount` is not a column — callers that need it count memberships. */
+function mapCrossRow(row: CrossRow, memberCount = 0): Cross {
+  return {
+    id: row.id,
+    name: row.name,
+    leaderId: row.leader_id,
+    description: row.description ?? "",
+    meetingDay: row.meeting_day ?? "",
+    meetingTime: row.meeting_time ?? "",
+    memberCount,
+  };
+}
+
+interface FinanceRow {
+  id: string;
+  event_id: string | null;
+  amount: number;
+  type: FinanceType;
+  account: FinanceAccount;
+  category: string;
+  description: string;
+  receipt_url: string | null;
+  recorded_by: string | null;
+  created_at: string;
+}
+
+function mapFinanceRow(row: FinanceRow): FinanceTransaction {
+  return {
+    id: row.id,
+    eventId: row.event_id,
+    amount: row.amount,
+    type: row.type,
+    // Older rows predate migration 0005; treat an absent account as kas kecil
+    // rather than letting `undefined` fall out of every balance filter.
+    account: row.account ?? "kas_kecil",
+    category: row.category,
+    description: row.description,
+    receiptUrl: row.receipt_url,
+    recordedById: row.recorded_by,
+    createdAt: row.created_at,
+  };
+}
+
+interface MeetingRow {
+  id: string;
+  title: string;
+  date: string;
+  /** jsonb — arrives already parsed, so it must not be JSON.parse()d again. */
+  content: unknown;
+  participants: string[] | null;
+  created_at: string;
+}
+
+function mapMeetingRow(row: MeetingRow): Meeting {
+  return {
+    id: row.id,
+    title: row.title,
+    date: row.date,
+    content: typeof row.content === "string" ? row.content : JSON.stringify(row.content ?? {}),
+    participants: row.participants ?? [],
+    createdAt: row.created_at,
   };
 }
 
@@ -94,11 +234,24 @@ export async function getDashboardStats(): Promise<DashboardStats> {
   if (isSupabaseConfigured()) {
     const { createClient } = await import("./supabase/server");
     const supabase = await createClient();
+
+    const now = new Date();
+    const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
+    const nextMonthStart = new Date(now.getFullYear(), now.getMonth() + 1, 1);
+
     const [members, events, crossGroups, finance] = await Promise.all([
       supabase.from("profiles").select("id", { count: "exact", head: true }),
-      supabase.from("events").select("id", { count: "exact" }).gte("date", new Date().toISOString().slice(0, 8) + "01"),
+      // Bounded to the calendar month. `gte` alone had no upper bound, so an
+      // event scheduled for December counted towards "Bulan Ini" in August.
+      supabase.from("events").select("id", { count: "exact" })
+        .gte("date", monthStart.toISOString())
+        .lt("date", nextMonthStart.toISOString()),
       supabase.from("crosses").select("id", { count: "exact", head: true }).eq("is_active", true),
-      supabase.from("finance_transactions").select("amount,type").is("deleted_at", null).gte("created_at", new Date().toISOString().slice(0, 8) + "01"),
+      // Running balance across ALL transactions, not just the current month.
+      // The card is labelled "Saldo Kas"; scoping it to transactions created
+      // this month showed Rp 0 whenever nobody had recorded anything yet,
+      // which reads as "the treasury is empty" rather than "no entries yet".
+      supabase.from("finance_transactions").select("amount,type").is("deleted_at", null),
     ]);
 
     const income = (finance.data ?? []).filter((f: any) => f.type === "income").reduce((a: number, b: any) => a + b.amount, 0);
@@ -108,7 +261,7 @@ export async function getDashboardStats(): Promise<DashboardStats> {
       totalMembers: members.count ?? 0,
       activeCrossGroups: crossGroups.count ?? 0,
       monthGatherings: events.data?.length ?? 0,
-      monthlyBalance: income - expense,
+      totalBalance: income - expense,
     };
   }
 
@@ -137,19 +290,12 @@ export async function getUpcomingGathering() {
       .select("*")
       .eq("event_id", event.id);
 
-    const profileIds = [...new Set((stewards ?? []).map(s => s.profile_id))];
-    const { data: profiles } = await supabase
-      .from("profiles")
-      .select("id,nickname")
-      .in("id", profileIds);
+    // No profile join here: the only caller (the dashboard) already loads the
+    // full profile list and resolves names from it, so fetching them again
+    // was a second round-trip for data that was thrown away.
+    const stewardAssignments = (stewards ?? []).map(s => mapStewardRow(s));
 
-    const stewardAssignments = (stewards ?? []).map(s => ({
-      ...s,
-      memberId: s.profile_id,
-      member: (profiles ?? []).find((p: any) => p.id === s.profile_id),
-    }));
-
-    return { ...event, stewardAssignments };
+    return { ...mapEventRow(event), stewardAssignments };
   }
 
   const { getUpcomingGathering } = await import("./seed");
@@ -162,10 +308,14 @@ export async function getFatigueAlerts(): Promise<FatigueAlert[]> {
     const { createClient } = await import("./supabase/server");
     const supabase = await createClient();
 
+    // Filter on the EVENT's date, not the assignment row's created_at.
+    // created_at is when the row was written — every imported row shares the
+    // import timestamp, so filtering on it counted all 216 historical
+    // assignments as "this month" and showed everyone serving 10-15x.
     const { data: assignments } = await supabase
       .from("steward_assignments")
-      .select("profile_id")
-      .gte("created_at", thirtyDaysAgo);
+      .select("profile_id, events!inner(date)")
+      .gte("events.date", thirtyDaysAgo);
 
     const countMap: Record<string, number> = {};
     (assignments ?? []).forEach((a: any) => {
@@ -193,7 +343,11 @@ export async function getFatigueAlerts(): Promise<FatigueAlert[]> {
   return getFatigueAlerts();
 }
 
-export async function getRecentActivity(): Promise<RecentActivity[]> {
+/**
+ * @param limit 5 suits the dashboard's activity strip; the Audit page passes a
+ *   larger number because it is the full trail, not a preview of it.
+ */
+export async function getRecentActivity(limit = 5): Promise<RecentActivity[]> {
   if (isSupabaseConfigured()) {
     const { createClient } = await import("./supabase/server");
     const supabase = await createClient();
@@ -201,7 +355,7 @@ export async function getRecentActivity(): Promise<RecentActivity[]> {
       .from("audit_logs")
       .select("id,action,timestamp")
       .order("timestamp", { ascending: false })
-      .limit(5);
+      .limit(limit);
 
     return (data ?? []).map((log: any) => ({
       id: log.id,
@@ -214,12 +368,42 @@ export async function getRecentActivity(): Promise<RecentActivity[]> {
   return getRecentActivity();
 }
 
+/**
+ * How many times each person served in the last 30 days, keyed by profile id.
+ *
+ * Counted from the EVENT's date, not the assignment row's created_at — the
+ * same distinction that made the fatigue alerts wrong. Members pages render
+ * this as "N× bulan ini", so a stale or invented number is visible to every
+ * pengurus.
+ */
+async function serviceCounts30d(
+  supabase: { from: (t: string) => any }
+): Promise<Record<string, number>> {
+  const since = new Date(Date.now() - 30 * 86400000).toISOString();
+  const { data } = await supabase
+    .from("steward_assignments")
+    .select("profile_id, events!inner(date)")
+    .gte("events.date", since);
+
+  const counts: Record<string, number> = {};
+  (data ?? []).forEach((row: any) => {
+    counts[row.profile_id] = (counts[row.profile_id] ?? 0) + 1;
+  });
+  return counts;
+}
+
 export async function getProfiles(): Promise<Profile[]> {
   if (isSupabaseConfigured()) {
     const { createClient } = await import("./supabase/server");
     const supabase = await createClient();
-    const { data } = await supabase.from("profiles").select(PROFILE_COLUMNS).order("full_name");
-    return (data ?? []).map(mapProfileRow);
+    const [{ data }, counts] = await Promise.all([
+      supabase.from("profiles").select(PROFILE_COLUMNS).order("full_name"),
+      serviceCounts30d(supabase),
+    ]);
+    return (data ?? []).map((row) => ({
+      ...mapProfileRow(row),
+      serviceCount30d: counts[row.id] ?? 0,
+    }));
   }
 
   const { seedProfiles } = await import("./seed");
@@ -230,8 +414,12 @@ export async function getProfileById(id: string): Promise<Profile | undefined> {
   if (isSupabaseConfigured()) {
     const { createClient } = await import("./supabase/server");
     const supabase = await createClient();
-    const { data } = await supabase.from("profiles").select(PROFILE_COLUMNS).eq("id", id).single();
-    return data ? mapProfileRow(data) : undefined;
+    const [{ data }, counts] = await Promise.all([
+      supabase.from("profiles").select(PROFILE_COLUMNS).eq("id", id).single(),
+      serviceCounts30d(supabase),
+    ]);
+    if (!data) return undefined;
+    return { ...mapProfileRow(data), serviceCount30d: counts[data.id] ?? 0 };
   }
 
   const profiles = await getProfiles();
@@ -243,7 +431,7 @@ export async function getEvents(): Promise<Event[]> {
     const { createClient } = await import("./supabase/server");
     const supabase = await createClient();
     const { data } = await supabase.from("events").select("*").order("date", { ascending: false });
-    return (data ?? []) as Event[];
+    return (data ?? []).map(mapEventRow);
   }
 
   const { seedEvents } = await import("./seed");
@@ -255,7 +443,7 @@ export async function getEventById(id: string): Promise<Event | undefined> {
     const { createClient } = await import("./supabase/server");
     const supabase = await createClient();
     const { data } = await supabase.from("events").select("*").eq("id", id).single();
-    return data as Event | undefined;
+    return data ? mapEventRow(data) : undefined;
   }
 
   const events = await getEvents();
@@ -277,11 +465,8 @@ export async function getStewardsByEvent(eventId: string): Promise<StewardAssign
       .select(PROFILE_COLUMNS)
       .in("id", profileIds);
 
-    return (stewards ?? []).map(s => ({
-      ...s,
-      memberId: s.profile_id,
-      member: (profiles ?? []).find((p: any) => p.id === s.profile_id),
-    })) as StewardAssignment[];
+    const byId = new Map((profiles ?? []).map(p => [p.id, mapProfileRow(p)]));
+    return (stewards ?? []).map(s => mapStewardRow(s, byId.get(s.profile_id)));
   }
 
   const { seedStewards, seedProfiles } = await import("./seed");
@@ -295,7 +480,7 @@ export async function getCrosses(): Promise<Cross[]> {
     const { createClient } = await import("./supabase/server");
     const supabase = await createClient();
     const { data } = await supabase.from("crosses").select("*").eq("is_active", true);
-    return (data ?? []) as Cross[];
+    return (data ?? []).map(row => mapCrossRow(row));
   }
 
   const { seedCrosses } = await import("./seed");
@@ -490,7 +675,7 @@ export async function getFinanceTransactions(): Promise<FinanceTransaction[]> {
       .select("*")
       .is("deleted_at", null)
       .order("created_at", { ascending: false });
-    return (data ?? []) as FinanceTransaction[];
+    return (data ?? []).map(mapFinanceRow);
   }
 
   const { seedFinance } = await import("./seed");
@@ -502,7 +687,7 @@ export async function getMeetings(): Promise<Meeting[]> {
     const { createClient } = await import("./supabase/server");
     const supabase = await createClient();
     const { data } = await supabase.from("meeting_notes").select("*").order("date", { ascending: false });
-    return (data ?? []) as Meeting[];
+    return (data ?? []).map(mapMeetingRow);
   }
 
   const { seedMeetings } = await import("./seed");
@@ -514,7 +699,7 @@ export async function getMeetingById(id: string): Promise<Meeting | undefined> {
     const { createClient } = await import("./supabase/server");
     const supabase = await createClient();
     const { data } = await supabase.from("meeting_notes").select("*").eq("id", id).single();
-    return data as Meeting | undefined;
+    return data ? mapMeetingRow(data) : undefined;
   }
 
   const meetings = await getMeetings();

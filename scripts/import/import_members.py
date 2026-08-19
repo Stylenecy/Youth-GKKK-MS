@@ -39,6 +39,8 @@ except ImportError:
 DB_DIR = Path(__file__).resolve().parent.parent.parent / "database"
 XLSX_PATH = DB_DIR / "DATA_PEMUDA-GKKK-YK.xlsx"
 SHEET_NAME = "ANGGOTA PEMUDA"
+# The roster's status column ("Keterangan") lives here, not on ANGGOTA PEMUDA.
+ABSENSI_SHEET = "ABSENSI 2026 (Agustus - Desembe"
 DEFAULT_OUTPUT_DIR = Path(__file__).resolve().parent / "output"
 
 SKILL_CATEGORIES = {
@@ -118,10 +120,86 @@ def parse_skills(raw):
     return found
 
 
+def name_key(raw):
+    """Kunci pencocokan nama antar-sheet.
+
+    Kedua sheet menulis nama orang yang sama dengan cara berbeda: 'Arion
+    Sudibyo' vs 'Arion Sudibyo (Arion)', 'Ding-ding' vs 'Ding-Ding'. Mencocokkan
+    string mentah hanya berhasil untuk 52 dari 93 orang. Kunci ini membuang
+    bagian dalam kurung, merapatkan spasi, dan menyamakan huruf besar-kecil.
+    """
+    if not raw:
+        return ""
+    text = re.sub(r"\(.*?\)", " ", str(raw))
+    return re.sub(r"\s+", " ", text).strip().lower()
+
+
+def load_keterangan(wb):
+    """Petakan nama -> teks 'Keterangan' dari sheet ABSENSI terbaru.
+
+    Kolom ini TIDAK ada di sheet ANGGOTA PEMUDA -- hanya di sheet absensi --
+    sehingga versi lama importer ini tidak pernah melihatnya dan menandai
+    seluruh 93 anggota sebagai 'active'. Isinya alasan seseorang sedang tidak
+    hadir rutin: 'Kuliah di luar', 'Pindah gereja', 'Ke Belanda', 'Skripsi'.
+
+    Nama yang setelah dinormalisasi cocok ke lebih dari satu baris dibuang,
+    bukan ditebak. Proyek ini sudah pernah tertipu pencarian nama yang ambigu
+    (dua 'Nathan', dua 'Dian'); menandai orang yang salah sebagai 'pindah
+    gereja' jauh lebih buruk daripada tidak menandai siapa pun.
+    """
+    if ABSENSI_SHEET not in wb.sheetnames:
+        return {}, []
+    ws = wb[ABSENSI_SHEET]
+    seen = {}
+    for row in ws.iter_rows(min_row=4, max_row=ws.max_row, values_only=True):
+        num, full_name, _nick, ket = row[0], row[1], row[2], row[3]
+        if not isinstance(num, (int, float)) or not full_name:
+            continue
+        key = name_key(full_name)
+        if not key:
+            continue
+        seen.setdefault(key, []).append(str(ket).strip() if ket else "")
+
+    ambiguous = sorted(k for k, v in seen.items() if len(v) > 1)
+    out = {k: v[0] for k, v in seen.items() if len(v) == 1}
+    return out, ambiguous
+
+
+def unmatched_report(members, keterangan):
+    """Nama di ANGGOTA PEMUDA yang tidak punya pasangan persis di ABSENSI.
+
+    Sengaja TIDAK dicocokkan secara fuzzy. Kandidat terdekat untuk 'christian
+    natanael' adalah 'christian yang' -- dua orang berbeda yang lolos ambang
+    kemiripan 0,75. Menebak di sini berarti menandai orang yang salah sebagai
+    pindah gereja. Yang tidak cocok tetap 'active' (default paling aman), dan
+    namanya dilaporkan supaya ejaan di Excel bisa dirapikan di sumbernya.
+    """
+    return [m["full_name"] for m in members if name_key(m["full_name"]) not in keterangan]
+
+
+def status_from_keterangan(text):
+    """Terjemahkan teks Keterangan jadi (status, catatan).
+
+    Sengaja konservatif: satu-satunya hal yang menurunkan seseorang jadi
+    'inactive' adalah keterangan bahwa dia sudah PINDAH GEREJA. Semua alasan
+    lain (kuliah di luar, kerja, skripsi, jarang datang) berarti 'away' --
+    masih anggota Pemuda, hanya sedang tidak hadir rutin. Salah menandai
+    seseorang 'tidak aktif' padahal dia masih jemaat jauh lebih merugikan
+    daripada menandainya 'berhalangan'.
+    """
+    if not text or text == "-":
+        return "active", None
+    lowered = text.lower()
+    if "pindah gereja" in lowered or lowered.strip() == "pindah":
+        return "inactive", text
+    return "away", text
+
+
 def load_members(path=XLSX_PATH):
     """Baca sheet ANGGOTA PEMUDA, return list of dict."""
     wb = openpyxl.load_workbook(path, data_only=True)
     ws = wb[SHEET_NAME]
+    keterangan, ambiguous_names = load_keterangan(wb)
     members = []
     for row in ws.iter_rows(min_row=3, max_row=ws.max_row, values_only=True):
         num = row[0]
@@ -139,6 +217,7 @@ def load_members(path=XLSX_PATH):
         skills = parse_skills(row[6])
         if not full_name:
             continue
+        status, notes = status_from_keterangan(keterangan.get(name_key(full_name)))
         members.append({
             "num": int(num),
             "full_name": full_name,
@@ -148,6 +227,8 @@ def load_members(path=XLSX_PATH):
             "hometown": hometown,
             "birth_date": birth_date,
             "skills": skills,
+            "status": status,
+            "notes": notes,
         })
     return members
 
@@ -182,15 +263,16 @@ def generate_sql(members):
         ht_sql = f"'{ht}'" if ht else "NULL"
         bd_sql = f"'{bd}'" if bd != "NULL" else "NULL"
         wa_sql = f"'{wa}'" if wa else "NULL"
-        status = "active" if m["num"] <= 93 else "inactive"
+        status = m["status"]
+        notes_sql = f"'{m['notes'].replace(chr(39), chr(39) * 2)}'" if m["notes"] else "NULL"
         row_id = pid(f"p{m['num']:03d}")
         lines.append(
-            f"INSERT INTO public.profiles (id, full_name, nickname, birth_date, hometown, whatsapp, status, is_active) "
-            f"VALUES ('{row_id}', '{fn}', '{nn}', {bd_sql}, {ht_sql}, {wa_sql}, '{status}', true) "
+            f"INSERT INTO public.profiles (id, full_name, nickname, birth_date, hometown, whatsapp, status, notes, is_active) "
+            f"VALUES ('{row_id}', '{fn}', '{nn}', {bd_sql}, {ht_sql}, {wa_sql}, '{status}', {notes_sql}, true) "
             f"ON CONFLICT (id) DO UPDATE SET "
             f"full_name = EXCLUDED.full_name, nickname = EXCLUDED.nickname, "
             f"birth_date = EXCLUDED.birth_date, hometown = EXCLUDED.hometown, "
-            f"whatsapp = EXCLUDED.whatsapp, "
+            f"whatsapp = EXCLUDED.whatsapp, notes = EXCLUDED.notes, "
             f"status = EXCLUDED.status, updated_at = now();"
         )
     lines.append("")
@@ -218,7 +300,6 @@ def generate_json(members):
         nn = m["nickname"]
         ht = m["hometown"]
         bd = m["birth_date"]
-        status = "active" if m["num"] <= 93 else "inactive"
         output.append({
             "id": pid(f"p{m['num']:03d}"),
             "full_name": fn,
@@ -226,7 +307,8 @@ def generate_json(members):
             "birth_date": bd,
             "hometown": ht,
             "whatsapp": m["whatsapp"],
-            "status": status,
+            "status": m["status"],
+            "notes": m["notes"],
             "is_active": True,
         })
     return json.dumps(output, ensure_ascii=False, indent=2)
@@ -243,6 +325,27 @@ def generate_report(members):
     print(f"Dengan skills: {sum(1 for m in members if m['skills'])}")
     print(f"Dengan hometown: {sum(1 for m in members if m['hometown'])}")
     print(f"Nomor GAGAL dinormalisasi (dikosongkan): {failed_raw}")
+    print()
+    counts = {}
+    for m in members:
+        counts[m["status"]] = counts.get(m["status"], 0) + 1
+    print("Status (dari kolom Keterangan sheet ABSENSI):")
+    for key in ("active", "away", "inactive", "alumni"):
+        if key in counts:
+            print(f"  {key}: {counts[key]}")
+
+    wb = openpyxl.load_workbook(XLSX_PATH, data_only=True)
+    keterangan, ambiguous = load_keterangan(wb)
+    missing = unmatched_report(members, keterangan)
+    print(f"  (tanpa pasangan di sheet ABSENSI -> dianggap active: {len(missing)})")
+    if ambiguous:
+        print(f"  NAMA AMBIGU di ABSENSI, sengaja dilewati: {', '.join(ambiguous)}")
+    if missing:
+        print()
+        print("Belum cocok ke sheet ABSENSI -- rapikan ejaannya di Excel supaya")
+        print("keterangannya ikut terbaca (TIDAK dicocokkan otomatis, terlalu berisiko):")
+        for name in missing:
+            print(f"  - {name}")
     print()
     print("Sample (5 pertama):")
     for m in members[:5]:

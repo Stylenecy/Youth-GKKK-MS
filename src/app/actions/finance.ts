@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { financeSchema } from "@/lib/schemas";
 import { categoryKeyFromLabel, CATEGORY_LABEL } from "@/lib/finance";
 import { isSupabaseConfigured } from "@/lib/supabase/env";
+import { recordAudit } from "@/lib/audit";
 
 /**
  * Only the treasurer (Nathan) or an admin may write to the cash book.
@@ -43,7 +44,7 @@ export async function createTransaction(formData: FormData) {
     const auth = await requireTreasurer();
     if (!auth.ok) return { success: false, errors: { form: [auth.error] } };
 
-    const { error } = await auth.supabase.from("finance_transactions").insert({
+    const { data: created, error } = await auth.supabase.from("finance_transactions").insert({
       amount: validated.data.amount,
       type: validated.data.type,
       account: validated.data.account,
@@ -51,11 +52,19 @@ export async function createTransaction(formData: FormData) {
       description: validated.data.description,
       event_id: validated.data.eventId || null,
       recorded_by: auth.userId,
-    });
+    }).select("id").single();
 
     if (error) {
       return { success: false, errors: { form: [error.message] } };
     }
+
+    await recordAudit("Mencatat transaksi", "finance_transaction", created?.id ?? "?", {
+      after: {
+        amount: validated.data.amount,
+        type: validated.data.type,
+        description: validated.data.description,
+      },
+    });
   }
 
   revalidatePath("/dashboard/finance");
@@ -97,6 +106,14 @@ export async function updateTransaction(id: string, formData: FormData) {
     if (error) {
       return { success: false, errors: { form: [error.message] } };
     }
+
+    await recordAudit("Mengubah transaksi", "finance_transaction", id, {
+      after: {
+        amount: validated.data.amount,
+        type: validated.data.type,
+        description: validated.data.description,
+      },
+    });
   }
 
   revalidatePath("/dashboard/finance");
@@ -123,6 +140,8 @@ export async function deleteTransaction(id: string) {
       .eq("id", id);
 
     if (error) return { success: false, error: error.message };
+
+    await recordAudit("Menghapus transaksi", "finance_transaction", id);
   }
 
   revalidatePath("/dashboard/finance");
@@ -141,6 +160,8 @@ export async function restoreTransaction(id: string) {
       .eq("id", id);
 
     if (error) return { success: false, error: error.message };
+
+    await recordAudit("Memulihkan transaksi", "finance_transaction", id);
   }
 
   revalidatePath("/dashboard/finance");
@@ -248,6 +269,10 @@ export async function importTransactions(pastedText: string) {
   if (error) {
     return { success: false, error: error.message, errors: [] as ImportRowError[] };
   }
+
+  await recordAudit("Impor transaksi massal", "finance_transaction", "bulk", {
+    after: { count: toInsert.length },
+  });
 
   revalidatePath("/dashboard/finance");
   return { success: true, error: null, errors: [] as ImportRowError[], count: toInsert.length };

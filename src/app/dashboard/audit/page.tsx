@@ -7,7 +7,7 @@ import { ShieldCheck, History, Activity, AlertCircle } from "lucide-react";
 export const metadata: Metadata = { title: "Log Audit" };
 
 export default async function AuditPage() {
-  const activities = await getRecentActivity();
+  const activities = await getRecentActivity(100);
   const live = isSupabaseConfigured();
 
   return (

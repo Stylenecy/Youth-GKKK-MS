@@ -6,6 +6,7 @@ import { PageHeader, BackLink, DataPoint, EmptyState, Monogram } from "@/compone
 import { EditEventForm } from "@/components/EditEventForm";
 import { ConfirmAction } from "@/components/ConfirmAction";
 import { archiveEvent, restoreEvent } from "@/app/actions/gatherings";
+import { eventStateLabel } from "@/lib/events";
 import {
   formatFullDate,
   formatTime,
@@ -21,12 +22,6 @@ const STEWARD_STATUS: Record<string, { label: string; cls: string }> = {
   replaced: { label: "Sudah diganti", cls: "tag font-medium opacity-60" },
 };
 
-const EVENT_STATUS: Record<string, { label: string; cls: string }> = {
-  published: { label: "Terjadwal", cls: "tag tag-sage font-medium" },
-  draft: { label: "Rencana", cls: "tag font-medium" },
-  completed: { label: "Selesai", cls: "tag font-medium opacity-80" },
-  archived: { label: "Arsip", cls: "tag font-medium opacity-60" },
-};
 
 export async function generateMetadata({
   params,
@@ -53,7 +48,7 @@ export default async function GatheringDetailPage({
   ]);
 
   const pic = profiles.find((p) => p.id === event.picId);
-  const status = EVENT_STATUS[event.status] ?? EVENT_STATUS.draft;
+  const status = eventStateLabel(event);
   const active = stewards.filter((s) => s.status !== "replaced");
 
   // Bound to this event's id so the client component stays a plain button.

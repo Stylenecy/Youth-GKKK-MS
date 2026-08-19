@@ -31,14 +31,14 @@ import type {
 // ============================================================
 
 export const seedProfiles: Profile[] = [
-  { id: "1", fullName: "Dex", nickname: "Dex", whatsapp: null, birthDate: null, hometown: null, university: null, cohort: null, status: "active", avatarUrl: null, serviceCount30d: 3, createdAt: "2026-01-01T00:00:00Z", updatedAt: "2026-08-08T00:00:00Z" },
-  { id: "2", fullName: "Angel", nickname: "Angel", whatsapp: null, birthDate: null, hometown: null, university: null, cohort: null, status: "active", avatarUrl: null, serviceCount30d: 4, createdAt: "2026-01-01T00:00:00Z", updatedAt: "2026-08-08T00:00:00Z" },
-  { id: "3", fullName: "Wangke", nickname: "Wangke", whatsapp: "6280000-101-23", birthDate: null, hometown: null, university: null, cohort: null, status: "active", avatarUrl: null, serviceCount30d: 2, createdAt: "2026-01-01T00:00:00Z", updatedAt: "2026-08-08T00:00:00Z" },
-  { id: "4", fullName: "Arion", nickname: "Arion", whatsapp: null, birthDate: null, hometown: null, university: null, cohort: null, status: "active", avatarUrl: null, serviceCount30d: 2, createdAt: "2026-01-01T00:00:00Z", updatedAt: "2026-08-08T00:00:00Z" },
-  { id: "5", fullName: "Nita", nickname: "Nita", whatsapp: null, birthDate: null, hometown: null, university: null, cohort: null, status: "active", avatarUrl: null, serviceCount30d: 1, createdAt: "2026-01-01T00:00:00Z", updatedAt: "2026-08-08T00:00:00Z" },
-  { id: "6", fullName: "Grace", nickname: "Grace", whatsapp: "+62 80000-456-78", birthDate: null, hometown: null, university: null, cohort: null, status: "active", avatarUrl: null, serviceCount30d: 1, createdAt: "2026-01-01T00:00:00Z", updatedAt: "2026-08-08T00:00:00Z" },
-  { id: "7", fullName: "Erica", nickname: "Erica", whatsapp: null, birthDate: null, hometown: null, university: null, cohort: null, status: "active", avatarUrl: null, serviceCount30d: 2, createdAt: "2026-01-01T00:00:00Z", updatedAt: "2026-08-08T00:00:00Z" },
-  { id: "8", fullName: "Nathan", nickname: "Nathan", whatsapp: null, birthDate: null, hometown: null, university: null, cohort: null, status: "active", avatarUrl: null, serviceCount30d: 2, createdAt: "2026-01-01T00:00:00Z", updatedAt: "2026-08-08T00:00:00Z" },
+  { id: "1", fullName: "Dex", nickname: "Dex", whatsapp: null, birthDate: null, hometown: null, university: null, cohort: null, status: "active", notes: null, avatarUrl: null, serviceCount30d: 3, createdAt: "2026-01-01T00:00:00Z", updatedAt: "2026-08-08T00:00:00Z" },
+  { id: "2", fullName: "Angel", nickname: "Angel", whatsapp: null, birthDate: null, hometown: null, university: null, cohort: null, status: "active", notes: null, avatarUrl: null, serviceCount30d: 4, createdAt: "2026-01-01T00:00:00Z", updatedAt: "2026-08-08T00:00:00Z" },
+  { id: "3", fullName: "Wangke", nickname: "Wangke", whatsapp: "6280000-101-23", birthDate: null, hometown: null, university: null, cohort: null, status: "active", notes: null, avatarUrl: null, serviceCount30d: 2, createdAt: "2026-01-01T00:00:00Z", updatedAt: "2026-08-08T00:00:00Z" },
+  { id: "4", fullName: "Arion", nickname: "Arion", whatsapp: null, birthDate: null, hometown: null, university: null, cohort: null, status: "active", notes: null, avatarUrl: null, serviceCount30d: 2, createdAt: "2026-01-01T00:00:00Z", updatedAt: "2026-08-08T00:00:00Z" },
+  { id: "5", fullName: "Nita", nickname: "Nita", whatsapp: null, birthDate: null, hometown: null, university: null, cohort: null, status: "active", notes: null, avatarUrl: null, serviceCount30d: 1, createdAt: "2026-01-01T00:00:00Z", updatedAt: "2026-08-08T00:00:00Z" },
+  { id: "6", fullName: "Grace", nickname: "Grace", whatsapp: "+62 80000-456-78", birthDate: null, hometown: null, university: null, cohort: null, status: "active", notes: null, avatarUrl: null, serviceCount30d: 1, createdAt: "2026-01-01T00:00:00Z", updatedAt: "2026-08-08T00:00:00Z" },
+  { id: "7", fullName: "Erica", nickname: "Erica", whatsapp: null, birthDate: null, hometown: null, university: null, cohort: null, status: "active", notes: null, avatarUrl: null, serviceCount30d: 2, createdAt: "2026-01-01T00:00:00Z", updatedAt: "2026-08-08T00:00:00Z" },
+  { id: "8", fullName: "Nathan", nickname: "Nathan", whatsapp: null, birthDate: null, hometown: null, university: null, cohort: null, status: "active", notes: null, avatarUrl: null, serviceCount30d: 2, createdAt: "2026-01-01T00:00:00Z", updatedAt: "2026-08-08T00:00:00Z" },
 ];
 
 // ------------------------------------------------------------
@@ -163,7 +163,7 @@ export function getDashboardStats(): DashboardStats {
     totalMembers: seedProfiles.length,
     activeCrossGroups: seedCrosses.length,
     monthGatherings: seedEvents.filter(e => e.status === "published" || e.status === "draft").length,
-    monthlyBalance: seedFinance.filter(f => f.type === "income").reduce((a, b) => a + b.amount, 0) -
+    totalBalance: seedFinance.filter(f => f.type === "income").reduce((a, b) => a + b.amount, 0) -
       seedFinance.filter(f => f.type === "expense").reduce((a, b) => a + b.amount, 0),
   };
 }

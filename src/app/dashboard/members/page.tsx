@@ -17,13 +17,14 @@ export default async function MembersPage() {
   const profiles = await getProfiles();
 
   const activeCount = profiles.filter((p) => p.status === "active").length;
+  const awayCount = profiles.filter((p) => p.status === "away").length;
 
   return (
     <div className="px-5 py-7 sm:px-8 sm:py-9">
       <PageHeader
         kicker="DIREKTORI JEMAAT"
         title="Daftar Anggota"
-        meta={`${profiles.length} total anggota terdaftar · ${activeCount} berstatus aktif`}
+        meta={`${profiles.length} anggota · ${activeCount} aktif · ${awayCount} berhalangan`}
         action={
           <Link
             href="/dashboard/cross/mine"
@@ -78,6 +79,11 @@ export default async function MembersPage() {
                       <span className="block truncate text-xs text-ink-muted mt-0.5">
                         {profile.fullName}
                       </span>
+                      {profile.notes && (
+                        <span className="mt-1 block truncate text-xs text-ink-faint">
+                          {profile.notes}
+                        </span>
+                      )}
                       <div className="mt-2 flex flex-wrap items-center gap-1.5">
                         <span className={s.cls}>{s.label}</span>
                         {profile.serviceCount30d > 0 && (
