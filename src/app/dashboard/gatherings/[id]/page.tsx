@@ -8,12 +8,14 @@ import {
   getCurrentProfile,
   getMyLeaderCrossIds,
   getCrossMembers,
+  getPicEligibleProfiles,
 } from "@/lib/data";
 import type { StewardAssignment } from "@/lib/types";
 import { canRecordAttendance } from "@/lib/attendance";
 import { isSupabaseConfigured } from "@/lib/supabase/env";
 import { PageHeader, BackLink, DataPoint, EmptyState, Monogram } from "@/components/page-parts";
 import { EditEventForm } from "@/components/EditEventForm";
+import { AssignStewardForm } from "@/components/AssignStewardForm";
 import { ConfirmAction } from "@/components/ConfirmAction";
 import { AttendanceTaker } from "@/components/AttendanceTaker";
 import { archiveEvent, restoreEvent } from "@/app/actions/gatherings";
@@ -53,16 +55,23 @@ export default async function GatheringDetailPage({
   const event = await getEventById(id);
   if (!event) notFound();
 
-  const [profiles, stewards, attendance, current, leaderCrossIds] =
+  const [profiles, stewards, attendance, current, leaderCrossIds, picEligible] =
     await Promise.all([
       getProfiles(),
       getStewardsByEvent(id),
       getAttendanceByEvent(id),
       getCurrentProfile(),
       getMyLeaderCrossIds(),
+      getPicEligibleProfiles(),
     ]);
 
   const pic = profiles.find((p) => p.id === event.picId);
+  // The PIC dropdown only offers pengurus — but an event saved before the
+  // rule keeps its recorded PIC selectable, so editing never wipes history.
+  const picOptions =
+    pic && !picEligible.some((p) => p.id === pic.id)
+      ? [pic, ...picEligible]
+      : picEligible;
   const status = eventStateLabel(event);
   const active = stewards.filter((s) => s.status !== "replaced");
 
@@ -129,7 +138,8 @@ export default async function GatheringDetailPage({
 
       {/* Action Shelf */}
       <div className="mt-6 flex flex-wrap items-center gap-3 border-t border-rule-soft pt-6">
-        <EditEventForm event={event} profiles={profiles} />
+        <EditEventForm event={event} profiles={picOptions} />
+        <AssignStewardForm eventId={id} profiles={profiles} />
         {event.status === "archived" ? (
           <ConfirmAction
             label="Pulihkan Ibadah"

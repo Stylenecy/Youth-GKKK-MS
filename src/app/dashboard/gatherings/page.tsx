@@ -1,7 +1,7 @@
 import Link from "next/link";
 import type { Metadata } from "next";
 import { ChevronRight, Calendar, Sparkles } from "lucide-react";
-import { getEvents, getProfiles } from "@/lib/data";
+import { getEvents, getProfiles, getPicEligibleProfiles } from "@/lib/data";
 import { CreateEventForm } from "@/components/CreateEventForm";
 import { PageHeader, EmptyState } from "@/components/page-parts";
 import { eventStateLabel } from "@/lib/events";
@@ -16,7 +16,14 @@ import {
 export const metadata: Metadata = { title: "Jadwal Ibadah" };
 
 export default async function GatheringsPage() {
-  const [events, profiles] = await Promise.all([getEvents(), getProfiles()]);
+  // The create form's PIC dropdown only offers pengurus (committee +
+  // active Cross leaders, migration 0013). `profiles` stays whole because
+  // the list below still needs every nickname for rows saved before the rule.
+  const [events, profiles, picOptions] = await Promise.all([
+    getEvents(),
+    getProfiles(),
+    getPicEligibleProfiles(),
+  ]);
 
   const now = Date.now();
   const sorted = [...events].sort(
@@ -36,7 +43,7 @@ export default async function GatheringsPage() {
         kicker="PELAYANAN"
         title="Jadwal Ibadah"
         meta={`${upcoming.length} ibadah mendatang · ${past.length} riwayat terlaksana`}
-        action={<CreateEventForm profiles={profiles} />}
+        action={<CreateEventForm profiles={picOptions} />}
       />
 
       {events.length === 0 ? (

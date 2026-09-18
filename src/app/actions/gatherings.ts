@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { eventSchema } from "@/lib/schemas";
 import { wibToISO } from "@/lib/datetime";
 import { isSupabaseConfigured } from "@/lib/supabase/env";
+import { isStewardRole } from "@/lib/validation";
 import { recordAudit } from "@/lib/audit";
 
 export async function createEvent(formData: FormData) {
@@ -26,6 +27,21 @@ export async function createEvent(formData: FormData) {
   if (isSupabaseConfigured()) {
     const { createClient } = await import("@/lib/supabase/server");
     const supabase = await createClient();
+
+    // PIC harus pengurus (keputusan Dex, 19 Sep 2026). Trigger 0013
+    // menegakkan ini di database; cek di sini dulu supaya penolakannya
+    // menempel di field yang salah dengan bahasa manusia, bukan crash.
+    const { data: picEligible } = await supabase.rpc("is_pic_eligible", {
+      p_profile_id: validated.data.picId,
+    });
+    if (picEligible !== true) {
+      return {
+        success: false,
+        errors: {
+          picId: ["PIC harus pengurus — pengurus inti atau pemimpin Cross yang masih aktif."],
+        },
+      };
+    }
 
     const { data: created, error } = await supabase.from("events").insert({
       date: wibToISO(validated.data.date, validated.data.time),
@@ -70,6 +86,19 @@ export async function updateEvent(id: string, formData: FormData) {
   if (isSupabaseConfigured()) {
     const { createClient } = await import("@/lib/supabase/server");
     const supabase = await createClient();
+
+    // Sama seperti createEvent di atas: PIC harus pengurus.
+    const { data: picEligible } = await supabase.rpc("is_pic_eligible", {
+      p_profile_id: validated.data.picId,
+    });
+    if (picEligible !== true) {
+      return {
+        success: false,
+        errors: {
+          picId: ["PIC harus pengurus — pengurus inti atau pemimpin Cross yang masih aktif."],
+        },
+      };
+    }
 
     const { error } = await supabase
       .from("events")
@@ -151,7 +180,11 @@ export async function updateEventStatus(id: string, status: string) {
   if (isSupabaseConfigured()) {
     const { createClient } = await import("@/lib/supabase/server");
     const supabase = await createClient();
-    await supabase.from("events").update({ status }).eq("id", id);
+    // The error check comes first: auditing a write the database refused
+    // would leave a log line claiming something that never happened.
+    const { error } = await supabase.from("events").update({ status }).eq("id", id);
+    if (error) return { success: false, error: error.message };
+
     await recordAudit("Mengubah status ibadah", "event", id, { after: { status } });
   }
   revalidatePath("/dashboard/gatherings");
@@ -159,6 +192,14 @@ export async function updateEventStatus(id: string, status: string) {
 }
 
 export async function assignSteward(eventId: string, profileId: string, role: string) {
+  if (
+    typeof eventId !== "string" || eventId.trim() === "" ||
+    typeof profileId !== "string" || profileId.trim() === "" ||
+    !isStewardRole(role)
+  ) {
+    return { success: false, error: "Data penatalayan tidak valid." };
+  }
+
   if (isSupabaseConfigured()) {
     const { createClient } = await import("@/lib/supabase/server");
     const supabase = await createClient();

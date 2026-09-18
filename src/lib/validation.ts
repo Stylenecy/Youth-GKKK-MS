@@ -16,3 +16,24 @@ export function validateMemberName(raw: string): { ok: true; value: string } | {
   }
   return { ok: true, value };
 }
+
+/**
+ * The only steward slots the ministry actually fills — WL, Singer, Pemusik,
+ * Multimedia, Sound, Usher. Taken from the seed roster and the 2026 import
+ * (19 Sep 2026 audit). Both the tick-box form and the server action check
+ * against this list so a typo'd role can never reach steward_assignments.
+ */
+export const STEWARD_ROLES = [
+  "WL",
+  "Singer",
+  "Pemusik",
+  "Multimedia",
+  "Sound",
+  "Usher",
+] as const;
+
+export type StewardRole = (typeof STEWARD_ROLES)[number];
+
+export function isStewardRole(raw: string): raw is StewardRole {
+  return (STEWARD_ROLES as readonly string[]).includes(raw);
+}

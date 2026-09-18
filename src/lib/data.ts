@@ -502,6 +502,89 @@ export async function getAttendanceByEvent(eventId: string): Promise<AttendanceR
   return [];
 }
 
+/**
+ * Profiles allowed to be picked as PIC — committee + active Cross leaders
+ * (keputusan Dex, 19 Sep 2026, enforced by migration 0013's trigger).
+ *
+ * Supabase mode asks list_pic_eligible(), the same function the trigger
+ * uses, so the dropdown can never offer someone the database would
+ * reject. Demo mode mirrors the rule honestly from the seed: the 8
+ * Cross leaders.
+ */
+export async function getPicEligibleProfiles(): Promise<Profile[]> {
+  if (isSupabaseConfigured()) {
+    const { createClient } = await import("./supabase/server");
+    const supabase = await createClient();
+
+    const { data: ids } = await supabase.rpc("list_pic_eligible");
+    const eligible = (ids ?? []) as string[];
+    if (eligible.length === 0) return [];
+
+    const [{ data }, counts] = await Promise.all([
+      supabase
+        .from("profiles")
+        .select(PROFILE_COLUMNS)
+        .in("id", eligible)
+        .eq("is_active", true)
+        .order("full_name"),
+      serviceCounts30d(supabase),
+    ]);
+    return (data ?? []).map((row) => ({
+      ...mapProfileRow(row),
+      serviceCount30d: counts[row.id] ?? 0,
+    }));
+  }
+
+  const { seedCrossMemberships, seedProfiles } = await import("./seed");
+  const leaderIds = new Set(
+    seedCrossMemberships
+      .filter((m) => m.role === "leader" && m.isActive)
+      .map((m) => m.profileId)
+  );
+  return seedProfiles.filter((p) => leaderIds.has(p.id));
+}
+
+/**
+ * Active Cross names per profile, for directory context ("anak siapa").
+ * One batched read for the whole list page — never per-card queries.
+ */
+export async function getProfileCrossNames(): Promise<Record<string, string[]>> {
+  if (isSupabaseConfigured()) {
+    const { createClient } = await import("./supabase/server");
+    const supabase = await createClient();
+
+    const [{ data: memberships }, { data: crosses }] = await Promise.all([
+      supabase
+        .from("cross_memberships")
+        .select("profile_id,cross_id")
+        .eq("is_active", true),
+      supabase.from("crosses").select("id,name"),
+    ]);
+
+    const names = new Map(
+      ((crosses ?? []) as any[]).map((c) => [c.id as string, c.name as string])
+    );
+    const out: Record<string, string[]> = {};
+    for (const m of (memberships ?? []) as any[]) {
+      const name = names.get(m.cross_id);
+      if (!name) continue;
+      (out[m.profile_id] ??= []).push(name);
+    }
+    return out;
+  }
+
+  const { seedCrossMemberships, seedCrosses } = await import("./seed");
+  const names = new Map(seedCrosses.map((c) => [c.id, c.name]));
+  const out: Record<string, string[]> = {};
+  for (const m of seedCrossMemberships) {
+    if (!m.isActive) continue;
+    const name = names.get(m.crossId);
+    if (!name) continue;
+    (out[m.profileId] ??= []).push(name);
+  }
+  return out;
+}
+
 export async function getCrosses(): Promise<Cross[]> {
   if (isSupabaseConfigured()) {
     const { createClient } = await import("./supabase/server");
