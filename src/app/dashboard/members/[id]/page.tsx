@@ -12,11 +12,12 @@ import WhatsAppButton from "@/components/WhatsAppButton";
 import { formatDayMonth } from "@/lib/datetime";
 import { User, AlertTriangle, ShieldCheck } from "lucide-react";
 
+// Same labels as the directory list — one status, one name everywhere.
 const STATUS: Record<string, { label: string; cls: string }> = {
-  active: { label: "Aktif Melayani", cls: "tag tag-sage font-medium" },
-  away: { label: "Berhalangan Sementara", cls: "tag tag-warning font-medium" },
-  alumni: { label: "Alumni Youth", cls: "tag font-medium opacity-75" },
-  inactive: { label: "Tidak Aktif", cls: "tag font-medium opacity-60" },
+  active: { label: "Aktif", cls: "tag tag-sage font-medium" },
+  away: { label: "Berhalangan", cls: "tag tag-warning font-medium" },
+  alumni: { label: "Alumni", cls: "tag font-medium opacity-75" },
+  inactive: { label: "Tidak aktif", cls: "tag font-medium opacity-60" },
 };
 
 export async function generateMetadata({
