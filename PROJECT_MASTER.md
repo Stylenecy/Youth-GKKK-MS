@@ -523,8 +523,8 @@ muncul.
 | Styling | Tailwind CSS v4 |
 | Design | Sanctuary Editorial |
 | Fonts | Fraunces (serif), Geist (sans), Geist Mono (mono) |
-| Database | Supabase (PostgreSQL + Auth + Storage) — coming |
-| Deployment | Vercel — coming |
+| Database | Supabase (PostgreSQL + Auth + Storage) — ✅ LIVE |
+| Deployment | Vercel — ✅ LIVE · https://youth-gkkk-ms.vercel.app |
 
 ---
 
@@ -1219,3 +1219,50 @@ impor 18 Ags. Nama yang ambigu dibuang, bukan ditebak.
 | Ibadah dengan PIC terisi | **2** (tersimpan sejak awal, sekarang akhirnya tampil) |
 | `record_audit()` di DB | terpasang |
 | Commit | `904b325`, ter-push ke `origin/master` |
+
+---
+
+## 15 Sep 2026 — Update status admin + event Movie Time & 26 Sep
+
+**Sesi:** Dex via OpenCode. Update kartu status YGMS + konfirmasi produksi.
+
+### Admin list confirmed (produksi, screenshot dashboard Dex)
+
+| Email | Peran | Masuk | Status |
+|---|---|---|---|
+| Dex | admin | 8 Ags | ✅ approved |
+| `marthaangelina293@gmail.com` (Angel) | admin | 12 Ags | ✅ approved |
+| Erica sekretaris | admin | 12 Ags | ✅ approved |
+| Ko Martin (Pembina) | admin | 12 Ags | ✅ approved |
+| `dave.aryanda@si.ukdw.ac.id` | — | 19 Ags | ❌ **Ditolak Dex** (bukan jemaat, hanya lihat-lihat demo) |
+
+Dave bukan ancaman — statusnya MENUNGGU sejak 19 Ags, nggak pernah lihat data. Dashboard approval gate (`layout.tsx:15-18`) bekerja: akun non-approved cuma lihat layar "Menunggu Persetujuan", 0 data.
+
+### Event 19 Sep — Movie Time
+- WL: Angel (nawarin diri di chat 14 Sep, belum konfirmasi final)
+- Pemusik kasar: Dex + Yeri + Nathan + Moses (drum) + Ben (bass) — **tidak dicatat di YGMS** (keputusan Dex: kasar aja)
+- Film: polling 9-10 judul Netflix (A Week Away, Beautiful Game, Blue Miracle, Miracles from Heaven, Big World, Tunggu Aku Sukses, Semua Akan Baik Baik Saja, Zero to Hero, True Spirit) + usulan Ko Martin **The Longest Yard**. Hasil polling belum final di ekspor ini.
+- **PIC tidak tercantum** di spreadsheet (hanya tulis "3 PIC") — perlu Dex tentukan.
+
+### Event 26 Sep — Ibadah Pemuda (detail lengkap)
+- PIC: Grace
+- WL: Dex
+- Singer: Grace, Nita (Benita Ruhulessin)
+- Pemusik: Erica (Erica Celine), Aeryn (Carissa Aeryn Christer), Marvel (**Marvellino Wijayanto**, C3, lahir 13 Maret 2008)
+- Multimedia: Heidi (**Heidi Helena Huang**, C5, lahir 20 Agustus 2008)
+- Sound: Angel
+- Usher: Angel, Olvan (**Nathanael Olvan Valentino**, C3)
+- Tema: "Walk Like a Lion, Lead Like a Goat, Shine Like a King."
+- Pembicara: **Pak Hari** (= Pdt. Hari Soegianto)
+- Semua nickname resolve ke roster **bersih** — nggak ada ambiguitas.
+
+### Yang nggak dicatat
+- Judul film final (tunggu polling)
+- PIC Movie Time 19 Sep (sheet nggak punya nama)
+- Detail poster/film (ada di chat WA, belum diekstrak ke berkas)
+- Film yang Ko Martin coret (format hilang di ekspor)
+
+### Verifikasi
+- `npm test` **92/92 lulus** · `npx tsc --noEmit` bersih · `npm run build` hijau **20 rute**
+- Live: `/` 200 · `/login` 200 · dashboard **307 → /login** · rute ngawur **404**
+- Worktree: `PROJECT_MASTER.md` 2 baris update (ini) — aman. File absensi/migrasi tanpa UI tertinggal sebagai untracked, tidak nyentuh produksi.
