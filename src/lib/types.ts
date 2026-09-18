@@ -76,6 +76,15 @@ export interface StewardAssignment {
   member?: Profile;
 }
 
+export interface AttendanceRecord {
+  id: string;
+  eventId: string;
+  profileId: string;
+  present: boolean;
+  note: string | null;
+  recordedAt: string;
+}
+
 export interface Cross {
   id: string;
   name: string;

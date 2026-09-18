@@ -1,6 +1,7 @@
 import { isSupabaseConfigured } from "./supabase/env";
+import { mapAttendanceRow } from "./attendance";
 import type {
-  Profile, Event, StewardAssignment, Cross, FinanceTransaction,
+  Profile, Event, StewardAssignment, AttendanceRecord, Cross, FinanceTransaction,
   Meeting, DashboardStats, FatigueAlert, RecentActivity, MemberStatus,
   EventType, EventStatus, StewardStatus, FinanceType, FinanceAccount,
 } from "./types";
@@ -476,6 +477,29 @@ export async function getStewardsByEvent(eventId: string): Promise<StewardAssign
   return seedStewards
     .filter(s => s.eventId === eventId)
     .map(s => ({ ...s, member: seedProfiles.find(p => p.id === s.profileId) }));
+}
+
+/**
+ * Attendance verdicts recorded for one gathering. Mapped rows, never casts.
+ *
+ * Supabase mode reads public.attendance directly — RLS (migration 0012)
+ * already narrows this to committee + a leader over their own members, so
+ * no role check is needed here. Demo mode returns []: there is no seed
+ * attendance, and an empty list renders the guiding empty state rather
+ * than fake ticks nobody recorded.
+ */
+export async function getAttendanceByEvent(eventId: string): Promise<AttendanceRecord[]> {
+  if (isSupabaseConfigured()) {
+    const { createClient } = await import("./supabase/server");
+    const supabase = await createClient();
+    const { data } = await supabase
+      .from("attendance")
+      .select("id,event_id,profile_id,present,note,recorded_at")
+      .eq("event_id", eventId);
+    return (data ?? []).map(mapAttendanceRow);
+  }
+
+  return [];
 }
 
 export async function getCrosses(): Promise<Cross[]> {
