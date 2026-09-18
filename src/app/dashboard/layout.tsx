@@ -1,5 +1,6 @@
 import { Sidebar } from "@/components/Sidebar";
 import { MobileNav } from "@/components/MobileNav";
+import { DashboardThemeShell, ThemeInitScript } from "@/components/DashboardTheme";
 import { getMyAccountStatus } from "@/lib/data";
 import { PendingApproval } from "@/components/PendingApproval";
 
@@ -17,8 +18,14 @@ export default async function DashboardLayout({
     return <PendingApproval />;
   }
 
+  // ThemeInitScript applies the stored theme before first paint;
+  // DashboardThemeShell re-applies it on client-side navigation into
+  // the dashboard (the script only runs on full page loads).
   return (
-    <div className="flex min-h-screen bg-canvas text-ink selection:bg-accent selection:text-canvas">
+    <>
+      <ThemeInitScript />
+      <DashboardThemeShell>
+      <div className="flex min-h-screen bg-canvas text-ink selection:bg-accent selection:text-canvas">
       <Sidebar />
 
       <div className="relative flex min-w-0 flex-1 flex-col overflow-x-hidden">
@@ -36,5 +43,7 @@ export default async function DashboardLayout({
         </main>
       </div>
     </div>
+      </DashboardThemeShell>
+    </>
   );
 }

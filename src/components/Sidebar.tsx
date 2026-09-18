@@ -4,6 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { NAV_ITEMS, isActive } from "./nav-items";
 import { Logomark } from "./Masthead";
+import { ThemeToggle } from "./DashboardTheme";
 
 /** Persistent rail. Hidden below `lg`, where MobileNav takes over. */
 export function Sidebar() {
@@ -113,6 +114,7 @@ export function Sidebar() {
 
       {/* Footer Section */}
       <div className="border-t border-rule-soft p-3.5 space-y-2">
+        <ThemeToggle />
         <Link
           href="/"
           className="flex min-h-[44px] items-center justify-between gap-2 rounded-xl px-3 font-mono text-xs text-ink-faint transition-all duration-200 hover:bg-surface-2 hover:text-accent"

@@ -49,8 +49,11 @@ export default async function LandingPage() {
     (s: StewardAssignment) => s.status !== "replaced"
   );
 
+  // Pinned dark: the dashboard theme toggle must never touch the
+  // public landing page. Its subtree always resolves Nocturne tokens,
+  // whatever the committee chose for their own dashboard.
   return (
-    <div className="flex min-h-screen flex-col bg-canvas">
+    <div className="flex min-h-screen flex-col bg-canvas" data-theme="dark">
       <Preloader />
       <Masthead />
 

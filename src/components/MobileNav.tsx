@@ -6,6 +6,7 @@ import { useEffect, useId, useRef, useState } from "react";
 import { MoreHorizontal, X } from "lucide-react";
 import { NAV_ITEMS, isActive } from "./nav-items";
 import { Logomark } from "./Masthead";
+import { ThemeToggle } from "./DashboardTheme";
 
 /**
  * Responsive Mobile Navigation for phone & tablet.
@@ -59,12 +60,15 @@ export function MobileNav() {
             Youth GKKK
           </span>
         </Link>
-        <Link
-          href="/"
-          className="flex min-h-[44px] items-center gap-1.5 px-2 font-mono text-[0.625rem] uppercase tracking-[0.16em] text-ink-faint hover:text-accent transition-colors"
-        >
-          <span aria-hidden="true">&larr;</span> Depan
-        </Link>
+        <div className="flex items-center gap-1">
+          <ThemeToggle compact />
+          <Link
+            href="/"
+            className="flex min-h-[44px] items-center gap-1.5 px-2 font-mono text-[0.625rem] uppercase tracking-[0.16em] text-ink-faint hover:text-accent transition-colors"
+          >
+            <span aria-hidden="true">&larr;</span> Depan
+          </Link>
+        </div>
       </div>
 
       {/* Fixed bottom tab bar */}

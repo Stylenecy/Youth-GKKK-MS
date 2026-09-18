@@ -55,8 +55,10 @@ export const metadata: Metadata = {
 };
 
 export const viewport: Viewport = {
-  themeColor: "#faf7f2",
-  colorScheme: "light",
+  themeColor: "#0f0a08",
+  // Both schemes are real now: dark Nocturne by default, light Warta on
+  // the committee dashboard via the theme toggle.
+  colorScheme: "dark light",
   width: "device-width",
   initialScale: 1,
   // Deliberately NOT capping maximumScale — users must be able to

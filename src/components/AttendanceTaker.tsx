@@ -132,7 +132,7 @@ export function AttendanceTaker({
                     checked={checked}
                     disabled={busy}
                     onChange={(e) => toggle(m.id, e.target.checked)}
-                    className="h-5 w-5 shrink-0 accent-[#FDBE02]"
+                    className="h-5 w-5 shrink-0 accent-accent"
                     aria-label={`Tandai ${m.nickname} hadir`}
                   />
                   <span className="min-w-0">

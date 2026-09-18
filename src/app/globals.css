@@ -20,7 +20,7 @@
    (>= 4.5:1) for normal text. Ratios are quoted inline.
    ============================================================ */
 
-@theme inline {
+@theme {
   /* --- Ground (dark surfaces) --- */
   --color-canvas: #0f0a08; /* warm near-black, the default plane */
   --color-canvas-sunk: #080505; /* recessed band, deeper than canvas */
@@ -742,4 +742,92 @@ a.card:hover .lucide {
   button.card-glass:hover {
     transform: none;
   }
+}
+
+/* ============================================================
+   Dashboard light mode — "Warta" paper, restored
+   ============================================================
+   Scope: data-theme="light" on <html>, flipped by ThemeToggle
+   (Sidebar + MobileNav). The landing page pins data-theme="dark"
+   on its own root, so this block can never touch it.
+
+   Values below are the audited Warta palette from before Nocturne
+   (retrieved from git history, ebcf7bc^) — every text pair in it
+   passed WCAG AA when it was the live design. Two tokens are new
+   since then and got light-safe values chosen by ratio, not taste:
+     --color-line:  #a2937f  (>=3:1 on white — a boundary must read
+                              as a boundary; this also answers the
+                              "borders are invisible" complaint in
+                              both modes)
+     --color-rose:  #83021c  (brand maroon — ~8:1 on white, so rose
+                              text stays legible on paper)
+   --color-deep* keep their dark values on purpose: the original
+   Warta design had exactly one dark anchor band, and dark sections
+   on a paper page are a feature, not a bug.
+
+   This only works because @theme above is NOT `inline`: utilities
+   reference var(--color-*) at runtime instead of baked hex. Do not
+   switch it back to `@theme inline` or the toggle silently dies
+   (verified against built CSS: inline bakes #0f0a08 into .bg-canvas).
+
+   Known imperfections (accepted for v1, not regressions):
+   - Hardcoded gold glows (rgba(253,190,2,…)) stay warm on paper.
+   - The dark phone bottom-bar shadow stays dark — reads as elevation.
+   ============================================================ */
+[data-theme="light"] {
+  color-scheme: light;
+  background-color: #faf7f2;
+
+  /* --- Paper (light surfaces) --- */
+  --color-canvas: #faf7f2;
+  --color-canvas-sunk: #f3eee5;
+  --color-surface: #ffffff;
+  --color-surface-2: #f3eee5;
+
+  /* --- Ink (foreground on paper; ratios vs canvas-sunk) --- */
+  --color-ink: #241f1b; /* 14.1:1 */
+  --color-ink-muted: #6f655c; /*  4.9:1 */
+  --color-ink-faint: #756a60; /*  4.6:1 */
+
+  /* --- Night (dark anchor sections — kept dark on purpose) --- */
+  --color-deep: #1c1815;
+  --color-deep-soft: #2a241f;
+  --color-on-deep: #faf7f2; /* 16.5:1 on deep */
+  --color-on-deep-muted: #a79b8e; /*  6.5:1 on deep */
+
+  /* --- Amber: the single accent --- */
+  --color-accent: #a94d08; /*  4.8:1 on canvas-sunk */
+  --color-accent-strong: #8a3d06;
+  --color-accent-on-deep: #e8a33d; /*  8.2:1 on deep */
+  --color-accent-wash: #fbeada;
+
+  /* --- Rose & maroon --- */
+  --color-rose: #83021c;
+  --color-maroon: #83021c;
+
+  /* --- Sage --- */
+  --color-sage: #4f6b44; /*  5.6:1 on canvas */
+  --color-sage-wash: #e9efe4;
+
+  /* --- Signals --- */
+  --color-warning: #8a5a10; /*  5.3:1 on canvas */
+  --color-warning-wash: #fbf0d9;
+  --color-danger: #a02c2c; /*  5.9:1 on canvas */
+  --color-danger-wash: #f8e3e3;
+
+  /* --- Rules, hairlines & object boundaries --- */
+  --color-rule: #ded4c6;
+  --color-rule-soft: #ece5da;
+  --color-line: #a2937f;
+  --color-line-accent: #a94d08;
+
+  /* --- Compatibility aliases --- */
+  --color-accent-hover: #8a3d06;
+  --color-accent-light: #fbeada;
+  --color-border: #ded4c6;
+  --color-border-light: #ece5da;
+  --color-divider: #ece5da;
+  --color-success: #4f6b44;
+  --color-glow: rgba(180, 83, 9, 0.05);
+  --color-glow-strong: rgba(180, 83, 9, 0.09);
 }
