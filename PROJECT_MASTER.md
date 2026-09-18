@@ -1316,3 +1316,97 @@ bisa mencatat sampai ditautkan. Sudah benar begitu (gagal tertutup, bukan terbuk
    → cek angka, baru `--mode sql` → jalankan ke DB.
 3. Login sebagai leader → buka satu ibadah → centang 1 nama → refresh →
    centang harus bertahan (bukti RPC + RLS jalan).
+
+---
+
+## 19 Sep 2026 (sore) — Audit besar Dex + backup + Light Mode dashboard
+
+**Sesi:** Dex via OpenCode. Dex puas dengan live saat ini tapi lapor 4 keluhan
+(isi penatalayan tak ketemu · absensi tak ketemu · daftar anggota tak jelas ·
+anggota biasa bisa jadi PIC) + minta Light Mode dashboard + backup aman.
+Budget: 2 jam, santai tapi pasti. Aturan: jangan rusak yang sudah bagus,
+GitHub = backup, live saat ini = patokan.
+
+### 0. Backup dulu sebelum sentuh apa pun
+- Slice absensi tadi dipecah jadi **5 commit** (`bd17ac3`, `6387765`,
+  `129c1bd`, `85d71de`, `27c8506`) + push — bukan 1 raksasa.
+- Tag **`baseline/live-2026-09-19` → `1be7161`** (keadaan live yang Dex nilai
+  bagus, sebelum slice absensi) + push tag. Cara kembali kalau ada yang
+  rusak: `git checkout baseline/live-2026-09-19`.
+- Sisa untracked yang SENGAJA tidak di-commit: `Jadwal Penatalayan
+  Pemuda.xlsx` (data jemaat — larangan BRIEF §0.4) + `CODEX-START-HERE.md`
+  (prompt helper lokal).
+
+### 1. Audit — 3 sub-agen paralel, semua temuan diverifikasi di disk
+- **Penatalayan: RUSAK, bukan tersembunyi.** `assignSteward`
+  (`actions/gatherings.ts:161`) **nol pemanggil UI** (dead action sejak
+  Sprint 2). `CreateEventForm`/`EditEventForm` cuma field ibadah, EmptyState
+  "Tugaskan tim…" tanpa tombol. → diperbaiki: `AssignStewardForm.tsx` (modal
+  peran + anggota, whitelist 6 peran) dipasang di Action Shelf `[id]`;
+  `assignSteward` sekarang menolak peran tak dikenal.
+- **PIC: BUG TERKONFIRMASI ujung-ke-ujung.** Client: semua profil jadi
+  `<option>` (`EditEventForm.tsx:133`, label menipu "Pilih pengurus PIC").
+  Server: `picId: z.string().min(1)` tanpa cek peran. DB: `pic_id` cuma FK,
+  `is_committee()` (0010) membatasi *penulis* event, bukan *target* PIC.
+  → diperbaiki 3 lapis (keputusan Dex: PIC = pengurus inti atau pemimpin
+  Cross aktif): dropdown hanya opsi layak (`getPicEligibleProfiles()` —
+  RPC `list_pic_eligible()`, demo = 8 leader seed) + PIC lama tetap
+  selectable supaya edit tak menghapus sejarah; server cek
+  `is_pic_eligible()` dengan pesan field; **migrasi 0013** (trigger
+  `check_event_pic` + `is_pic_eligible()` + `list_pic_eligible()`) sebagai
+  jaring terakhir — berlaku juga untuk REST/impor langsung.
+- **Direktori anggota: 5 cacat.** Tanpa cari/saring/urut prioritas · header
+  menyembunyikan alumni/inactive · kartu tanpa Cross asal ("anak siapa") ·
+  label status beda list vs detail · empty state generik. → diperbaiki:
+  form cari+saring status (server-side, 0 JS bundle), badge Cross per kartu
+  (`getProfileCrossNames()`, 1 query batch), hitungan 4 status, label
+  disatukan ("Aktif/Berhalangan/Alumni/Tidak aktif").
+- **🔴 `lib/supabase/auth.ts:16` `select("*")`** menabrak revoke `whatsapp`
+  (0006). → kolom eksplisit. Catatan jujur: fungsinya **nol pemanggil**
+  (dorman) — diperbaiki sebagai ranjau, bukan kebakaran.
+- **🔴 `updateEventStatus`** mengaudit sukses tanpa cek error (audit
+  berbohong saat RLS menolak). → cek error dulu. Juga dorman (nol
+  pemanggil) — sama, ranjau yang dicabut.
+- **🟡 Hex hardcoded** (~12 `rgba(253,190,2,…)` + `accent-[#FDBE02]` baruku).
+  Baruku diganti `accent-accent`; sisanya dekorasi glow — dicatat, tidak
+  diutak-atik (risiko desain > nilai).
+- **Positif (tidak disentuh):** semua write beraudit · `getMemberWhatsapp`
+  aman via RPC · nol `select("*")` ke profiles di `data.ts` · nol
+  `text-white`/TODO/`console.log` di dashboard.
+
+### 2. Light Mode dashboard (landing TIDAK disentuh)
+- Pin: landing root `data-theme="dark"` (`page.tsx:53`) — toggle takkan
+  pernah menyentuhnya. Toggle di footer Sidebar + top bar MobileNav
+  (`ThemeToggle`), persisten per-browser (default gelap = tampilan yang
+  dikenal), pre-paint tanpa kedip (`ThemeInitScript` + `DashboardThemeShell`
+  untuk navigasi client-side).
+- Teknik: `@theme inline` → `@theme` (terbukti dari CSS build: `inline`
+  membakar `#0f0a08` ke `.bg-canvas` sehingga override var mustahil;
+  sekarang utilitas mereferensi `var(--color-*)`). Blok
+  `[data-theme="light"]` = palet Warta teruji audit (nilai persis pra-Nocturne
+  dari git) + 2 token adaptasi berasio (`--color-line` #a2937f ≥3:1,
+  `--color-rose` = maroon ~8:1). `color-scheme` ikut flip supaya form
+  control & scrollbar terang.
+- Batasan v1 yang dicatat jujur: glow emas hardcoded tetap hangat di kertas;
+  shadow bar HP tetap gelap (terbaca sebagai elevasi).
+
+### Angka verifikasi — diukur sendiri, bukan diklaim
+- `npm test` **116/116 lulus** (dari 101; 15 baru: members 10, theme 3,
+  steward-roles 2) · `tsc --noEmit` bersih · `npm run build` hijau
+  **20 rute** (`/dashboard/members` kini dinamis — wajar, pakai searchParams)
+- CSS build dicek: `.bg-canvas` dkk mereferensi `var()` + blok
+  `[data-theme="light"]` ada — mekanisme toggle terbukti di level CSS,
+  bukan klaim.
+- 2 kegagalan tes saat pengembangan, keduanya salah hitung fixture-ku
+  ("dex" tak mengandung "a"; "Ocvianty" tak mengandung "oct") — kode benar,
+  tesnya yang dibetulkan.
+
+### 🟡 Menunggu Dex (urutan)
+1. Jalankan **0012 + 0013** di SQL Editor (CHECKLIST Langkah 1 mutakhir).
+2. Impor absensi (`--mode report` → cek → `--mode sql`).
+3. Uji klik: leader centang hadir · pengurus isi penatalayan · PIC dropdown
+   hanya pengurus · toggle terang/gelap di HP + desktop.
+4. Keputusan: **deploy produksi** (`vercel --prod`) — SENGAJA belum
+   kujalankan; live saat ini patokan backup. Konfirmasi dulu baru gas.
+5. Tunggakan non-kode: judul film final · PIC Movie Time · 28 ejaan nama
+   Excel (tetap `active`, aman).

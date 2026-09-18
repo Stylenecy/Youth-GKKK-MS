@@ -62,6 +62,11 @@ git push -u origin master
 - [ ] Copy-paste isi `supabase/migrations/0012_attendance.sql` → **Run**
   - 🔴 Tabel absensi + RPC `mark_attendance()`. Tanpa ini, kartu Kehadiran
     tidak muncul di halaman detail ibadah (kode mengecek otomatis).
+- [ ] Copy-paste isi `supabase/migrations/0013_pic_must_be_pengurus.sql` → **Run**
+  - 🔴 PIC wajib pengurus (trigger + RPC `is_pic_eligible()` /
+    `list_pic_eligible()`). Tanpa ini, dropdown PIC di web tetap
+    memfilter (aman di UI), tapi database masih menerima PIC siapa pun
+    lewat jalur langsung.
 
 **Verifikasi:**
 ```sql
