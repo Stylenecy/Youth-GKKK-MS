@@ -1266,3 +1266,53 @@ Dave bukan ancaman — statusnya MENUNGGU sejak 19 Ags, nggak pernah lihat data.
 - `npm test` **92/92 lulus** · `npx tsc --noEmit` bersih · `npm run build` hijau **20 rute**
 - Live: `/` 200 · `/login` 200 · dashboard **307 → /login** · rute ngawur **404**
 - Worktree: `PROJECT_MASTER.md` 2 baris update (ini) — aman. File absensi/migrasi tanpa UI tertinggal sebagai untracked, tidak nyentuh produksi.
+
+---
+
+## 19 Sep 2026 — Slice absensi: tick-box Kehadiran di detail ibadah
+
+**Sesi:** Dex via OpenCode. Lanjutan dari 4 file untracked (0012 + importer tanpa UI).
+
+### Audit 0012 — tidak ada temuan, tidak diubah
+Semua dependensi ada: `handle_updated_at()` (`schema.sql:49`), `is_committee()`
++ `account_approvals` (0010), `is_admin/treasurer/ministry_email` (0004/0005/0006).
+Satu catatan desain (bukan bug): `my_profile_id()` jatuh ke `auth.uid()` kalau
+admin belum menautkan login ke baris roster — leader yang belum ditautkan tidak
+bisa mencatat sampai ditautkan. Sudah benar begitu (gagal tertutup, bukan terbuka).
+
+### Yang dibangun (kode saja — migrasi live & impor tetap tunggu Dex)
+- `src/lib/attendance.ts` (baru): `AttendanceRow` + `mapAttendanceRow` (petakan,
+  jangan cast) + `canRecordAttendance()` (gate UI murni, mirror policy 0012).
+- `src/lib/types.ts`: `AttendanceRecord`.
+- `src/lib/data.ts`: `getAttendanceByEvent()` — Supabase baca `attendance`
+  (RLS 0012 sudah menyempitkan), demo mode `[]` (empty state menuntun, bukan
+  centang palsu).
+- `src/app/actions/attendance.ts` (baru): `markAttendance()` → RPC
+  `mark_attendance()` + `recordAudit("Mencatat kehadiran", ...)` + revalidate.
+  Izin asli di SQL; panggilan palsu dari DevTools dapat
+  `not_allowed_to_record`, bukan baris.
+- `src/components/AttendanceTaker.tsx` (baru): daftar centang + filter cari
+  nama, optimistik, revert kalau DB menolak, target sentuh 44px, checkbox asli
+  berlabel.
+- `src/app/dashboard/gatherings/[id]/page.tsx`: section Kehadiran — pengurus/PIC
+  lihat semua, leader hanya anggotanya sendiri (persis `leads_profile`), anggota
+  biasa tidak render apa pun, demo mode empty state "Absensi butuh Supabase".
+- `tests/attendance.test.ts` (baru): 9 tes — mapper (termasuk `present=false`
+  adalah data, bukan kekosongan), gate 5 peran, demo fallback `[]`.
+- `CHECKLIST_Dex.md` Langkah 1: tambah migrasi 0008–0012 yang tertinggal +
+  verifikasi tabel 14 → **16** (`account_approvals`, `attendance`).
+
+### Angka verifikasi — diukur sendiri, bukan diklaim
+- `npm test` **101/101 lulus** (dari 92; 9 baru) · `tsc --noEmit` bersih ·
+  `npm run build` hijau **20 rute**
+- Kelas Tailwind baru (`text-danger` dkk) sudah dipakai di kode lama — 0 token baru.
+- **Belum dijalankan:** migrasi 0012 di Supabase (butuh Dex, SQL Editor) +
+  `import_attendance.py --mode report` (butuh file xlsx + batas `--sampai`) +
+  verifikasi klik sungguhan sebagai leader.
+
+### 🟡 Menunggu Dex
+1. Jalankan 0012 di SQL Editor (CHECKLIST Langkah 1 sudah diperbarui).
+2. `python scripts/import/import_attendance.py --sampai 2026-09-18 --mode report`
+   → cek angka, baru `--mode sql` → jalankan ke DB.
+3. Login sebagai leader → buka satu ibadah → centang 1 nama → refresh →
+   centang harus bertahan (bukti RPC + RLS jalan).

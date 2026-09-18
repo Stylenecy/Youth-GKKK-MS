@@ -53,18 +53,27 @@ git push -u origin master
   - 🔴 **WAJIB sebelum Fase 3 (impor).** Tanpa ini, `profiles.id` masih terkunci
     ke `auth.users(id)` tanpa DEFAULT — INSERT anggota manapun akan gagal
     dengan foreign key violation.
+- [ ] Copy-paste isi `supabase/migrations/0008_audit_trail.sql` → **Run**
+- [ ] Copy-paste isi `supabase/migrations/0009_profile_notes.sql` → **Run**
+- [ ] Copy-paste isi `supabase/migrations/0010_close_open_signup.sql` → **Run**
+  - 🔴 Menutup pendaftaran terbuka + tabel `account_approvals`. Tanpa ini,
+    akun Google luar bisa membaca seluruh database.
+- [ ] Copy-paste isi `supabase/migrations/0011_approval_rpcs.sql` → **Run**
+- [ ] Copy-paste isi `supabase/migrations/0012_attendance.sql` → **Run**
+  - 🔴 Tabel absensi + RPC `mark_attendance()`. Tanpa ini, kartu Kehadiran
+    tidak muncul di halaman detail ibadah (kode mengecek otomatis).
 
 **Verifikasi:**
 ```sql
 SELECT table_name FROM information_schema.tables
 WHERE table_schema = 'public' ORDER BY table_name;
 ```
-Harus muncul **14 tabel**: `admin_emails`, `audit_logs`, `cross_claim_codes`,
-`cross_memberships`, `crosses`, `events`, `finance_transactions`,
-`meeting_notes`, `ministry_emails`, `monthly_themes`, `profiles`, `skills`,
-`steward_assignments`, `treasurer_emails`.
+Harus muncul **16 tabel**: `account_approvals`, `admin_emails`, `attendance`,
+`audit_logs`, `cross_claim_codes`, `cross_memberships`, `crosses`, `events`,
+`finance_transactions`, `meeting_notes`, `ministry_emails`, `monthly_themes`,
+`profiles`, `skills`, `steward_assignments`, `treasurer_emails`.
 
-Kurang dari 14 → ada migrasi yang gagal jalan, ulangi yang hilang.
+Kurang dari 16 → ada migrasi yang gagal jalan, ulangi yang hilang.
 
 ### Langkah 2: Tambah Email Nathan sebagai Bendahara
 
