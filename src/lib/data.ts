@@ -3,7 +3,7 @@ import { mapAttendanceRow } from "./attendance";
 import type {
   Profile, Event, StewardAssignment, AttendanceRecord, Cross, FinanceTransaction,
   Meeting, DashboardStats, FatigueAlert, RecentActivity, MemberStatus,
-  EventType, EventStatus, StewardStatus, FinanceType, FinanceAccount,
+  EventType, EventStatus, StewardStatus, FinanceType, FinanceAccount, AppRole,
 } from "./types";
 
 // ============================================================
@@ -712,6 +712,11 @@ export interface AccountApproval {
  * (migration 0010) is what actually stops that; this is the app-layer read so
  * the dashboard can explain the situation instead of rendering empty tables.
  *
+ * "rejected" is read from the caller's own approvals row (policy "Own
+ * approval row is readable", migration 0010) — no new migration needed. The
+ * am_i_approved() RPC stays first so an admin-email login without a row yet
+ * still counts as approved instead of pending.
+ *
  * Returns "approved" in demo mode: with no Supabase there is no real data to
  * protect, and the seed pages are meant to be browsable.
  */
@@ -723,8 +728,54 @@ export async function getMyAccountStatus(): Promise<AccountStatus> {
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return "pending";
 
-  const { data } = await supabase.rpc("am_i_approved");
-  return data === true ? "approved" : "pending";
+  const { data: approved } = await supabase.rpc("am_i_approved");
+  if (approved === true) return "approved";
+
+  const { data: row } = await supabase
+    .from("account_approvals")
+    .select("status")
+    .eq("user_id", user.id)
+    .maybeSingle();
+  return (row as { status: string } | null)?.status === "rejected"
+    ? "rejected"
+    : "pending";
+}
+
+export interface SessionInfo {
+  email: string | null;
+  displayName: string | null;
+  appRole: AppRole;
+}
+
+/**
+ * Who is signed in, for the Settings "Akun Saya" card. Separate from
+ * getCurrentProfile() because admins often have no profiles row at all
+ * (handle_new_user files an approval request, not a profile, since 0010) —
+ * this reads the session + role RPC + own approvals row instead.
+ */
+export async function getMySessionInfo(): Promise<SessionInfo | null> {
+  if (!isSupabaseConfigured()) return null;
+
+  const { createClient } = await import("./supabase/server");
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return null;
+
+  const [{ data: appRole }, { data: approval }] = await Promise.all([
+    supabase.rpc("get_my_app_role"),
+    supabase
+      .from("account_approvals")
+      .select("display_name")
+      .eq("user_id", user.id)
+      .maybeSingle(),
+  ]);
+  return {
+    email: user.email ?? null,
+    displayName:
+      (approval as { display_name: string | null } | null)?.display_name ??
+      null,
+    appRole: (appRole as AppRole) ?? "member",
+  };
 }
 
 /** The approval queue. Empty for non-admins — RLS decides, not this code. */

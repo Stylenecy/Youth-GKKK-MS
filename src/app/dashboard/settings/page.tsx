@@ -1,13 +1,25 @@
 import type { Metadata } from "next";
 import { isSupabaseConfigured } from "@/lib/supabase/env";
+import { getMySessionInfo } from "@/lib/data";
+import type { AppRole } from "@/lib/types";
 import { PageHeader, DataPoint } from "@/components/page-parts";
 import { AccountApprovals } from "@/components/AccountApprovals";
+import { SignOutButton } from "@/components/SignOutButton";
 import { Settings, Shield, Database, Lock, Globe, CheckCircle2 } from "lucide-react";
 
 export const metadata: Metadata = { title: "Pengaturan Sistem" };
 
-export default function SettingsPage() {
+const ROLE_LABELS: Record<AppRole, string> = {
+  admin: "Pengurus Inti (Admin)",
+  treasurer: "Bendahara",
+  leader: "Pemimpin Cross",
+  ministry: "Tim Ibadah",
+  member: "Anggota",
+};
+
+export default async function SettingsPage() {
   const live = isSupabaseConfigured();
+  const session = await getMySessionInfo();
 
   return (
     <div className="px-5 py-7 sm:px-8 sm:py-9">
@@ -20,6 +32,44 @@ export default function SettingsPage() {
       <div className="mt-8 space-y-6">
         {/* Admin-only: empty for everyone else, because RLS returns no rows. */}
         <AccountApprovals />
+        {/* Who is signed in — role shown here so nobody has to guess. */}
+        {session && (
+          <section
+            className="rounded-2xl border border-line/40 bg-surface/75 p-6 backdrop-blur-xl shadow-sm sm:p-7"
+            aria-labelledby="account-heading"
+          >
+            <div className="flex items-center justify-between border-b border-rule-soft pb-3">
+              <div className="flex items-center gap-2">
+                <span className="h-1.5 w-1.5 rounded-full bg-accent" />
+                <h2
+                  id="account-heading"
+                  className="font-mono text-xs font-bold uppercase tracking-[0.2em] text-accent"
+                >
+                  ( AKUN SAYA )
+                </h2>
+              </div>
+            </div>
+
+            <dl className="mt-6 grid gap-x-8 gap-y-3 sm:grid-cols-2 border-t border-rule-soft pt-4">
+              <DataPoint
+                label="Masuk Sebagai"
+                value={
+                  session.displayName && session.email
+                    ? `${session.displayName} (${session.email})`
+                    : (session.displayName ?? session.email ?? "—")
+                }
+              />
+              <DataPoint
+                label="Peran"
+                value={ROLE_LABELS[session.appRole] ?? session.appRole}
+              />
+            </dl>
+
+            <div className="mt-6 max-w-xs">
+              <SignOutButton label="Keluar" />
+            </div>
+          </section>
+        )}
         {/* Connection Status Card */}
         <section
           className="rounded-2xl border border-line/40 bg-surface/75 p-6 backdrop-blur-xl shadow-sm sm:p-7"

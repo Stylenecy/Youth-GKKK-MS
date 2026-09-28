@@ -15,7 +15,7 @@ export default async function DashboardLayout({
   // unapproved visitor gets an explanation instead of rows of empty tables.
   const accountStatus = await getMyAccountStatus();
   if (accountStatus !== "approved") {
-    return <PendingApproval />;
+    return <PendingApproval status={accountStatus} />;
   }
 
   // ThemeInitScript applies the stored theme before first paint;

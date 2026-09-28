@@ -111,12 +111,14 @@ export default async function LoginPage({
               className="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-accent to-transparent opacity-70"
             />
 
-            {error === "oauth" && (
+            {(error === "oauth" || error === "auth") && (
               <div
                 role="alert"
                 className="mb-5 rounded-xl border border-danger/40 bg-danger-wash p-3.5 text-xs text-danger"
               >
-                Gagal memproses autentikasi Google. Silakan coba kembali beberapa saat lagi.
+                {error === "oauth"
+                  ? "Gagal memproses autentikasi Google. Silakan coba kembali beberapa saat lagi."
+                  : "Sesi Google gagal ditukar dengan sesi aplikasi (mis. tautan kedaluwarsa atau dibatalkan). Silakan klik tombol Google sekali lagi."}
               </div>
             )}
 
