@@ -1508,3 +1508,8 @@ Opsi (a/b/c) tetap di catatan 0007 — jangan di-code-fix diam-diam.
 - Sisa Inggris dibersihkan ("(mock)", "Bypass", "Fatigue Alert").
 
 Verifikasi: `tsc` bersih · 116/116 tes · build hijau.
+
+### Deploy batch kuning — live 28 Sep malam
+`vercel --prod` (build 26s, Ready 51s). Produksi dicek: `/` 200 ·
+`/login` 200 · 9 dashboard → login · robots/sitemap 200 · ngawur 404.
+Error ramah + gate tombol + 44px sekarang live.
