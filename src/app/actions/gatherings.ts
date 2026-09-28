@@ -204,18 +204,53 @@ export async function assignSteward(eventId: string, profileId: string, role: st
   if (isSupabaseConfigured()) {
     const { createClient } = await import("@/lib/supabase/server");
     const supabase = await createClient();
-    const { error } = await supabase.from("steward_assignments").insert({
+    const { data: created, error } = await supabase.from("steward_assignments").insert({
       event_id: eventId,
       profile_id: profileId,
       role,
       status: "assigned",
-    });
+    }).select("id").single();
     if (error) return { success: false, error: friendlyDbError(error.message) };
 
     await recordAudit("Menugaskan penatalayan", "steward_assignment", eventId, {
       after: { role },
     });
+    revalidatePath(`/dashboard/gatherings/${eventId}`);
+    revalidatePath("/dashboard/penatalayan");
+    return { success: true, id: created?.id ?? null };
   }
   revalidatePath(`/dashboard/gatherings/${eventId}`);
+  revalidatePath("/dashboard/penatalayan");
+  return { success: true, id: null };
+}
+
+/**
+ * Undo a just-made assignment (toast "Batalkan").
+ *
+ * Hard delete, bukan soft: barisnya berumur detik dan salah input — tidak
+ * ada sejarah yang layak dipertahankan. Butuh migrasi 0014 (committee
+ * boleh DELETE steward_assignments); tanpa itu RLS menolak dengan pesan
+ * ramah, bukan kebocoran.
+ */
+export async function removeStewardAssignment(id: string, eventId: string) {
+  if (typeof id !== "string" || id.trim() === "") {
+    return { success: false, error: "Data penugasan tidak valid." };
+  }
+
+  if (isSupabaseConfigured()) {
+    const { createClient } = await import("@/lib/supabase/server");
+    const supabase = await createClient();
+    const { error } = await supabase
+      .from("steward_assignments")
+      .delete()
+      .eq("id", id);
+    if (error) return { success: false, error: friendlyDbError(error.message) };
+
+    await recordAudit("Membatalkan penugasan", "steward_assignment", eventId, {
+      after: { removedId: id },
+    });
+  }
+  revalidatePath(`/dashboard/gatherings/${eventId}`);
+  revalidatePath("/dashboard/penatalayan");
   return { success: true };
 }

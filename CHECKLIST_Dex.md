@@ -67,6 +67,9 @@ git push -u origin master
     `list_pic_eligible()`). Tanpa ini, dropdown PIC di web tetap
     memfilter (aman di UI), tapi database masih menerima PIC siapa pun
     lewat jalur langsung.
+- [ ] Copy-paste isi `supabase/migrations/0014_committee_manage_stewards.sql` → **Run**
+  - 🔴 Undo/batalkan + (nanti) edit/hapus penatalayan. Tanpa ini, toast
+    "Batalkan" sesudah menugaskan selalu ditolak RLS.
 
 **Verifikasi:**
 ```sql

@@ -1547,6 +1547,17 @@ pasti bingung**. IMK di atas kecanggihan.
 - **Shortcut presensi per kolom — DITAHAN** sampai penjadwalan beres
   (instruksi Dex 29 Sep).
 
+### Upgrade 1+2 spek IMK AI-lain — dibangun 29 Sep (`lib/stewards.ts`)
+- Dropdown kandidat: nama lengkap + Cross + `N×/30 hari`, urut ringan-dulu,
+  overload ⚠️ tanpa blokir ("Tetap jadwalkan" + "Pilih orang lain"), away
+  disabled saat dicari, null ≠ 0.
+- Sel papan: `Role x/y` + Kurang/Lengkap/Lebih + tombol +Tambah per sel
+  (preset peran+tanggal). Angka slot: WL 1, Singer 2, Pemusik 2 (fleksibel
+  2–4, lebih tak diblok), Multimedia 1, Sound 1, Usher 2 (Dex 29 Sep).
+- Toast sticky "X ditetapkan [Batalkan]" (undo = hard delete baris umur-detik).
+- **Butuh Dex:** migrasi `0014` (committee UPDATE+DELETE steward) — tanpa itu
+  Batalkan ditolak RLS. Ganti/hapus level chip = Fase 2b (tertunda).
+
 ### Aturan main papan (dari cara Grace/Nita bekerja)
 - Satuan kolom = Sabtu ibadah (tanggal + tema), bukan minggu kalender abstrak.
 - Baris = 6 peran (`WL, Singer, Pemusik, Multimedia, Sound, Usher`).

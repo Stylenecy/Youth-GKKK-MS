@@ -10,6 +10,7 @@ import {
   getCrossMembers,
   getPicEligibleProfiles,
   getMySessionInfo,
+  getProfileCrossNames,
 } from "@/lib/data";
 import type { StewardAssignment } from "@/lib/types";
 import { canRecordAttendance } from "@/lib/attendance";
@@ -56,7 +57,7 @@ export default async function GatheringDetailPage({
   const event = await getEventById(id);
   if (!event) notFound();
 
-  const [profiles, stewards, attendance, current, leaderCrossIds, picEligible, session] =
+  const [profiles, stewards, attendance, current, leaderCrossIds, picEligible, session, crossNames] =
     await Promise.all([
       getProfiles(),
       getStewardsByEvent(id),
@@ -65,6 +66,7 @@ export default async function GatheringDetailPage({
       getMyLeaderCrossIds(),
       getPicEligibleProfiles(),
       getMySessionInfo(),
+      getProfileCrossNames(),
     ]);
 
   const pic = profiles.find((p) => p.id === event.picId);
@@ -151,8 +153,13 @@ export default async function GatheringDetailPage({
       {/* Action Shelf — committee only (see canManage above) */}
       {canManage && (
         <div className="mt-6 flex flex-wrap items-center gap-3 border-t border-rule-soft pt-6">
-          <EditEventForm event={event} profiles={picOptions} />
-          <AssignStewardForm eventId={id} profiles={profiles} />
+        <EditEventForm event={event} profiles={picOptions} />
+        <AssignStewardForm
+          eventId={id}
+          eventLabel={formatFullDate(event.date)}
+          profiles={profiles}
+          crossNames={crossNames}
+        />
           {event.status === "archived" ? (
             <ConfirmAction
               label="Pulihkan Ibadah"

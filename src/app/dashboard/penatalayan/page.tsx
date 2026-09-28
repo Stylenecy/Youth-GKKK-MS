@@ -6,12 +6,14 @@ import {
   getProfiles,
   getStewardsByEvent,
   getMySessionInfo,
+  getProfileCrossNames,
 } from "@/lib/data";
 import {
   isOverloaded,
   FATIGUE_THRESHOLD,
   FATIGUE_WINDOW_DAYS,
 } from "@/lib/fatigue";
+import { slotStatus } from "@/lib/stewards";
 import { STEWARD_ROLES } from "@/lib/validation";
 import { PageHeader, EmptyState, Monogram } from "@/components/page-parts";
 import { AssignStewardForm } from "@/components/AssignStewardForm";
@@ -41,10 +43,11 @@ const MAX_PAST = 4;
  * Fase 2 (saran otomatis/acak/AI) SENGAJA belum ada — lihat PROJECT_MASTER.
  */
 export default async function PenatalayanPage() {
-  const [events, profiles, session] = await Promise.all([
+  const [events, profiles, session, crossNames] = await Promise.all([
     getEvents(),
     getProfiles(),
     getMySessionInfo(),
+    getProfileCrossNames(),
   ]);
 
   const now = Date.now();
@@ -195,7 +198,12 @@ export default async function PenatalayanPage() {
                         </Link>
                         {canManage && !isPast && (
                           <div className="mt-2 [&_button]:text-xs [&_button]:px-3 [&_button]:py-1.5">
-                            <AssignStewardForm eventId={e.id} profiles={profiles} />
+                            <AssignStewardForm
+                              eventId={e.id}
+                              eventLabel={formatWeekdayDayMonth(e.date)}
+                              profiles={profiles}
+                              crossNames={crossNames}
+                            />
                           </div>
                         )}
                       </th>
@@ -211,18 +219,35 @@ export default async function PenatalayanPage() {
                       >
                         {role}
                       </th>
-                      {columns.map(({ event: e }, colIdx) => {
+                      {columns.map(({ event: e, isPast }, colIdx) => {
                         const stewards = (stewardsPerEvent[colIdx] ?? []).filter(
                           (s) => s.role === role && s.status !== "replaced"
                         );
+                        const slot = slotStatus(role, stewards.length);
                         return (
                           <td key={e.id} className="p-3 align-top">
+                            <p
+                              className={`font-mono text-xs font-bold ${
+                                slot.tone === "full" || slot.tone === "over"
+                                  ? "text-ink-muted"
+                                  : "text-accent"
+                              }`}
+                            >
+                              {slot.head}
+                            </p>
+                            <p
+                              className={`text-[0.6875rem] ${
+                                slot.tone === "full" ? "text-sage" : "text-ink-faint"
+                              }`}
+                            >
+                              {slot.sub}
+                            </p>
                             {stewards.length === 0 ? (
-                              <span className="text-ink-faint" aria-label={`Belum ada ${role}`}>
-                                —
-                              </span>
+                              <p className="mt-2 text-xs text-ink-faint">
+                                Belum ada penatalayan
+                              </p>
                             ) : (
-                              <ul className="space-y-1.5">
+                              <ul className="mt-2 space-y-1.5">
                                 {stewards.map((s) => {
                                   const hot = isOverloaded(loadOf(s.profileId));
                                   return (
@@ -245,6 +270,19 @@ export default async function PenatalayanPage() {
                                   );
                                 })}
                               </ul>
+                            )}
+                            {canManage && !isPast && (
+                              <div className="mt-2">
+                                <AssignStewardForm
+                                  eventId={e.id}
+                                  eventLabel={formatWeekdayDayMonth(e.date)}
+                                  profiles={profiles}
+                                  crossNames={crossNames}
+                                  presetRole={role}
+                                  buttonLabel="+ Tambah"
+                                  compact
+                                />
+                              </div>
                             )}
                           </td>
                         );
