@@ -1464,3 +1464,8 @@ Sengaja TIDAK disentuh: dead code `auth.ts`/`updateEventStatus` (rina, tak
 berdampak), ubah/hapus penatalayan + CRUD notulen (fitur baru, butuh spek Dex).
 
 Verifikasi: `tsc` bersih · 116/116 tes · build hijau.
+
+### Deploy batch kecil — live 28 Sep sore
+`vercel --prod` (build 21s, Ready 51s, alias `youth-gkkk-ms.vercel.app`).
+Produksi dicek sendiri: `/` 200 · `/login` 200 · 9 dashboard → login ·
+`robots.txt`/`sitemap.xml` 200 · ngawur 404. Batch auth-UX sekarang live.
