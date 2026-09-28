@@ -1541,7 +1541,11 @@ pasti bingung**. IMK di atas kecanggihan.
   3. **AI kecil**: Grace/Nita bertanya ("siapa cocok WL minggu depan?") →
      dijawab + bisa langsung diterapkan/shuffle di web. Catatan: butuh API key,
      biaya, dan privasi data — desain dulu, eksekusi nanti.
-- **Fase 3 (wacana):** kalender bodily? Tidak — cukup 3 fase di atas.
+- **Fase 1b (29 Sep, dibangun):** kolom riwayat 4 Sabtu ke belakang di papan
+  (read-only, tanpa tombol isi) — jawaban atas "pengurus tetap bisa melihat
+  yang sudah-sudah".
+- **Shortcut presensi per kolom — DITAHAN** sampai penjadwalan beres
+  (instruksi Dex 29 Sep).
 
 ### Aturan main papan (dari cara Grace/Nita bekerja)
 - Satuan kolom = Sabtu ibadah (tanggal + tema), bukan minggu kalender abstrak.

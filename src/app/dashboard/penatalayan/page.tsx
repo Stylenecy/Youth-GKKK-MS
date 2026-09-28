@@ -25,7 +25,11 @@ export const metadata: Metadata = { title: "Papan Penatalayan" };
 
 /** Berapa Sabtu ke depan yang muat di papan. Spreadsheet tim ibadah
  *  biasanya merencanakan sebulan — 6 kolom cukup tanpa scroll gila. */
-const MAX_COLUMNS = 6;
+const MAX_UPCOMING = 6;
+/** Riwayat ke belakang: justru ini yang ditanya Grace & Nita setiap
+ *  menyusun ("si X sudah WL minggu ke-1, jangan dipakai minggu ke-4").
+ *  Read-only — koreksi riwayat tetap lewat halaman detail. */
+const MAX_PAST = 4;
 
 /**
  * Papan Penatalayan — cermin spreadsheet tim ibadah (Grace & Nita).
@@ -47,10 +51,20 @@ export default async function PenatalayanPage() {
   const upcoming = events
     .filter((e) => new Date(e.date).getTime() >= now)
     .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())
-    .slice(0, MAX_COLUMNS);
+    .slice(0, MAX_UPCOMING);
+  const past = events
+    .filter((e) => new Date(e.date).getTime() < now)
+    .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
+    .slice(0, MAX_PAST)
+    .reverse();
+  // Satu garis waktu kiri-ke-kanan: riwayat dulu, baru rencana.
+  const columns = [
+    ...past.map((event) => ({ event, isPast: true })),
+    ...upcoming.map((event) => ({ event, isPast: false })),
+  ];
 
   const stewardsPerEvent = await Promise.all(
-    upcoming.map((e) => getStewardsByEvent(e.id))
+    columns.map((c) => getStewardsByEvent(c.event.id))
   );
 
   // Tombol isi hanya untuk pengurus (RLS events = committee). Sisanya
@@ -75,10 +89,10 @@ export default async function PenatalayanPage() {
       <PageHeader
         kicker="PERENCANAAN"
         title="Papan Penatalayan"
-        meta={`${upcoming.length} Sabtu ke depan · merah = sudah >${FATIGUE_THRESHOLD}× dalam ${FATIGUE_WINDOW_DAYS} hari`}
+        meta={`${past.length} riwayat · ${upcoming.length} mendatang · merah = sudah >${FATIGUE_THRESHOLD}× dalam ${FATIGUE_WINDOW_DAYS} hari`}
       />
 
-      {upcoming.length === 0 ? (
+      {columns.length === 0 ? (
         <div className="mt-8">
           <EmptyState
             title="Belum ada ibadah mendatang"
@@ -153,8 +167,8 @@ export default async function PenatalayanPage() {
                     >
                       Peran
                     </th>
-                    {upcoming.map((e, i) => (
-                      <th key={e.id} scope="col" className="min-w-44 p-4 text-left align-top">
+                    {columns.map(({ event: e, isPast }) => (
+                      <th key={e.id} scope="col" className={`min-w-44 p-4 text-left align-top ${isPast ? "opacity-70" : ""}`}>
                         <Link
                           href={`/dashboard/gatherings/${e.id}`}
                           className="group block rounded-xl transition-colors hover:bg-surface-2/60 p-1 -m-1"
@@ -166,6 +180,11 @@ export default async function PenatalayanPage() {
                             <span className="font-mono text-xs font-bold uppercase text-accent">
                               {formatMonthShort(e.date)}
                             </span>
+                            {isPast && (
+                              <span className="font-mono text-[0.625rem] uppercase tracking-wider text-ink-faint">
+                                · lewat
+                              </span>
+                            )}
                           </span>
                           <span className="mt-1 block truncate text-xs font-semibold text-ink">
                             {e.weeklyTheme}
@@ -174,12 +193,11 @@ export default async function PenatalayanPage() {
                             {formatWeekdayDayMonth(e.date)}
                           </span>
                         </Link>
-                        {canManage && (
+                        {canManage && !isPast && (
                           <div className="mt-2 [&_button]:text-xs [&_button]:px-3 [&_button]:py-1.5">
                             <AssignStewardForm eventId={e.id} profiles={profiles} />
                           </div>
                         )}
-                        <span className="sr-only">{`Kolom ${i + 1}`}</span>
                       </th>
                     ))}
                   </tr>
@@ -193,8 +211,8 @@ export default async function PenatalayanPage() {
                       >
                         {role}
                       </th>
-                      {upcoming.map((e) => {
-                        const stewards = (stewardsPerEvent[upcoming.indexOf(e)] ?? []).filter(
+                      {columns.map(({ event: e }, colIdx) => {
+                        const stewards = (stewardsPerEvent[colIdx] ?? []).filter(
                           (s) => s.role === role && s.status !== "replaced"
                         );
                         return (
@@ -240,7 +258,8 @@ export default async function PenatalayanPage() {
             <p className="mt-4 text-xs leading-relaxed text-ink-muted">
               Merah = orang itu sudah melayani &gt;{FATIGUE_THRESHOLD}&times; dalam{" "}
               {FATIGUE_WINDOW_DAYS} hari terakhir — pertimbangkan orang lain dulu.
-              Angka dihitung dari tanggal ibadah. Klik tanggal untuk buka detail
+              Angka dihitung dari tanggal ibadah. Kolom "lewat" = riwayat
+              (tidak bisa diisi dari sini). Klik tanggal untuk buka detail
               (ubah, arsip, absensi).
             </p>
           </section>
