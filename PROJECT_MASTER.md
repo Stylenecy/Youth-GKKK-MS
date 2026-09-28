@@ -1410,3 +1410,30 @@ GitHub = backup, live saat ini = patokan.
    kujalankan; live saat ini patokan backup. Konfirmasi dulu baru gas.
 5. Tunggakan non-kode: judul film final · PIC Movie Time · 28 ejaan nama
    Excel (tetap `active`, aman).
+
+---
+
+## 28 Sep 2026 — Deploy produksi (semua slice 19 Sep sore live)
+
+**Sesi:** Dex via OpenCode. Dex gas deploy setelah `vercel login`.
+
+### Persiapan
+- `.vercelignore` + `.gitignore`: tambah `Rapat/` + `*.xlsx` (jadwal penatalayan
+  & notulen rapat sebelumnya ikut ke-upload ke infra build). Commit `95cca5a`,
+  push ke `origin/master`.
+- Backup tetap: tag `baseline/live-2026-09-19` → `1be7161` (cara kembali kalau
+  ada yang rusak).
+
+### Angka verifikasi — diukur sendiri, bukan diklaim
+- Lokal: `npm test` **116/116 lulus** · `tsc --noEmit` bersih ·
+  `npm run build` hijau **20 rute**
+- Vercel: build 41s, `✓ Ready`, alias `https://youth-gkkk-ms.vercel.app`
+- Produksi dicek sendiri: `/` 200 · `/login` 200 (tombol Google render) ·
+  9 rute dashboard → halaman login (gate aman) · `robots.txt` 200 ·
+  `sitemap.xml` 200 · rute ngawur **404**
+
+### 🟡 Menunggu Dex (urut)
+1. Verifikasi SQL 0012+0013 (3 query, ada di chat 28 Sep).
+2. Uji klik login: centang absensi → refresh bertahan · dropdown PIC cuma
+   pengurus · toggle terang/gelap HP + desktop.
+3. Tunggakan non-kode lama: judul film final · PIC Movie Time · 28 ejaan Excel.
