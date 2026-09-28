@@ -1469,3 +1469,42 @@ Verifikasi: `tsc` bersih · 116/116 tes · build hijau.
 `vercel --prod` (build 21s, Ready 51s, alias `youth-gkkk-ms.vercel.app`).
 Produksi dicek sendiri: `/` 200 · `/login` 200 · 9 dashboard → login ·
 `robots.txt`/`sitemap.xml` 200 · ngawur 404. Batch auth-UX sekarang live.
+
+---
+
+## 28 Sep 2026 (sore) — Audit putaran 2 + batch kuning
+
+**Sesi:** Dex via OpenCode (Dex ngetes live paralel). 3 agen + cek bukti langsung.
+
+### Vonis batch kemarin: 7/7 OK, nol regresi
+
+### 🔴 2 temuan butuh SQL Dex (kode tak bisa)
+1. **Isi penatalayan mati total** — tidak ada policy INSERT di
+   `steward_assignments` (cuma SELECT + UPDATE). SQL:
+   `DROP POLICY IF EXISTS "Committee can insert steward assignments" ...;
+   CREATE POLICY ... FOR INSERT WITH CHECK (public.is_committee());`
+   (lengkap di chat 28 Sep sore).
+2. **Kas terbaca semua approved** — Dex pilih Opsi A (admin+bendahara). SQL:
+   `DROP POLICY "Finance readable by approved accounts" ...;
+   CREATE POLICY "Finance readable by admin and treasurer" ...
+   USING (is_admin_email(...) OR is_treasurer_email(...))` (lengkap di chat).
+
+### Koreksi jujur: klaim "tombol Ekspor 404" SALAH — `export/route.ts` ada.
+Agen boleh salah, bukti menang.
+
+### Temuan identitas (DITUNDA, ranah Dex — documented 0007)
+Akun login setelah 0010 tak punya baris profiles uid (trigger baru cuma
+mengajukan approval). Gate peran UI fail-closed (aman), RLS tetap menegakkan.
+Opsi (a/b/c) tetap di catatan 0007 — jangan di-code-fix diam-diam.
+
+### Batch kuning `d8ced9e` (push, belum deploy)
+- `lib/db-errors.ts` baru: semua action pakai pesan Indonesia ramah
+  (mentah → Vercel logs, bukan layar). `cross.ts` disatukan ke sini.
+- Tombol tulis digate peran (keuangan: bendahara/admin; ibadah: pengurus),
+  halaman keuangan mode-baca dapat banner jujur. Demo tetap full preview.
+- `AssignStewardForm` anti-double-submit; tombol ikon 36→44px.
+- `*.csv` di-ignore (dua file). `*.txt` SENGAJA tidak — yang tracked cuma
+  catatan dev, Rapat/ sudah ke-cover.
+- Sisa Inggris dibersihkan ("(mock)", "Bypass", "Fatigue Alert").
+
+Verifikasi: `tsc` bersih · 116/116 tes · build hijau.
