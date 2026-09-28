@@ -1,19 +1,26 @@
 import { isOverloaded } from "./fatigue";
 import type { StewardRole } from "./validation";
 
+export interface SlotNeed {
+  /** Minimal tampil "Kurang n" di bawah ini. */
+  min: number;
+  /** null = tak terbatas (Pemusik 2–4 tergantung acara & siapa bisa). */
+  max: number | null;
+}
+
 /**
  * Kebutuhan orang per peran per Sabtu — konfigurasi aplikasi, BUKAN kolom
- * DB (kebutuhan mingguan stabil, tak layak jadi skema). Angka dari Dex
- * 29 Sep 2026: Pemusik 2–4 tergantung acara (piano/gitar/bass/drum) dan
- * siapa bisa — target 2, lebihnya BOLEH dan dilabeli "Lebih n", tak diblok.
+ * DB (kebutuhan mingguan stabil, tak layak jadi skema). Angka dari Dex:
+ * WL 1, Singer 2, Pemusik min 1 / maks tak terbatas, Multimedia 1,
+ * Sound 1, Usher 2 (29 Sep 2026).
  */
-export const SLOT_NEEDS: Record<StewardRole, number> = {
-  WL: 1,
-  Singer: 2,
-  Pemusik: 2,
-  Multimedia: 1,
-  Sound: 1,
-  Usher: 2,
+export const SLOT_NEEDS: Record<StewardRole, SlotNeed> = {
+  WL: { min: 1, max: 1 },
+  Singer: { min: 2, max: 2 },
+  Pemusik: { min: 1, max: null },
+  Multimedia: { min: 1, max: 1 },
+  Sound: { min: 1, max: 1 },
+  Usher: { min: 2, max: 2 },
 };
 
 export type SlotTone = "empty" | "partial" | "full" | "over";
@@ -33,21 +40,31 @@ export interface SlotStatus {
 export function slotStatus(
   role: StewardRole,
   filled: number,
-  need: number = SLOT_NEEDS[role]
+  need: SlotNeed = SLOT_NEEDS[role]
 ): SlotStatus {
+  if (need.max === null) {
+    // Tanpa batas atas: "Pemusik 3 · Cukup".
+    if (filled < need.min)
+      return {
+        head: `${role} ${filled}`,
+        sub: `Kurang ${need.min - filled}`,
+        tone: filled <= 0 ? "empty" : "partial",
+      };
+    return { head: `${role} ${filled}`, sub: "Cukup", tone: "full" };
+  }
   if (filled <= 0)
-    return { head: `${role} 0/${need}`, sub: `Kurang ${need}`, tone: "empty" };
-  if (filled < need)
+    return { head: `${role} 0/${need.max}`, sub: `Kurang ${need.max}`, tone: "empty" };
+  if (filled < need.max)
     return {
-      head: `${role} ${filled}/${need}`,
-      sub: `Kurang ${need - filled}`,
+      head: `${role} ${filled}/${need.max}`,
+      sub: `Kurang ${need.max - filled}`,
       tone: "partial",
     };
-  if (filled === need)
-    return { head: `${role} ${filled}/${need}`, sub: "Lengkap", tone: "full" };
+  if (filled === need.max)
+    return { head: `${role} ${filled}/${need.max}`, sub: "Lengkap", tone: "full" };
   return {
-    head: `${role} ${filled}/${need}`,
-    sub: `Lebih ${filled - need}`,
+    head: `${role} ${filled}/${need.max}`,
+    sub: `Lebih ${filled - need.max}`,
     tone: "over",
   };
 }

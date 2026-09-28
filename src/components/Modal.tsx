@@ -86,13 +86,14 @@ export function Modal({
         className="fixed inset-0 h-full w-full cursor-default bg-canvas/80 backdrop-blur-md transition-opacity"
       />
 
-      {/* Modal Dialog Card */}
+      {/* Modal Dialog Card — max-h + scroll dalam: konten panjang
+          (combobox kandidat) tidak boleh mendorong tombol keluar layar. */}
       <div
         ref={panelRef}
         role="dialog"
         aria-modal="true"
         aria-labelledby={titleId}
-        className="relative z-10 my-0 w-full max-w-lg overflow-hidden rounded-t-3xl border border-line-accent/40 bg-surface/95 p-6 pb-[max(1.5rem,env(safe-area-inset-bottom))] shadow-[0_24px_64px_rgba(0,0,0,0.8),0_0_32px_rgba(253,190,2,0.1)] backdrop-blur-2xl transition-all sm:my-8 sm:rounded-2xl sm:p-7"
+        className="relative z-10 my-0 max-h-[92dvh] w-full max-w-lg overflow-y-auto rounded-t-3xl border border-line-accent/40 bg-surface/95 p-6 pb-[max(1.5rem,env(safe-area-inset-bottom))] shadow-[0_24px_64px_rgba(0,0,0,0.8),0_0_32px_rgba(253,190,2,0.1)] backdrop-blur-2xl transition-all sm:my-8 sm:rounded-2xl sm:p-7"
       >
         {/* Subtle Top Accent Beam */}
         <div

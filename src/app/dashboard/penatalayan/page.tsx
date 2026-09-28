@@ -1,4 +1,3 @@
-import Link from "next/link";
 import type { Metadata } from "next";
 import { ClipboardList } from "lucide-react";
 import {
@@ -9,38 +8,27 @@ import {
   getProfileCrossNames,
 } from "@/lib/data";
 import {
-  isOverloaded,
   FATIGUE_THRESHOLD,
   FATIGUE_WINDOW_DAYS,
 } from "@/lib/fatigue";
-import { slotStatus } from "@/lib/stewards";
-import { STEWARD_ROLES } from "@/lib/validation";
 import { PageHeader, EmptyState, Monogram } from "@/components/page-parts";
-import { AssignStewardForm } from "@/components/AssignStewardForm";
+import { isOverloaded } from "@/lib/fatigue";
 import {
   formatDayNumber,
   formatMonthShort,
   formatWeekdayDayMonth,
 } from "@/lib/datetime";
+import { PenatalayanBoard, type BoardColumn } from "@/components/PenatalayanBoard";
 
 export const metadata: Metadata = { title: "Papan Penatalayan" };
 
-/** Berapa Sabtu ke depan yang muat di papan. Spreadsheet tim ibadah
- *  biasanya merencanakan sebulan — 6 kolom cukup tanpa scroll gila. */
-const MAX_UPCOMING = 6;
-/** Riwayat ke belakang: justru ini yang ditanya Grace & Nita setiap
- *  menyusun ("si X sudah WL minggu ke-1, jangan dipakai minggu ke-4").
- *  Read-only — koreksi riwayat tetap lewat halaman detail. */
+/** Cermin spreadsheet tim ibadah: 4 riwayat ke belakang + 6 rencana. */
 const MAX_PAST = 4;
+const MAX_UPCOMING = 6;
 
 /**
- * Papan Penatalayan — cermin spreadsheet tim ibadah (Grace & Nita).
- *
- * Baris = 6 peran, kolom = Sabtu ibadah mendatang. Satu pandang harus
- * menjawab: "si X sudah pelayanan berapa kali, aman ditugaskan lagi?"
- * Sel merah = orang itu sudah > ambang 30 hari. Isi lewat tombol per
- * kolom (pakai AssignStewardForm yang sama dengan halaman detail).
- * Fase 2 (saran otomatis/acak/AI) SENGAJA belum ada — lihat PROJECT_MASTER.
+ * Papan Penatalayan — halaman ini server (data), gridnya
+ * <PenatalayanBoard> (interaksi: semua ↔ fokus-banding).
  */
 export default async function PenatalayanPage() {
   const [events, profiles, session, crossNames] = await Promise.all([
@@ -60,28 +48,33 @@ export default async function PenatalayanPage() {
     .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
     .slice(0, MAX_PAST)
     .reverse();
-  // Satu garis waktu kiri-ke-kanan: riwayat dulu, baru rencana.
-  const columns = [
-    ...past.map((event) => ({ event, isPast: true })),
-    ...upcoming.map((event) => ({ event, isPast: false })),
-  ];
 
+  const ordered = [...past, ...upcoming];
   const stewardsPerEvent = await Promise.all(
-    columns.map((c) => getStewardsByEvent(c.event.id))
+    ordered.map((e) => getStewardsByEvent(e.id))
   );
 
-  // Tombol isi hanya untuk pengurus (RLS events = committee). Sisanya
-  // dapat papan baca. Demo (session null) tetap full preview.
+  const columns: BoardColumn[] = ordered.map((e, i) => ({
+    id: e.id,
+    dayNum: formatDayNumber(e.date),
+    monthShort: formatMonthShort(e.date),
+    weekdayLabel: formatWeekdayDayMonth(e.date),
+    theme: e.weeklyTheme,
+    eventLabel: formatWeekdayDayMonth(e.date),
+    isPast: new Date(e.date).getTime() < now,
+    stewards: (stewardsPerEvent[i] ?? []).map((s) => ({
+      id: s.id,
+      profileId: s.profileId,
+      role: s.role,
+      status: s.status,
+    })),
+  }));
+
   const canManage =
     !session ||
     session.appRole === "admin" ||
     session.appRole === "treasurer" ||
     session.appRole === "ministry";
-
-  const byId = new Map(profiles.map((p) => [p.id, p]));
-  const loadOf = (profileId: string) => byId.get(profileId)?.serviceCount30d ?? 0;
-  const nameOf = (profileId: string) =>
-    byId.get(profileId)?.nickname ?? "—";
 
   const loaded = profiles
     .filter((p) => p.serviceCount30d > 0)
@@ -98,14 +91,13 @@ export default async function PenatalayanPage() {
       {columns.length === 0 ? (
         <div className="mt-8">
           <EmptyState
-            title="Belum ada ibadah mendatang"
+            title="Belum ada ibadah terjadwal"
             body="Tambahkan jadwal dulu di halaman Ibadah — papan ini terisi sendiri begitu ada Sabtu yang terjadwal."
             icon={ClipboardList}
           />
         </div>
       ) : (
         <>
-          {/* Beban 30 hari: siapa sudah berapa kali, sekilas */}
           <section aria-labelledby="beban-heading" className="mt-8">
             <div className="flex items-center gap-2 border-b border-rule-soft pb-3">
               <span className="h-1.5 w-1.5 rounded-full bg-accent" />
@@ -148,7 +140,6 @@ export default async function PenatalayanPage() {
             )}
           </section>
 
-          {/* Grid peran × Sabtu */}
           <section aria-labelledby="papan-heading" className="mt-10">
             <div className="flex items-center gap-2 border-b border-rule-soft pb-3">
               <span className="h-1.5 w-1.5 rounded-full bg-accent" />
@@ -160,146 +151,14 @@ export default async function PenatalayanPage() {
               </h2>
             </div>
 
-            <div className="mt-4 overflow-x-auto rounded-2xl border border-line/40 bg-surface/60 backdrop-blur-xl shadow-sm">
-              <table className="w-full min-w-[720px] border-collapse text-sm">
-                <thead>
-                  <tr>
-                    <th
-                      scope="col"
-                      className="sticky left-0 bg-surface p-4 text-left font-mono text-xs font-bold uppercase tracking-[0.16em] text-ink-muted"
-                    >
-                      Peran
-                    </th>
-                    {columns.map(({ event: e, isPast }) => (
-                      <th key={e.id} scope="col" className={`min-w-44 p-4 text-left align-top ${isPast ? "opacity-70" : ""}`}>
-                        <Link
-                          href={`/dashboard/gatherings/${e.id}`}
-                          className="group block rounded-xl transition-colors hover:bg-surface-2/60 p-1 -m-1"
-                        >
-                          <span className="flex items-baseline gap-2">
-                            <span className="num font-serif text-2xl font-bold text-ink group-hover:text-accent">
-                              {formatDayNumber(e.date)}
-                            </span>
-                            <span className="font-mono text-xs font-bold uppercase text-accent">
-                              {formatMonthShort(e.date)}
-                            </span>
-                            {isPast && (
-                              <span className="font-mono text-[0.625rem] uppercase tracking-wider text-ink-faint">
-                                · lewat
-                              </span>
-                            )}
-                          </span>
-                          <span className="mt-1 block truncate text-xs font-semibold text-ink">
-                            {e.weeklyTheme}
-                          </span>
-                          <span className="block text-[0.6875rem] text-ink-faint">
-                            {formatWeekdayDayMonth(e.date)}
-                          </span>
-                        </Link>
-                        {canManage && !isPast && (
-                          <div className="mt-2 [&_button]:text-xs [&_button]:px-3 [&_button]:py-1.5">
-                            <AssignStewardForm
-                              eventId={e.id}
-                              eventLabel={formatWeekdayDayMonth(e.date)}
-                              profiles={profiles}
-                              crossNames={crossNames}
-                            />
-                          </div>
-                        )}
-                      </th>
-                    ))}
-                  </tr>
-                </thead>
-                <tbody>
-                  {STEWARD_ROLES.map((role) => (
-                    <tr key={role} className="border-t border-rule-soft/60">
-                      <th
-                        scope="row"
-                        className="sticky left-0 bg-surface p-4 text-left font-mono text-xs font-bold uppercase tracking-[0.14em] text-accent"
-                      >
-                        {role}
-                      </th>
-                      {columns.map(({ event: e, isPast }, colIdx) => {
-                        const stewards = (stewardsPerEvent[colIdx] ?? []).filter(
-                          (s) => s.role === role && s.status !== "replaced"
-                        );
-                        const slot = slotStatus(role, stewards.length);
-                        return (
-                          <td key={e.id} className="p-3 align-top">
-                            <p
-                              className={`font-mono text-xs font-bold ${
-                                slot.tone === "full" || slot.tone === "over"
-                                  ? "text-ink-muted"
-                                  : "text-accent"
-                              }`}
-                            >
-                              {slot.head}
-                            </p>
-                            <p
-                              className={`text-[0.6875rem] ${
-                                slot.tone === "full" ? "text-sage" : "text-ink-faint"
-                              }`}
-                            >
-                              {slot.sub}
-                            </p>
-                            {stewards.length === 0 ? (
-                              <p className="mt-2 text-xs text-ink-faint">
-                                Belum ada penatalayan
-                              </p>
-                            ) : (
-                              <ul className="mt-2 space-y-1.5">
-                                {stewards.map((s) => {
-                                  const hot = isOverloaded(loadOf(s.profileId));
-                                  return (
-                                    <li
-                                      key={s.id}
-                                      title={`${nameOf(s.profileId)} — ${loadOf(s.profileId)}× dalam 30 hari`}
-                                      className={`flex items-center justify-between gap-2 rounded-lg border px-2.5 py-1.5 text-xs ${
-                                        hot
-                                          ? "border-danger/50 bg-danger-wash/60 font-semibold text-danger"
-                                          : "border-line/40 bg-canvas-sunk/60 text-ink"
-                                      }`}
-                                    >
-                                      <span className="truncate">
-                                        {nameOf(s.profileId)}
-                                      </span>
-                                      <span className="num shrink-0 font-mono font-bold opacity-80">
-                                        {loadOf(s.profileId)}&times;
-                                      </span>
-                                    </li>
-                                  );
-                                })}
-                              </ul>
-                            )}
-                            {canManage && !isPast && (
-                              <div className="mt-2">
-                                <AssignStewardForm
-                                  eventId={e.id}
-                                  eventLabel={formatWeekdayDayMonth(e.date)}
-                                  profiles={profiles}
-                                  crossNames={crossNames}
-                                  presetRole={role}
-                                  buttonLabel="+ Tambah"
-                                  compact
-                                />
-                              </div>
-                            )}
-                          </td>
-                        );
-                      })}
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
+            <div className="mt-4">
+              <PenatalayanBoard
+                columns={columns}
+                profiles={profiles}
+                crossNames={crossNames}
+                canManage={canManage}
+              />
             </div>
-
-            <p className="mt-4 text-xs leading-relaxed text-ink-muted">
-              Merah = orang itu sudah melayani &gt;{FATIGUE_THRESHOLD}&times; dalam{" "}
-              {FATIGUE_WINDOW_DAYS} hari terakhir — pertimbangkan orang lain dulu.
-              Angka dihitung dari tanggal ibadah. Kolom "lewat" = riwayat
-              (tidak bisa diisi dari sini). Klik tanggal untuk buka detail
-              (ubah, arsip, absensi).
-            </p>
           </section>
         </>
       )}

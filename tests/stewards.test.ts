@@ -19,14 +19,14 @@ function cand(
 }
 
 describe("kebutuhan slot per peran (Dex 29 Sep 2026)", () => {
-  it("Singer 2, WL/Multimedia/Sound 1, Pemusik/Usher 2", () => {
+  it("WL/Multimedia/Sound 1, Singer/Usher 2, Pemusik min 1 maks bebas", () => {
     expect(SLOT_NEEDS).toMatchObject({
-      WL: 1,
-      Singer: 2,
-      Pemusik: 2,
-      Multimedia: 1,
-      Sound: 1,
-      Usher: 2,
+      WL: { min: 1, max: 1 },
+      Singer: { min: 2, max: 2 },
+      Pemusik: { min: 1, max: null },
+      Multimedia: { min: 1, max: 1 },
+      Sound: { min: 1, max: 1 },
+      Usher: { min: 2, max: 2 },
     });
   });
 
@@ -50,6 +50,24 @@ describe("kebutuhan slot per peran (Dex 29 Sep 2026)", () => {
       head: "Singer 3/2",
       sub: "Lebih 1",
       tone: "over",
+    });
+  });
+
+  it("Pemusik tanpa batas atas: Kurang di bawah min, Cukup di atasnya", () => {
+    expect(slotStatus("Pemusik", 0)).toMatchObject({
+      head: "Pemusik 0",
+      sub: "Kurang 1",
+      tone: "empty",
+    });
+    expect(slotStatus("Pemusik", 1)).toMatchObject({
+      head: "Pemusik 1",
+      sub: "Cukup",
+      tone: "full",
+    });
+    expect(slotStatus("Pemusik", 4)).toMatchObject({
+      head: "Pemusik 4",
+      sub: "Cukup",
+      tone: "full",
     });
   });
 });

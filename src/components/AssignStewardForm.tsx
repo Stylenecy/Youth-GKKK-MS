@@ -4,6 +4,7 @@ import { useEffect, useMemo, useRef, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { UserPlus, TriangleAlert } from "lucide-react";
 import { assignSteward, removeStewardAssignment } from "@/app/actions/gatherings";
+import { isSupabaseConfigured } from "@/lib/supabase/env";
 import type { Profile } from "@/lib/types";
 import { STEWARD_ROLES, type StewardRole } from "@/lib/validation";
 import {
@@ -354,6 +355,9 @@ export function AssignStewardForm({
         >
           <p className="text-sm text-ink">
             <strong>{toast.name}</strong> ditetapkan sebagai {toast.role}.
+            {!isSupabaseConfigured() && (
+              <span className="text-ink-muted"> (mode demo — tidak tersimpan)</span>
+            )}
           </p>
           <div className="mt-2.5 flex gap-2">
             {toast.assignmentId && undoState !== "failed" && (

@@ -1558,6 +1558,15 @@ pasti bingung**. IMK di atas kecanggihan.
 - **Butuh Dex:** migrasi `0014` (committee UPDATE+DELETE steward) — tanpa itu
   Batalkan ditolak RLS. Ganti/hapus level chip = Fase 2b (tertunda).
 
+### Papan v2 — 29 Sep (`PenatalayanBoard`, motion + fokus + hapus)
+- Modal bisa scroll (`max-h-92dvh` di shell, bukan per form).
+- Pemusik min 1 / maks ∞ (`Cukup`, bukan `x/y`).
+- × per chip (komite, kolom mendatang) + konfirmasi + audit. Batalkan toast
+  butuh 0014; di demo toast jujur "(tidak tersimpan)".
+- Warna minggu (emas/sage/rose/warning, kelas literal) + animasi 240ms
+  (mati ikut reduced-motion) + mode Fokus (minggu lalu vs minggu itu) +
+  default 4 kolom + "Lihat semua". Tombol isi header dihapus (per sel cukup).
+
 ### Aturan main papan (dari cara Grace/Nita bekerja)
 - Satuan kolom = Sabtu ibadah (tanggal + tema), bukan minggu kalender abstrak.
 - Baris = 6 peran (`WL, Singer, Pemusik, Multimedia, Sound, Usher`).
