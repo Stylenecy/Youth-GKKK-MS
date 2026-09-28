@@ -7,6 +7,10 @@
 .agent/
 database/
 scripts/import/output/
+Rapat/
+
+# Spreadsheets with real member/steward data — local-only, never upload.
+*.xlsx
 
 # Local tool binaries / raw footage — not build inputs, would just bloat upload.
 bin/
