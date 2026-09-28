@@ -1437,3 +1437,30 @@ GitHub = backup, live saat ini = patokan.
 2. Uji klik login: centang absensi → refresh bertahan · dropdown PIC cuma
    pengurus · toggle terang/gelap HP + desktop.
 3. Tunggakan non-kode lama: judul film final · PIC Movie Time · 28 ejaan Excel.
+
+---
+
+## 28 Sep 2026 (siang) — Batch kecil hasil audit flow: auth UX + role di settings
+
+**Sesi:** Dex via OpenCode. Audit 3 agen (baca kode langsung): inti OK (ibadah,
+penatalayan tambah, PIC, absensi, cross, anggota, WA, keuangan, audit, tema).
+4 cacat kecil diperbaiki di `68cf61e` (push, **belum deploy**):
+
+1. **Ditolak disamarkan jadi menunggu** — `getMyAccountStatus()` selalu
+   `"pending"` untuk non-approved. Sekarang baca baris sendiri (policy 0010:74
+   mengizinkan, tanpa migrasi baru; RPC `am_i_approved()` tetap duluan supaya
+   admin-email tanpa baris tetap approved). `PendingApproval` dapat prop
+   `status` + copy "Akses Tidak Disetujui" sendiri.
+2. **Tidak ada tombol keluar** — komponen baru `SignOutButton.tsx` (server
+   action `supabase.auth.signOut()` → `/`). Dipasang di PendingApproval (satu-
+   satunya UI akun pending/ditolak) + kartu baru settings.
+3. **Error login sunyi** — callback kirim `?error=auth`, halaman cuma render
+   `oauth`. Sekarang keduanya dirender dengan pesan beda.
+4. **Settings tak tampilkan role** — kartu "AKUN SAYA" baru (nama + email +
+   label peran Indonesia + Keluar). Pakai `getMySessionInfo()` baru — terpisah
+   dari `getCurrentProfile()` karena admin sering tidak punya baris profiles.
+
+Sengaja TIDAK disentuh: dead code `auth.ts`/`updateEventStatus` (rina, tak
+berdampak), ubah/hapus penatalayan + CRUD notulen (fitur baru, butuh spek Dex).
+
+Verifikasi: `tsc` bersih · 116/116 tes · build hijau.
