@@ -9,6 +9,7 @@ import {
   getMyLeaderCrossIds,
   getCrossMembers,
   getPicEligibleProfiles,
+  getMySessionInfo,
 } from "@/lib/data";
 import type { StewardAssignment } from "@/lib/types";
 import { canRecordAttendance } from "@/lib/attendance";
@@ -55,7 +56,7 @@ export default async function GatheringDetailPage({
   const event = await getEventById(id);
   if (!event) notFound();
 
-  const [profiles, stewards, attendance, current, leaderCrossIds, picEligible] =
+  const [profiles, stewards, attendance, current, leaderCrossIds, picEligible, session] =
     await Promise.all([
       getProfiles(),
       getStewardsByEvent(id),
@@ -63,6 +64,7 @@ export default async function GatheringDetailPage({
       getCurrentProfile(),
       getMyLeaderCrossIds(),
       getPicEligibleProfiles(),
+      getMySessionInfo(),
     ]);
 
   const pic = profiles.find((p) => p.id === event.picId);
@@ -80,6 +82,16 @@ export default async function GatheringDetailPage({
   // members, and ordinary members see nothing at all — not even a card
   // saying the feature exists. The database re-checks every write, so
   // this only decides what is rendered, never what is allowed.
+  // Write buttons mirror the events RLS (migration 0010, committee-only):
+  // hidden for everyone else instead of failing on submit. The role comes
+  // from the session (works even for admins without a profiles row);
+  // demo mode keeps everything visible for preview.
+  const role = session?.appRole ?? current?.appRole;
+  const canManage =
+    !isSupabaseConfigured() ||
+    role === "admin" ||
+    role === "treasurer" ||
+    role === "ministry";
   const isCommittee =
     current?.appRole === "admin" ||
     current?.appRole === "treasurer" ||
@@ -136,29 +148,31 @@ export default async function GatheringDetailPage({
         </div>
       </div>
 
-      {/* Action Shelf */}
-      <div className="mt-6 flex flex-wrap items-center gap-3 border-t border-rule-soft pt-6">
-        <EditEventForm event={event} profiles={picOptions} />
-        <AssignStewardForm eventId={id} profiles={profiles} />
-        {event.status === "archived" ? (
-          <ConfirmAction
-            label="Pulihkan Ibadah"
-            variant="outline"
-            title="Pulihkan ibadah ini?"
-            body="Ibadah akan kembali muncul sebagai rencana dan bisa dijadwalkan ulang."
-            confirmLabel="Pulihkan"
-            onConfirm={restoreThis}
-          />
-        ) : (
-          <ConfirmAction
-            label="Arsipkan Ibadah"
-            title="Arsipkan ibadah ini?"
-            body="Ibadah akan hilang dari halaman depan dan agenda publik, tapi datanya tetap tersimpan untuk audit dan bisa dipulihkan kapan saja."
-            confirmLabel="Arsipkan"
-            onConfirm={archiveThis}
-          />
-        )}
-      </div>
+      {/* Action Shelf — committee only (see canManage above) */}
+      {canManage && (
+        <div className="mt-6 flex flex-wrap items-center gap-3 border-t border-rule-soft pt-6">
+          <EditEventForm event={event} profiles={picOptions} />
+          <AssignStewardForm eventId={id} profiles={profiles} />
+          {event.status === "archived" ? (
+            <ConfirmAction
+              label="Pulihkan Ibadah"
+              variant="outline"
+              title="Pulihkan ibadah ini?"
+              body="Ibadah akan kembali muncul sebagai rencana dan bisa dijadwalkan ulang."
+              confirmLabel="Pulihkan"
+              onConfirm={restoreThis}
+            />
+          ) : (
+            <ConfirmAction
+              label="Arsipkan Ibadah"
+              title="Arsipkan ibadah ini?"
+              body="Ibadah akan hilang dari halaman depan dan agenda publik, tapi datanya tetap tersimpan untuk audit dan bisa dipulihkan kapan saja."
+              confirmLabel="Arsipkan"
+              onConfirm={archiveThis}
+            />
+          )}
+        </div>
+      )}
 
       {/* Main Grid Content: Stewards Roster vs Metadata Details */}
       <div className="mt-8 grid gap-8 lg:grid-cols-[1.6fr_1fr]">

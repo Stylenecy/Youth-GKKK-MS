@@ -2,6 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { isSupabaseConfigured } from "@/lib/supabase/env";
+import { friendlyDbError } from "@/lib/db-errors";
 import { recordAudit } from "@/lib/audit";
 
 /**
@@ -35,7 +36,7 @@ export async function markAttendance(
       p_profile_id: profileId,
       p_present: present,
     });
-    if (error) return { success: false, error: error.message };
+    if (error) return { success: false, error: friendlyDbError(error.message) };
 
     await recordAudit("Mencatat kehadiran", "attendance", eventId, {
       after: { profileId, present },

@@ -23,6 +23,8 @@ __pycache__/
 database/
 Rapat/
 *.xlsx
+# Exported CSVs carry real cash-book rows — never commit
+*.csv
 .agent/Cross/Chat/
 
 # Discarded Canva font-exploration exports (61 MB) — not the final logo,

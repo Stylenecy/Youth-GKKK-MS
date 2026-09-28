@@ -109,7 +109,7 @@ export default async function SettingsPage() {
             />
             <DataPoint
               label="Protokol Autentikasi"
-              value={live ? "Google OAuth 2.0" : "Bypass (Demo Mode)"}
+                value={live ? "Google OAuth 2.0" : "Tanpa Login (Mode Demo)"}
             />
             <DataPoint
               label="Zona Waktu Standar"

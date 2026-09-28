@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { financeSchema } from "@/lib/schemas";
 import { categoryKeyFromLabel, CATEGORY_LABEL } from "@/lib/finance";
 import { isSupabaseConfigured } from "@/lib/supabase/env";
+import { friendlyDbError } from "@/lib/db-errors";
 import { recordAudit } from "@/lib/audit";
 
 /**
@@ -55,7 +56,7 @@ export async function createTransaction(formData: FormData) {
     }).select("id").single();
 
     if (error) {
-      return { success: false, errors: { form: [error.message] } };
+      return { success: false, errors: { form: [friendlyDbError(error.message)] } };
     }
 
     await recordAudit("Mencatat transaksi", "finance_transaction", created?.id ?? "?", {
@@ -104,7 +105,7 @@ export async function updateTransaction(id: string, formData: FormData) {
       .eq("id", id);
 
     if (error) {
-      return { success: false, errors: { form: [error.message] } };
+      return { success: false, errors: { form: [friendlyDbError(error.message)] } };
     }
 
     await recordAudit("Mengubah transaksi", "finance_transaction", id, {
@@ -139,7 +140,7 @@ export async function deleteTransaction(id: string) {
       .update({ deleted_at: new Date().toISOString() })
       .eq("id", id);
 
-    if (error) return { success: false, error: error.message };
+    if (error) return { success: false, error: friendlyDbError(error.message) };
 
     await recordAudit("Menghapus transaksi", "finance_transaction", id);
   }
@@ -159,7 +160,7 @@ export async function restoreTransaction(id: string) {
       .update({ deleted_at: null })
       .eq("id", id);
 
-    if (error) return { success: false, error: error.message };
+    if (error) return { success: false, error: friendlyDbError(error.message) };
 
     await recordAudit("Memulihkan transaksi", "finance_transaction", id);
   }
@@ -267,7 +268,7 @@ export async function importTransactions(pastedText: string) {
 
   const { error } = await auth.supabase.from("finance_transactions").insert(toInsert);
   if (error) {
-    return { success: false, error: error.message, errors: [] as ImportRowError[] };
+    return { success: false, error: friendlyDbError(error.message), errors: [] as ImportRowError[] };
   }
 
   await recordAudit("Impor transaksi massal", "finance_transaction", "bulk", {

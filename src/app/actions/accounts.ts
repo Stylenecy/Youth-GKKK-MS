@@ -2,6 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { isSupabaseConfigured } from "@/lib/supabase/env";
+import { friendlyDbError } from "@/lib/db-errors";
 import { recordAudit } from "@/lib/audit";
 
 const ERROR_MESSAGES: Record<string, string> = {
@@ -38,7 +39,7 @@ export async function decideAccount(
   if (error) {
     return {
       success: false,
-      error: ERROR_MESSAGES[error.message] ?? error.message,
+      error: ERROR_MESSAGES[error.message] ?? friendlyDbError(error.message),
     };
   }
 

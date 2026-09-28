@@ -24,7 +24,7 @@ export function AssignStewardForm({
   const [isOpen, setIsOpen] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
-  const [, startTransition] = useTransition();
+  const [isPending, startTransition] = useTransition();
   const router = useRouter();
 
   function handleSubmit(formData: FormData) {
@@ -111,8 +111,12 @@ export function AssignStewardForm({
             </p>
           )}
 
-          <button type="submit" className="btn-primary w-full text-sm">
-            Simpan Penugasan
+          <button
+            type="submit"
+            disabled={isPending}
+            className="btn-primary w-full text-sm disabled:opacity-60"
+          >
+            {isPending ? "Menyimpan…" : "Simpan Penugasan"}
           </button>
         </form>
       </Modal>

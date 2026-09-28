@@ -5,6 +5,7 @@ import { eventSchema } from "@/lib/schemas";
 import { wibToISO } from "@/lib/datetime";
 import { isSupabaseConfigured } from "@/lib/supabase/env";
 import { isStewardRole } from "@/lib/validation";
+import { friendlyDbError } from "@/lib/db-errors";
 import { recordAudit } from "@/lib/audit";
 
 export async function createEvent(formData: FormData) {
@@ -54,7 +55,7 @@ export async function createEvent(formData: FormData) {
     }).select("id").single();
 
     if (error) {
-      return { success: false, errors: { form: [error.message] } };
+      return { success: false, errors: { form: [friendlyDbError(error.message)] } };
     }
 
     await recordAudit("Menambah ibadah", "event", created?.id ?? "?", {
@@ -113,7 +114,7 @@ export async function updateEvent(id: string, formData: FormData) {
       .eq("id", id);
 
     if (error) {
-      return { success: false, errors: { form: [error.message] } };
+      return { success: false, errors: { form: [friendlyDbError(error.message)] } };
     }
 
     await recordAudit("Mengubah ibadah", "event", id, {
@@ -144,7 +145,7 @@ export async function archiveEvent(id: string) {
       .update({ status: "archived", archived_at: new Date().toISOString() })
       .eq("id", id);
 
-    if (error) return { success: false, error: error.message };
+    if (error) return { success: false, error: friendlyDbError(error.message) };
 
     await recordAudit("Mengarsipkan ibadah", "event", id);
   }
@@ -165,7 +166,7 @@ export async function restoreEvent(id: string) {
       .update({ status: "draft", archived_at: null })
       .eq("id", id);
 
-    if (error) return { success: false, error: error.message };
+    if (error) return { success: false, error: friendlyDbError(error.message) };
 
     await recordAudit("Memulihkan ibadah", "event", id);
   }
@@ -183,7 +184,7 @@ export async function updateEventStatus(id: string, status: string) {
     // The error check comes first: auditing a write the database refused
     // would leave a log line claiming something that never happened.
     const { error } = await supabase.from("events").update({ status }).eq("id", id);
-    if (error) return { success: false, error: error.message };
+    if (error) return { success: false, error: friendlyDbError(error.message) };
 
     await recordAudit("Mengubah status ibadah", "event", id, { after: { status } });
   }
@@ -209,7 +210,7 @@ export async function assignSteward(eventId: string, profileId: string, role: st
       role,
       status: "assigned",
     });
-    if (error) return { success: false, error: error.message };
+    if (error) return { success: false, error: friendlyDbError(error.message) };
 
     await recordAudit("Menugaskan penatalayan", "steward_assignment", eventId, {
       after: { role },

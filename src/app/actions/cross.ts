@@ -3,28 +3,8 @@
 import { revalidatePath } from "next/cache";
 import { isSupabaseConfigured } from "@/lib/supabase/env";
 import { validateMemberName } from "@/lib/validation";
+import { friendlyDbError } from "@/lib/db-errors";
 import { recordAudit } from "@/lib/audit";
-
-/**
- * Postgres error messages from the RPCs in migration 0004, translated for
- * a leader who has never seen a stack trace. Anything not in this map
- * falls back to the raw message — still more useful than a generic
- * "something went wrong" while this list is incomplete.
- */
-const ERROR_MESSAGES: Record<string, string> = {
-  not_authenticated: "Kamu belum masuk. Coba masuk ulang.",
-  invalid_code: "Kode akses salah. Cek lagi ke pengurus.",
-  cross_not_found: "Kelompok ini tidak ditemukan — mungkin sudah dihapus.",
-  name_required: "Nama wajib diisi.",
-  name_too_long: "Nama terlalu panjang (maksimal 80 karakter).",
-  not_a_leader_of_this_group:
-    "Kamu bukan pemimpin kelompok ini, jadi tidak bisa menambah anggota di sini.",
-};
-
-function friendlyError(message: string | undefined): string {
-  if (!message) return "Terjadi kesalahan. Coba lagi.";
-  return ERROR_MESSAGES[message] ?? message;
-}
 
 /**
  * Self-service leadership claim.
@@ -51,7 +31,7 @@ export async function claimCrossLeadership(crossId: string, code: string) {
   });
 
   if (error) {
-    return { success: false, error: friendlyError(error.message) };
+    return { success: false, error: friendlyDbError(error.message) };
   }
 
   await recordAudit("Mengklaim kepemimpinan Cross", "cross", crossId);
@@ -89,7 +69,7 @@ export async function addCrossMember(crossId: string, name: string) {
   });
 
   if (error) {
-    return { success: false, error: friendlyError(error.message) };
+    return { success: false, error: friendlyDbError(error.message) };
   }
 
   // Name is the point of the action, so it belongs in the log — this trail is

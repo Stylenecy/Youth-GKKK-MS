@@ -1,7 +1,7 @@
 import Link from "next/link";
 import type { Metadata } from "next";
 import { ChevronRight, Calendar, Sparkles } from "lucide-react";
-import { getEvents, getProfiles, getPicEligibleProfiles } from "@/lib/data";
+import { getEvents, getProfiles, getPicEligibleProfiles, getMySessionInfo } from "@/lib/data";
 import { CreateEventForm } from "@/components/CreateEventForm";
 import { PageHeader, EmptyState } from "@/components/page-parts";
 import { eventStateLabel } from "@/lib/events";
@@ -19,11 +19,20 @@ export default async function GatheringsPage() {
   // The create form's PIC dropdown only offers pengurus (committee +
   // active Cross leaders, migration 0013). `profiles` stays whole because
   // the list below still needs every nickname for rows saved before the rule.
-  const [events, profiles, picOptions] = await Promise.all([
+  const [events, profiles, picOptions, session] = await Promise.all([
     getEvents(),
     getProfiles(),
     getPicEligibleProfiles(),
+    getMySessionInfo(),
   ]);
+  // Event writes are committee-only in RLS (migration 0010) — the create
+  // button hides for everyone else instead of failing on submit. Demo
+  // mode (session null) keeps it visible for preview.
+  const canManage =
+    !session ||
+    session.appRole === "admin" ||
+    session.appRole === "treasurer" ||
+    session.appRole === "ministry";
 
   const now = Date.now();
   const sorted = [...events].sort(
@@ -43,7 +52,7 @@ export default async function GatheringsPage() {
         kicker="PELAYANAN"
         title="Jadwal Ibadah"
         meta={`${upcoming.length} ibadah mendatang · ${past.length} riwayat terlaksana`}
-        action={<CreateEventForm profiles={picOptions} />}
+        action={canManage ? <CreateEventForm profiles={picOptions} /> : undefined}
       />
 
       {events.length === 0 ? (

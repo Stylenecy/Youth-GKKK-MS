@@ -299,7 +299,7 @@ export default async function DashboardPage() {
             </div>
           )}
 
-          {/* Fatigue Alerts */}
+          {/* Perhatian beban pelayanan */}
           {fatigueAlerts.length > 0 && (
             <section
               aria-labelledby="fatigue-heading"
@@ -311,7 +311,7 @@ export default async function DashboardPage() {
                   className="flex items-center gap-2 font-mono text-xs font-bold uppercase tracking-[0.18em] text-warning"
                 >
                   <AlertTriangle className="h-4 w-4 shrink-0" aria-hidden="true" />
-                  Perhatian Beban Pelayanan (Fatigue Alert)
+                  Perhatian Beban Pelayanan
                 </h2>
                 <span className="font-mono text-xs font-bold text-warning">
                   {fatigueAlerts.length} Orang

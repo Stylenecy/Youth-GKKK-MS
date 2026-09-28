@@ -49,7 +49,7 @@ export function TransactionRowActions({
   }
 
   const iconBtn =
-    "flex h-9 w-9 shrink-0 items-center justify-center rounded-xl text-ink-muted transition-all hover:bg-canvas-sunk hover:text-accent hover:border hover:border-line-accent/40";
+    "flex h-11 w-11 shrink-0 items-center justify-center rounded-xl text-ink-muted transition-all hover:bg-canvas-sunk hover:text-accent hover:border hover:border-line-accent/40";
 
   return (
     <>

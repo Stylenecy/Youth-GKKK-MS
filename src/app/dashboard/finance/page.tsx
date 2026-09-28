@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { Download, Wallet, ArrowDownRight, ArrowUpRight, Plus, FileSpreadsheet } from "lucide-react";
-import { getFinanceTransactions } from "@/lib/data";
+import { getFinanceTransactions, getMySessionInfo } from "@/lib/data";
 import { CreateTransactionForm } from "@/components/CreateTransactionForm";
 import { TransactionRowActions } from "@/components/TransactionRowActions";
 import { BulkImportTransactionsForm } from "@/components/BulkImportTransactionsForm";
@@ -11,7 +11,17 @@ import { CATEGORY_LABEL, ACCOUNT_LABEL } from "@/lib/finance";
 export const metadata: Metadata = { title: "Kas Keuangan" };
 
 export default async function FinancePage() {
-  const transactions = await getFinanceTransactions();
+  const [transactions, session] = await Promise.all([
+    getFinanceTransactions(),
+    getMySessionInfo(),
+  ]);
+  // Write UI mirrors migration 0005: only treasurer + admin can record.
+  // Everyone else gets a read view — no dead buttons that RLS would reject.
+  // Demo mode (session null) keeps everything visible for preview.
+  const canManage =
+    !session ||
+    session.appRole === "admin" ||
+    session.appRole === "treasurer";
 
   const income = transactions.filter((t) => t.type === "income").reduce((a, b) => a + b.amount, 0);
   const expense = transactions.filter((t) => t.type === "expense").reduce((a, b) => a + b.amount, 0);
@@ -57,18 +67,27 @@ export default async function FinancePage() {
         title="Buku Kas & Keuangan"
         meta={`${transactions.length} total transaksi tercatat · Saldo realtime berdasarkan entri transaksi`}
         action={
-          <div className="flex flex-wrap items-center gap-2.5">
-            <a
-              href="/dashboard/finance/export"
-              className="btn-outline text-xs sm:text-sm font-semibold"
-            >
-              <Download className="h-4 w-4" aria-hidden="true" />
-              <span className="hidden sm:inline">Ekspor CSV</span>
-            </a>
-            <CreateTransactionForm />
-          </div>
+          canManage ? (
+            <div className="flex flex-wrap items-center gap-2.5">
+              <a
+                href="/dashboard/finance/export"
+                className="btn-outline text-xs sm:text-sm font-semibold"
+              >
+                <Download className="h-4 w-4" aria-hidden="true" />
+                <span className="hidden sm:inline">Ekspor CSV</span>
+              </a>
+              <CreateTransactionForm />
+            </div>
+          ) : undefined
         }
       />
+
+      {!canManage && (
+        <p className="mt-6 rounded-xl border border-rule-soft bg-canvas-sunk/60 px-4 py-3 text-xs leading-relaxed text-ink-muted">
+          Kamu melihat mode baca — pencatatan kas hanya untuk bendahara dan
+          admin. Angka di bawah hanya yang boleh kamu lihat.
+        </p>
+      )}
 
       {/* 3 Luxury Balance KPI Cards */}
       <div className="mt-8 grid grid-cols-1 gap-4 sm:grid-cols-3">
@@ -130,7 +149,8 @@ export default async function FinancePage() {
       </div>
 
       {/* Bulk Import Module */}
-      <section className="mt-10" aria-labelledby="import-heading">
+      {canManage && (
+        <section className="mt-10" aria-labelledby="import-heading">
         <div className="flex items-center gap-2 border-b border-rule-soft pb-3">
           <span className="h-1.5 w-1.5 rounded-full bg-accent" />
           <h2 id="import-heading" className="font-mono text-xs font-bold uppercase tracking-[0.2em] text-accent">
@@ -140,7 +160,8 @@ export default async function FinancePage() {
         <div className="mt-3">
           <BulkImportTransactionsForm />
         </div>
-      </section>
+        </section>
+      )}
 
       {/* Transaction History Ledger */}
       <section className="mt-10" aria-labelledby="tx-heading">
@@ -160,7 +181,11 @@ export default async function FinancePage() {
           <div className="mt-4">
             <EmptyState
               title="Belum ada transaksi tercatat"
-              body="Catat pemasukan atau pengeluaran per kegiatan di atas, atau gunakan fitur impor dari spreadsheet lama."
+              body={
+                canManage
+                  ? "Catat pemasukan atau pengeluaran per kegiatan di atas, atau gunakan fitur impor dari spreadsheet lama."
+                  : "Belum ada transaksi yang dapat kamu lihat. Ringkasan kas hanya untuk bendahara dan admin."
+              }
               icon={Wallet}
             />
           </div>
@@ -193,7 +218,7 @@ export default async function FinancePage() {
                     {t.type === "income" ? "+" : "−"}
                     {formatRupiah(t.amount)}
                   </span>
-                  <TransactionRowActions transaction={t} />
+                  {canManage && <TransactionRowActions transaction={t} />}
                 </div>
               </li>
             ))}
