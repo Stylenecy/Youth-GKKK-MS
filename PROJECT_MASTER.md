@@ -1513,3 +1513,9 @@ Verifikasi: `tsc` bersih · 116/116 tes · build hijau.
 `vercel --prod` (build 26s, Ready 51s). Produksi dicek: `/` 200 ·
 `/login` 200 · 9 dashboard → login · robots/sitemap 200 · ngawur 404.
 Error ramah + gate tombol + 44px sekarang live.
+
+### Laporan QC Antigravity — 28 Sep malam (`docs/LAPORAN-QC_2026-09-28_antigravity.md`)
+§3 14 rute TERBUKTI (0 console error, 25/25 aset OK) · 0 MERAH · 2 KUNING:
+kurung nyasar audit (typo-ku, sudah dibetulkan `03c594b`) + "fallback peran
+ganda" (dibantah: `getMySessionInfo` selalu return appRole, tak pernah null —
+bukan bug). M1/M2/M3 tetap BELUM-BISA-DIUJI (butuh SQL Editor Dex).
