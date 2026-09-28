@@ -71,9 +71,16 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
+    // suppressHydrationWarning: ThemeInitScript (DashboardTheme.tsx)
+    // menyetel <html data-theme="light"> SEBELUM React hidrasi kalau user
+    // menyimpan tema terang — atribut itu benar dan disengaja, bukan bug.
+    // Tanpa ini, tiap user light-mode dapat overlay hydration-mismatch.
+    // (Ekstensi browser seperti Dark Reader yang menyuntik atribut sendiri
+    // ikut terbungkam — itu urusan browser user, bukan kode kita.)
     <html
       lang="id"
       data-scroll-behavior="smooth"
+      suppressHydrationWarning
       className={`${fraunces.variable} ${kaushan.variable} ${GeistSans.variable}`}
     >
       <body className="min-h-screen">

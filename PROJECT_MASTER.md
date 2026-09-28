@@ -1567,6 +1567,14 @@ pasti bingung**. IMK di atas kecanggihan.
   (mati ikut reduced-motion) + mode Fokus (minggu lalu vs minggu itu) +
   default 4 kolom + "Lihat semua". Tombol isi header dihapus (per sel cukup).
 
+### Hydration-mismatch — 29 Sep (`layout.tsx`, audit putaran fitur)
+- Gejala: overlay error di dev + badge "1 Issue". Akar: ThemeInitScript
+  menyetel `data-theme="light"` pre-hidrasi (Dex pakai light mode) +
+  Dark Reader nyuntik atribut sendiri. Bukan bug board.
+- Fix: `suppressHydrationWarning` di `<html>` (resmi Next.js untuk skrip tema).
+- Audit v2: tsc · 126/126 · build hijau · hapus-butuh-0014 (gagal tertutup) ·
+  kelas warna semua token-backed · tanpa PII. VONIS: AMAN, dikunci di bawah.
+
 ### Aturan main papan (dari cara Grace/Nita bekerja)
 - Satuan kolom = Sabtu ibadah (tanggal + tema), bukan minggu kalender abstrak.
 - Baris = 6 peran (`WL, Singer, Pemusik, Multimedia, Sound, Usher`).
