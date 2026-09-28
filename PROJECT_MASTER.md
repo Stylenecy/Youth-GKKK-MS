@@ -1549,3 +1549,8 @@ pasti bingung**. IMK di atas kecanggihan.
 - Satu sel bisa banyak orang (Singer 2 orang itu normal).
 - Orang `away`/nonaktif tidak ditawarkan (tetap terlihat, ditandai).
 - Angka beban selalu dari TANGGAL ibadah (pelajaran 19 Ags), bukan stempel impor.
+
+### Deploy Fase 1 — live 29 Sep dini hari
+`86c5826` → `vercel --prod` (Ready 59s). Cek: `/` 200 · `/login` 200 ·
+`/dashboard/penatalayan` (rute BARU) → login (gate berlaku) · 404 benar.
+Git: `master...origin/master` sinkron penuh, 8 commit 28 Sep semua ter-push.
