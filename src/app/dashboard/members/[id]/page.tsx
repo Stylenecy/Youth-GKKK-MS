@@ -7,6 +7,7 @@ import {
   isSupabaseConfigured,
 } from "@/lib/data";
 import { canViewContacts } from "@/lib/phone";
+import { isOverloaded } from "@/lib/fatigue";
 import { PageHeader, BackLink, DataPoint, Monogram } from "@/components/page-parts";
 import WhatsAppButton from "@/components/WhatsAppButton";
 import { formatDayMonth } from "@/lib/datetime";
@@ -48,7 +49,7 @@ export default async function MemberDetailPage({
   const whatsapp = canView ? await getMemberWhatsapp(id) : null;
 
   const status = STATUS[profile.status] ?? STATUS.inactive;
-  const isFatigued = profile.serviceCount30d > 3;
+  const isFatigued = isOverloaded(profile.serviceCount30d);
 
   return (
     <div className="px-5 py-7 sm:px-8 sm:py-9">

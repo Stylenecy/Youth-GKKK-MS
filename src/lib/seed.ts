@@ -2,6 +2,7 @@ import type {
   Profile, Event, StewardAssignment, Cross, CrossMembership, FinanceTransaction,
   Meeting, DashboardStats, FatigueAlert, RecentActivity, MonthlyTheme,
 } from "./types";
+import { isOverloaded } from "./fatigue";
 
 // ============================================================
 // DEMO SEED — displayed when Supabase is not configured.
@@ -183,7 +184,7 @@ export function getUpcomingGathering() {
 
 export function getFatigueAlerts(): FatigueAlert[] {
   return seedProfiles
-    .filter(p => p.serviceCount30d > 3)
+    .filter(p => isOverloaded(p.serviceCount30d))
     .map(p => ({ member: p, serviceCount: p.serviceCount30d }));
 }
 

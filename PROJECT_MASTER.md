@@ -1519,3 +1519,33 @@ Error ramah + gate tombol + 44px sekarang live.
 kurung nyasar audit (typo-ku, sudah dibetulkan `03c594b`) + "fallback peran
 ganda" (dibantah: `getMySessionInfo` selalu return appRole, tak pernah null —
 bukan bug). M1/M2/M3 tetap BELUM-BISA-DIUJI (butuh SQL Editor Dex).
+
+---
+
+## 28 Sep 2026 (malam) — VISI Dex: Papan Penatalayan + AI kecil tim ibadah
+
+**Sumber:** Dex langsung. Grace & Nita (tim ibadah) mengatur penatalayan pakai
+spreadsheet — kekuatannya: **melihat sekilas** (siapa sudah WL minggu 1, jangan
+dipakai lagi minggu 4). Kelemahannya: hitungan beban manual, saran manual.
+Prinsip: yang pakai nanti anggota non-IT — **kalau Dex saja bingung, mereka
+pasti bingung**. IMK di atas kecanggihan.
+
+### Keputusan Dex (28 Sep malam)
+- **Ambang beban: >2× per 30 hari** (dulu >3×). Berlaku di semua penanda.
+- **Fase 1 sekarang:** Papan Penatalayan — grid Peran × Sabtu mendatang (cermin
+  spreadsheet Grace/Nita), isi manual per sel (pakai form yang ada), hitungan
+  beban per orang, sel/penanda merah kalau >2×.
+- **Fase 2 (to-do, JANGAN dikerjakan sebelum Dex bilang):**
+  1. Tombol "Isi otomatis" per kolom + "Acak seimbang" (heuristik, bukan LLM).
+  2. Pengingat otomatis: "X sudah 3× bulan ini, sebaiknya diganti".
+  3. **AI kecil**: Grace/Nita bertanya ("siapa cocok WL minggu depan?") →
+     dijawab + bisa langsung diterapkan/shuffle di web. Catatan: butuh API key,
+     biaya, dan privasi data — desain dulu, eksekusi nanti.
+- **Fase 3 (wacana):** kalender bodily? Tidak — cukup 3 fase di atas.
+
+### Aturan main papan (dari cara Grace/Nita bekerja)
+- Satuan kolom = Sabtu ibadah (tanggal + tema), bukan minggu kalender abstrak.
+- Baris = 6 peran (`WL, Singer, Pemusik, Multimedia, Sound, Usher`).
+- Satu sel bisa banyak orang (Singer 2 orang itu normal).
+- Orang `away`/nonaktif tidak ditawarkan (tetap terlihat, ditandai).
+- Angka beban selalu dari TANGGAL ibadah (pelajaran 19 Ags), bukan stempel impor.

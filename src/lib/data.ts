@@ -1,5 +1,6 @@
 import { isSupabaseConfigured } from "./supabase/env";
 import { mapAttendanceRow } from "./attendance";
+import { FATIGUE_THRESHOLD } from "./fatigue";
 import type {
   Profile, Event, StewardAssignment, AttendanceRecord, Cross, FinanceTransaction,
   Meeting, DashboardStats, FatigueAlert, RecentActivity, MemberStatus,
@@ -324,7 +325,7 @@ export async function getFatigueAlerts(): Promise<FatigueAlert[]> {
     });
 
     const alertIds = Object.entries(countMap)
-      .filter(([_, count]) => count > 3)
+      .filter(([_, count]) => count > FATIGUE_THRESHOLD)
       .map(([id]) => id);
 
     if (alertIds.length === 0) return [];

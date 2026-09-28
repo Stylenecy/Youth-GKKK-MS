@@ -8,6 +8,7 @@ import {
   MEMBER_STATUS_FILTERS,
 } from "@/lib/members";
 import { PageHeader, EmptyState, Monogram } from "@/components/page-parts";
+import { isOverloaded } from "@/lib/fatigue";
 import { Users, ChevronRight, Search } from "lucide-react";
 
 export const metadata: Metadata = { title: "Direktori Anggota" };
@@ -136,7 +137,7 @@ export default async function MembersPage({
           <ul className="grid gap-3.5 sm:grid-cols-2 lg:grid-cols-3">
             {visible.map((profile) => {
               const s = STATUS[profile.status] ?? STATUS.inactive;
-              const isFatigued = profile.serviceCount30d > 3;
+              const isFatigued = isOverloaded(profile.serviceCount30d);
               const crosses = crossNames[profile.id] ?? [];
               return (
                 <li key={profile.id}>

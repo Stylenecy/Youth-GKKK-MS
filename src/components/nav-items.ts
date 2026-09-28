@@ -1,6 +1,7 @@
 import {
   LayoutDashboard,
   CalendarDays,
+  ClipboardList,
   Users,
   Network,
   UsersRound,
@@ -24,6 +25,7 @@ export const NAV_ITEMS: NavItem[] = [
   { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard, section: "utama", primary: true },
   { href: "/dashboard/cross/mine", label: "Kelompokku", icon: UsersRound, section: "utama", primary: true },
   { href: "/dashboard/gatherings", label: "Ibadah", icon: CalendarDays, section: "utama", primary: true },
+  { href: "/dashboard/penatalayan", label: "Penatalayan", icon: ClipboardList, section: "utama" },
   { href: "/dashboard/members", label: "Anggota", icon: Users, section: "utama", primary: true },
   { href: "/dashboard/cross", label: "Cross", icon: Network, section: "utama" },
   { href: "/dashboard/finance", label: "Keuangan", icon: Wallet, section: "admin" },

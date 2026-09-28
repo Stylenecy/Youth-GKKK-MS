@@ -319,7 +319,7 @@ export default async function DashboardPage() {
               </div>
 
               <p className="mt-3 text-xs leading-relaxed text-ink-muted">
-                Anggota berikut telah melayani &gt;3 kali dalam 30 hari terakhir. Pertimbangkan untuk mengistirahatkan mereka agar tidak jenuh/kelelahan.
+                Anggota berikut telah melayani &gt;2 kali dalam 30 hari terakhir. Pertimbangkan untuk mengistirahatkan mereka agar tidak jenuh/kelelahan.
               </p>
 
               <ul className="mt-4 space-y-2.5">
