@@ -2,7 +2,7 @@ import Link from "next/link";
 import type { Metadata } from "next";
 import { ChevronRight, FileText, Users } from "lucide-react";
 import { getMeetings } from "@/lib/data";
-import { PageHeader, EmptyState } from "@/components/page-parts";
+import { PageHeader, EmptyState, SectionTitle } from "@/components/page-parts";
 import { formatWeekdayDayMonth, formatTime } from "@/lib/datetime";
 
 export const metadata: Metadata = { title: "Notulen Rapat" };
@@ -32,17 +32,7 @@ export default async function MeetingsPage() {
         </div>
       ) : (
         <div className="mt-8">
-          <div className="flex items-center justify-between border-b border-rule-soft pb-3 mb-6">
-            <div className="flex items-center gap-2">
-              <span className="h-1.5 w-1.5 rounded-full bg-accent" />
-              <h2 className="font-mono text-xs font-bold uppercase tracking-[0.2em] text-accent">
-                ( RIWAYAT NOTULEN PENGURUS )
-              </h2>
-            </div>
-            <span className="font-mono text-xs text-ink-faint">
-              {sorted.length} Notulen
-            </span>
-          </div>
+          <div className="mb-6"><SectionTitle title="RIWAYAT NOTULEN PENGURUS" meta={<>{sorted.length} Notulen</>} /></div>
 
           <ul className="grid gap-3 sm:grid-cols-2">
             {sorted.map((meeting) => (

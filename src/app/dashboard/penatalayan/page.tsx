@@ -12,7 +12,7 @@ import {
   FATIGUE_THRESHOLD,
   FATIGUE_WINDOW_DAYS,
 } from "@/lib/fatigue";
-import { PageHeader, EmptyState, Monogram } from "@/components/page-parts";
+import { PageHeader, EmptyState, Monogram, SectionTitle } from "@/components/page-parts";
 import { isOverloaded } from "@/lib/fatigue";
 import { isCommittee } from "@/lib/roles";
 import {
@@ -104,15 +104,7 @@ export default async function PenatalayanPage() {
       ) : (
         <>
           <section aria-labelledby="beban-heading" className="mt-8">
-            <div className="flex items-center gap-2 border-b border-rule-soft pb-3">
-              <span className="h-1.5 w-1.5 rounded-full bg-accent" />
-              <h2
-                id="beban-heading"
-                className="font-mono text-xs font-bold uppercase tracking-[0.2em] text-accent"
-              >
-                ( BEBAN 30 HARI )
-              </h2>
-            </div>
+            <SectionTitle id="beban-heading" title="BEBAN 30 HARI" />
             {loaded.length === 0 ? (
               <p className="mt-4 text-sm text-ink-muted">
                 Belum ada yang tercatat pelayanan 30 hari terakhir.
@@ -146,15 +138,7 @@ export default async function PenatalayanPage() {
           </section>
 
           <section aria-labelledby="papan-heading" className="mt-10">
-            <div className="flex items-center gap-2 border-b border-rule-soft pb-3">
-              <span className="h-1.5 w-1.5 rounded-full bg-accent" />
-              <h2
-                id="papan-heading"
-                className="font-mono text-xs font-bold uppercase tracking-[0.2em] text-accent"
-              >
-                ( PAPAN )
-              </h2>
-            </div>
+            <SectionTitle id="papan-heading" title="PAPAN" />
 
             <div className="mt-4">
               <PenatalayanBoard

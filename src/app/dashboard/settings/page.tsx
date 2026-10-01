@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { isSupabaseConfigured } from "@/lib/supabase/env";
 import { getMySessionInfo } from "@/lib/data";
 import { ROLE_LABEL } from "@/lib/roles";
-import { PageHeader, DataPoint } from "@/components/page-parts";
+import { PageHeader, DataPoint, SectionTitle } from "@/components/page-parts";
 import { AccountApprovals } from "@/components/AccountApprovals";
 import { SignOutButton } from "@/components/SignOutButton";
 
@@ -29,17 +29,7 @@ export default async function SettingsPage() {
             className="rounded-2xl border border-line/40 bg-surface/75 p-6 backdrop-blur-xl shadow-sm sm:p-7"
             aria-labelledby="account-heading"
           >
-            <div className="flex items-center justify-between border-b border-rule-soft pb-3">
-              <div className="flex items-center gap-2">
-                <span className="h-1.5 w-1.5 rounded-full bg-accent" />
-                <h2
-                  id="account-heading"
-                  className="font-mono text-xs font-bold uppercase tracking-[0.2em] text-accent"
-                >
-                  ( AKUN SAYA )
-                </h2>
-              </div>
-            </div>
+            <SectionTitle id="account-heading" title="AKUN SAYA" />
 
             <dl className="mt-6 grid gap-x-8 gap-y-3 sm:grid-cols-2 border-t border-rule-soft pt-4">
               <DataPoint
@@ -66,17 +56,7 @@ export default async function SettingsPage() {
           className="rounded-2xl border border-line/40 bg-surface/75 p-6 backdrop-blur-xl shadow-sm sm:p-7"
           aria-labelledby="status-heading"
         >
-          <div className="flex items-center justify-between border-b border-rule-soft pb-3">
-            <div className="flex items-center gap-2">
-              <span className="h-1.5 w-1.5 rounded-full bg-accent" />
-              <h2
-                id="status-heading"
-                className="font-mono text-xs font-bold uppercase tracking-[0.2em] text-accent"
-              >
-                ( STATUS LINGKUNGAN & KONEKSI )
-              </h2>
-            </div>
-          </div>
+          <SectionTitle id="status-heading" title="STATUS LINGKUNGAN & KONEKSI" />
 
           <div className="mt-5 flex flex-wrap items-center gap-3">
             <span
@@ -115,15 +95,7 @@ export default async function SettingsPage() {
             className="rounded-2xl border border-line-accent/40 bg-gradient-to-b from-surface/90 to-accent-wash/30 p-6 backdrop-blur-xl shadow-sm sm:p-7"
             aria-labelledby="next-steps-heading"
           >
-            <div className="flex items-center gap-2 border-b border-rule-soft pb-3">
-              <span className="h-1.5 w-1.5 rounded-full bg-accent" />
-              <h2
-                id="next-steps-heading"
-                className="font-mono text-xs font-bold uppercase tracking-[0.2em] text-accent"
-              >
-                ( PANDUAN AKTIVASI SUPABASE LIVE )
-              </h2>
-            </div>
+            <SectionTitle id="next-steps-heading" title="PANDUAN AKTIVASI SUPABASE LIVE" />
 
             <ol className="mt-5 space-y-4">
               {[

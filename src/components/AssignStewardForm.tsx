@@ -152,6 +152,8 @@ export function AssignStewardForm({
       <button
         type="button"
         onClick={open}
+        // Many identical "Tambah" buttons on the board: name each one.
+        aria-label={presetRole ? `Tambah ${presetRole} untuk ${eventLabel}` : undefined}
         className={
           compact
             ? "btn-outline w-full justify-center text-xs px-2 py-1.5"

@@ -5,7 +5,7 @@ import { canManageFinance } from "@/lib/roles";
 import { CreateTransactionForm } from "@/components/CreateTransactionForm";
 import { TransactionRowActions } from "@/components/TransactionRowActions";
 import { BulkImportTransactionsForm } from "@/components/BulkImportTransactionsForm";
-import { PageHeader, EmptyState } from "@/components/page-parts";
+import { PageHeader, EmptyState, SectionTitle } from "@/components/page-parts";
 import { formatShortDate, formatRupiah, formatRupiahCompact } from "@/lib/datetime";
 import { CATEGORY_LABEL, ACCOUNT_LABEL } from "@/lib/finance";
 
@@ -155,12 +155,7 @@ export default async function FinancePage() {
       {/* Bulk Import Module */}
       {canManage && (
         <section className="mt-10" aria-labelledby="import-heading">
-        <div className="flex items-center gap-2 border-b border-rule-soft pb-3">
-          <span className="h-1.5 w-1.5 rounded-full bg-accent" />
-          <h2 id="import-heading" className="font-mono text-xs font-bold uppercase tracking-[0.2em] text-accent">
-            ( IMPOR DARI SPREADSHEET / EXCEL LAMA )
-          </h2>
-        </div>
+        <SectionTitle id="import-heading" title="IMPOR DARI SPREADSHEET / EXCEL LAMA" />
         <div className="mt-3">
           <BulkImportTransactionsForm />
         </div>
@@ -169,17 +164,7 @@ export default async function FinancePage() {
 
       {/* Transaction History Ledger */}
       <section className="mt-10" aria-labelledby="tx-heading">
-        <div className="flex items-center justify-between border-b border-rule-soft pb-3">
-          <div className="flex items-center gap-2">
-            <span className="h-1.5 w-1.5 rounded-full bg-accent" />
-            <h2 id="tx-heading" className="font-mono text-xs font-bold uppercase tracking-[0.2em] text-accent">
-              ( BUKU BESAR TRANSAKSI )
-            </h2>
-          </div>
-          <span className="font-mono text-xs text-ink-faint">
-            {sorted.length} Baris
-          </span>
-        </div>
+        <SectionTitle id="tx-heading" title="BUKU BESAR TRANSAKSI" meta={<>{sorted.length} Baris</>} />
 
         {sorted.length === 0 ? (
           <div className="mt-4">
