@@ -50,3 +50,28 @@ Status: **tuntas** · **patah** (salah/berbahaya) · **setengah** (jalan tapi bu
 2. P1: beranda (WIB, meter slot, aksi per peran, pintasan papan); absensi pakai peran sesi; antrean persetujuan kosong; umpan balik kas; audit untuk non-admin; buang kartu latihan hardcode.
 3. Refactor: `lib/roles.ts` satu sumber peran; buang `any`; komponen bagian/kartu bersama.
 4. Visual: satu sistem `Panel` + `SectionTitle`, cek ulang 390 px.
+
+## Hasil (akhir sesi 1 Okt)
+
+Commit lokal: `302b810` (fix peran/tulis/ekspor), `90661ef` (beranda + kas), `f202da2` (SectionTitle bersama). **Belum di-push, belum di-deploy.**
+
+| # | Status sekarang |
+|---|---|
+| 2 | tuntas — antrean kosong tampil "Tidak ada permintaan"; setujui/tolak memberi toast |
+| 3 | tuntas — `navFor(role)`: Keuangan hanya admin+bendahara, Audit hanya admin |
+| 4 | tuntas — WIB tunggal, meter 8 slot + "Masih kurang: …", pintasan & kartu per peran, tombol "Atur Penatalayan" |
+| 5 | tuntas — `requireRole` + cek jumlah baris di ubah/arsip/pulihkan/tambah/batal penatalayan |
+| 6 | tuntas — kartu latihan hardcode dibuang, WIB tunggal |
+| 7 | tuntas — empty state papan punya tombol ke Ibadah; tombol "Tambah" bernama per peran+tanggal |
+| 8 | tuntas (kode) — absensi memakai peran sesi |
+| 9 | tuntas — beban dipetakan lewat `mapProfileRow`; copy pakai `FATIGUE_THRESHOLD` |
+| 10 | tuntas — toast sukses, "Batalkan" hapus (`restoreTransaction`), error select tampil, tautan ibadah berupa pilihan |
+| 11 | tuntas — ekspor 403 untuk non-bendahara, sel rumus dinetralkan (tes `csv.test.ts`) |
+| 13 | tuntas — non-admin melihat "Log audit khusus admin" |
+| 15 | tuntas — 0 `any` di `data.ts`, `lib/roles.ts` satu sumber, `MEMBER_STATUS_TAG` bersama |
+| 16 | tuntas — seed "Pemusik" |
+| 12 | tetap — notulen read-only, menunggu spek Dex |
+
+Verifikasi akhir: `tsc` bersih · `npm test` **137/137** (16 berkas) · `npm run build` hijau 21 rute · lint **5 error / 6 warning** (4 di landing yang sengaja tidak disentuh, 1 `DashboardTheme` pola baca-localStorage) · 24 tangkapan 1440/390: 0 overflow, 0 error konsol. Screenshot: `docs/screens/2026-10-01/{before,after,after-light}/`.
+
+Belum terbukti: semua perilaku peran/RLS baru hanya diuji lewat kode + tes unit + mode demo. Uji klik dengan akun Tim Ibadah dan Anggota sungguhan belum dilakukan.
