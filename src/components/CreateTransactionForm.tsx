@@ -4,14 +4,17 @@ import { useState, useTransition } from "react";
 import { Plus } from "lucide-react";
 import { createTransaction } from "@/app/actions/finance";
 import { Modal, Field, fieldClass } from "./Modal";
-import { INCOME_CATEGORIES, EXPENSE_CATEGORIES, ACCOUNT_LABEL } from "@/lib/finance";
+import { useToast } from "./Toast";
+import { isSupabaseConfigured } from "@/lib/supabase/env";
+import { INCOME_CATEGORIES, EXPENSE_CATEGORIES, ACCOUNT_LABEL, type EventOption } from "@/lib/finance";
 
 type FieldErrors = Record<string, string[] | undefined>;
 
-export function CreateTransactionForm() {
+export function CreateTransactionForm({ events: eventOptions = [] }: { events?: EventOption[] }) {
   const [isOpen, setIsOpen] = useState(false);
   const [pending, startTransition] = useTransition();
   const [errors, setErrors] = useState<FieldErrors>({});
+  const toast = useToast();
 
   function handleSubmit(formData: FormData) {
     setErrors({});
@@ -19,6 +22,7 @@ export function CreateTransactionForm() {
       const result = await createTransaction(formData);
       if (result.success) {
         setIsOpen(false);
+        toast({ message: `Transaksi tersimpan.${isSupabaseConfigured() ? "" : " (mode demo — tidak tersimpan)"}` });
       } else {
         setErrors((result.errors ?? {}) as FieldErrors);
       }
@@ -57,14 +61,14 @@ export function CreateTransactionForm() {
           </Field>
 
           <div className="grid gap-4 sm:grid-cols-2">
-            <Field name="type" label="Jenis Transaksi">
+            <Field name="type" label="Jenis Transaksi" error={errors.type?.[0]}>
               <select id="type" name="type" className={fieldClass}>
                 <option value="income">Pemasukan (+)</option>
                 <option value="expense">Pengeluaran (−)</option>
               </select>
             </Field>
 
-            <Field name="account" label="Pos Kas">
+            <Field name="account" label="Pos Kas" error={errors.account?.[0]}>
               <select id="account" name="account" className={fieldClass}>
                 {Object.entries(ACCOUNT_LABEL).map(([value, label]) => (
                   <option key={value} value={value}>
@@ -75,7 +79,7 @@ export function CreateTransactionForm() {
             </Field>
           </div>
 
-          <Field name="category" label="Kategori Anggaran">
+          <Field name="category" label="Kategori Anggaran" error={errors.category?.[0]}>
             <select id="category" name="category" className={fieldClass}>
               <optgroup label="Pemasukan">
                 {INCOME_CATEGORIES.map(([value, label]) => (
@@ -106,15 +110,19 @@ export function CreateTransactionForm() {
 
           <Field
             name="eventId"
-            label="Tautkan ke ID Ibadah"
-            hint="Opsional — isi jika transaksi berkaitan dengan event tertentu."
+            label="Terkait ibadah"
+            hint="Opsional — pilih kalau transaksi ini untuk ibadah tertentu."
           >
-            <input
+            <select
               id="eventId"
               name="eventId"
-              placeholder="Contoh: e1"
               className={fieldClass}
-            />
+            >
+              <option value="">— Tidak terkait ibadah —</option>
+              {eventOptions.map((e) => (
+                <option key={e.id} value={e.id}>{e.label}</option>
+              ))}
+            </select>
           </Field>
 
           {errors.form && (

@@ -1,5 +1,5 @@
 import { isOverloaded } from "./fatigue";
-import type { StewardRole } from "./validation";
+import { STEWARD_ROLES, type StewardRole } from "./validation";
 
 export interface SlotNeed {
   /** Minimal tampil "Kurang n" di bawah ini. */
@@ -143,4 +143,40 @@ export function sortStewardCandidates(
     disabled: false,
     overloaded: cand.load !== null && isOverloaded(cand.load),
   }));
+}
+
+export interface Readiness {
+  /** Slot terisi, dihitung per peran sampai batas minimalnya. */
+  filled: number;
+  /** Total slot minimal satu Sabtu (jumlah SLOT_NEEDS[*].min). */
+  needed: number;
+  /** Peran yang belum cukup, urut STEWARD_ROLES. */
+  missing: { role: StewardRole; count: number }[];
+}
+
+/**
+ * Kesiapan satu ibadah untuk beranda. Dulu meter membagi jumlah orang
+ * dengan angka 6 — tiga Pemusik + nol Usher terbaca "lengkap". Sekarang
+ * kelebihan di satu peran tidak menutup kekurangan di peran lain, dan
+ * peran di luar daftar resmi tidak ikut terhitung.
+ */
+export function serviceReadiness(
+  stewards: { role: string; status: string }[]
+): Readiness {
+  const counts = new Map<string, number>();
+  for (const s of stewards) {
+    if (s.status === "replaced") continue;
+    counts.set(s.role, (counts.get(s.role) ?? 0) + 1);
+  }
+  let filled = 0;
+  let needed = 0;
+  const missing: Readiness["missing"] = [];
+  for (const role of STEWARD_ROLES) {
+    const need = SLOT_NEEDS[role].min;
+    const have = counts.get(role) ?? 0;
+    needed += need;
+    filled += Math.min(have, need);
+    if (have < need) missing.push({ role, count: need - have });
+  }
+  return { filled, needed, missing };
 }

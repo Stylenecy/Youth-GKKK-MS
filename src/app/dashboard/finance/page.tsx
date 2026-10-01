@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
-import { Download, Wallet, ArrowDownRight, ArrowUpRight, Plus, FileSpreadsheet } from "lucide-react";
-import { getFinanceTransactions, getMySessionInfo } from "@/lib/data";
+import { Download, Wallet, ArrowDownRight, ArrowUpRight } from "lucide-react";
+import { getFinanceTransactions, getMyRole, getEvents } from "@/lib/data";
+import { canManageFinance } from "@/lib/roles";
 import { CreateTransactionForm } from "@/components/CreateTransactionForm";
 import { TransactionRowActions } from "@/components/TransactionRowActions";
 import { BulkImportTransactionsForm } from "@/components/BulkImportTransactionsForm";
@@ -11,17 +12,20 @@ import { CATEGORY_LABEL, ACCOUNT_LABEL } from "@/lib/finance";
 export const metadata: Metadata = { title: "Kas Keuangan" };
 
 export default async function FinancePage() {
-  const [transactions, session] = await Promise.all([
+  const [transactions, role, events] = await Promise.all([
     getFinanceTransactions(),
-    getMySessionInfo(),
+    getMyRole(),
+    getEvents(),
   ]);
+  // Newest 12 services as link targets — readable labels instead of ids.
+  const eventOptions = [...events]
+    .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
+    .slice(0, 12)
+    .map((e) => ({ id: e.id, label: `${formatShortDate(e.date)} · ${e.weeklyTheme}` }));
   // Write UI mirrors migration 0005: only treasurer + admin can record.
   // Everyone else gets a read view — no dead buttons that RLS would reject.
-  // Demo mode (session null) keeps everything visible for preview.
-  const canManage =
-    !session ||
-    session.appRole === "admin" ||
-    session.appRole === "treasurer";
+  // Demo mode (role null) keeps everything visible for preview.
+  const canManage = canManageFinance(role);
 
   const income = transactions.filter((t) => t.type === "income").reduce((a, b) => a + b.amount, 0);
   const expense = transactions.filter((t) => t.type === "expense").reduce((a, b) => a + b.amount, 0);
@@ -76,7 +80,7 @@ export default async function FinancePage() {
                 <Download className="h-4 w-4" aria-hidden="true" />
                 <span className="hidden sm:inline">Ekspor CSV</span>
               </a>
-              <CreateTransactionForm />
+              <CreateTransactionForm events={eventOptions} />
             </div>
           ) : undefined
         }
@@ -218,7 +222,7 @@ export default async function FinancePage() {
                     {t.type === "income" ? "+" : "−"}
                     {formatRupiah(t.amount)}
                   </span>
-                  {canManage && <TransactionRowActions transaction={t} />}
+                  {canManage && <TransactionRowActions transaction={t} events={eventOptions} />}
                 </div>
               </li>
             ))}

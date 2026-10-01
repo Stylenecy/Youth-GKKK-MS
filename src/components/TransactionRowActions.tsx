@@ -2,11 +2,13 @@
 
 import { useState, useTransition } from "react";
 import { Pencil, Trash2, AlertTriangle } from "lucide-react";
-import { updateTransaction, deleteTransaction } from "@/app/actions/finance";
+import { updateTransaction, deleteTransaction, restoreTransaction } from "@/app/actions/finance";
+import { useToast } from "./Toast";
+import { isSupabaseConfigured } from "@/lib/supabase/env";
 import type { FinanceTransaction } from "@/lib/types";
 import { Modal, Field, fieldClass } from "./Modal";
 import { formatRupiah } from "@/lib/datetime";
-import { INCOME_CATEGORIES, EXPENSE_CATEGORIES, ACCOUNT_LABEL } from "@/lib/finance";
+import { INCOME_CATEGORIES, EXPENSE_CATEGORIES, ACCOUNT_LABEL, type EventOption } from "@/lib/finance";
 
 type FieldErrors = Record<string, string[] | undefined>;
 
@@ -15,14 +17,23 @@ type FieldErrors = Record<string, string[] | undefined>;
  */
 export function TransactionRowActions({
   transaction,
+  events = [],
 }: {
   transaction: FinanceTransaction;
+  events?: EventOption[];
 }) {
+  // A row linked to an older event than the picker lists keeps its link.
+  const eventOptions =
+    transaction.eventId && !events.some((e) => e.id === transaction.eventId)
+      ? [{ id: transaction.eventId, label: "Ibadah lama (tetap ditautkan)" }, ...events]
+      : events;
   const [editOpen, setEditOpen] = useState(false);
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [pending, startTransition] = useTransition();
   const [errors, setErrors] = useState<FieldErrors>({});
   const [deleteError, setDeleteError] = useState<string | null>(null);
+  const toast = useToast();
+  const demo = isSupabaseConfigured() ? "" : " (mode demo — tidak tersimpan)";
 
   function handleSubmit(formData: FormData) {
     setErrors({});
@@ -30,6 +41,7 @@ export function TransactionRowActions({
       const result = await updateTransaction(transaction.id, formData);
       if (result.success) {
         setEditOpen(false);
+        toast({ message: `Transaksi diperbarui.${demo}` });
       } else {
         setErrors((result.errors ?? {}) as FieldErrors);
       }
@@ -42,6 +54,12 @@ export function TransactionRowActions({
       const result = await deleteTransaction(transaction.id);
       if (result.success) {
         setDeleteOpen(false);
+        // Soft delete, so it is reversible — offer it right where the
+        // mistake happened instead of leaving restoreTransaction unused.
+        toast({
+          message: `"${transaction.description}" dihapus dari saldo.${demo}`,
+          action: { label: "Batalkan", run: () => restoreTransaction(transaction.id) },
+        });
       } else {
         setDeleteError(result.error ?? "Gagal menghapus transaksi.");
       }
@@ -98,7 +116,7 @@ export function TransactionRowActions({
           </Field>
 
           <div className="grid gap-4 sm:grid-cols-2">
-            <Field name="type" label="Jenis Transaksi">
+            <Field name="type" label="Jenis Transaksi" error={errors.type?.[0]}>
               <select
                 id="type"
                 name="type"
@@ -110,7 +128,7 @@ export function TransactionRowActions({
               </select>
             </Field>
 
-            <Field name="account" label="Pos Kas">
+            <Field name="account" label="Pos Kas" error={errors.account?.[0]}>
               <select
                 id="account"
                 name="account"
@@ -124,7 +142,7 @@ export function TransactionRowActions({
             </Field>
           </div>
 
-          <Field name="category" label="Kategori Anggaran">
+          <Field name="category" label="Kategori Anggaran" error={errors.category?.[0]}>
             <select
               id="category"
               name="category"
@@ -160,15 +178,20 @@ export function TransactionRowActions({
 
           <Field
             name="eventId"
-            label="Tautkan ke ID Ibadah"
-            hint="Opsional — isi jika transaksi ini bagian dari acara tertentu."
+            label="Terkait ibadah"
+            hint="Opsional — pilih kalau transaksi ini untuk ibadah tertentu."
           >
-            <input
+            <select
               id="eventId"
               name="eventId"
               defaultValue={transaction.eventId ?? ""}
               className={fieldClass}
-            />
+            >
+              <option value="">— Tidak terkait ibadah —</option>
+              {eventOptions.map((e) => (
+                <option key={e.id} value={e.id}>{e.label}</option>
+              ))}
+            </select>
           </Field>
 
           {errors.form && (
