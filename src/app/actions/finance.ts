@@ -6,6 +6,8 @@ import { categoryKeyFromLabel, CATEGORY_LABEL } from "@/lib/finance";
 import { isSupabaseConfigured } from "@/lib/supabase/env";
 import { friendlyDbError } from "@/lib/db-errors";
 import { recordAudit } from "@/lib/audit";
+import { FINANCE_ROLES } from "@/lib/roles";
+import { requireRole, NOTHING_CHANGED } from "@/lib/role-guard";
 
 /**
  * Only the treasurer (Nathan) or an admin may write to the cash book.
@@ -13,18 +15,11 @@ import { recordAudit } from "@/lib/audit";
  * boundary — this exists so a non-treasurer sees "kamu bukan bendahara"
  * instead of a raw Postgres permission error.
  */
-async function requireTreasurer() {
-  const { createClient } = await import("@/lib/supabase/server");
-  const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) return { ok: false as const, error: "Kamu belum masuk." };
-
-  const { data: role } = await supabase.rpc("get_my_app_role");
-  if (role !== "admin" && role !== "treasurer") {
-    return { ok: false as const, error: "Kamu bukan bendahara — cuma bendahara dan admin yang bisa mencatat transaksi." };
-  }
-  return { ok: true as const, supabase, userId: user.id };
-}
+const requireTreasurer = () =>
+  requireRole(
+    FINANCE_ROLES,
+    "Kamu bukan bendahara — cuma bendahara dan admin yang bisa mencatat transaksi."
+  );
 
 export async function createTransaction(formData: FormData) {
   const rawData = {
@@ -91,7 +86,7 @@ export async function updateTransaction(id: string, formData: FormData) {
     const auth = await requireTreasurer();
     if (!auth.ok) return { success: false, errors: { form: [auth.error] } };
 
-    const { error } = await auth.supabase
+    const { data: changed, error } = await auth.supabase
       .from("finance_transactions")
       .update({
         amount: validated.data.amount,
@@ -102,11 +97,13 @@ export async function updateTransaction(id: string, formData: FormData) {
         event_id: validated.data.eventId || null,
         updated_at: new Date().toISOString(),
       })
-      .eq("id", id);
+      .eq("id", id)
+      .select("id");
 
     if (error) {
       return { success: false, errors: { form: [friendlyDbError(error.message)] } };
     }
+    if (!changed?.length) return { success: false, errors: { form: [NOTHING_CHANGED] } };
 
     await recordAudit("Mengubah transaksi", "finance_transaction", id, {
       after: {
@@ -135,12 +132,14 @@ export async function deleteTransaction(id: string) {
     const auth = await requireTreasurer();
     if (!auth.ok) return { success: false, error: auth.error };
 
-    const { error } = await auth.supabase
+    const { data: changed, error } = await auth.supabase
       .from("finance_transactions")
       .update({ deleted_at: new Date().toISOString() })
-      .eq("id", id);
+      .eq("id", id)
+      .select("id");
 
     if (error) return { success: false, error: friendlyDbError(error.message) };
+    if (!changed?.length) return { success: false, error: NOTHING_CHANGED };
 
     await recordAudit("Menghapus transaksi", "finance_transaction", id);
   }
@@ -155,12 +154,14 @@ export async function restoreTransaction(id: string) {
     const auth = await requireTreasurer();
     if (!auth.ok) return { success: false, error: auth.error };
 
-    const { error } = await auth.supabase
+    const { data: changed, error } = await auth.supabase
       .from("finance_transactions")
       .update({ deleted_at: null })
-      .eq("id", id);
+      .eq("id", id)
+      .select("id");
 
     if (error) return { success: false, error: friendlyDbError(error.message) };
+    if (!changed?.length) return { success: false, error: NOTHING_CHANGED };
 
     await recordAudit("Memulihkan transaksi", "finance_transaction", id);
   }

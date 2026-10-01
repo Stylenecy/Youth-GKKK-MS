@@ -1,10 +1,11 @@
+import Link from "next/link";
 import type { Metadata } from "next";
 import { ClipboardList } from "lucide-react";
 import {
   getEvents,
   getProfiles,
   getStewardsByEvent,
-  getMySessionInfo,
+  getMyRole,
   getProfileCrossNames,
 } from "@/lib/data";
 import {
@@ -13,6 +14,7 @@ import {
 } from "@/lib/fatigue";
 import { PageHeader, EmptyState, Monogram } from "@/components/page-parts";
 import { isOverloaded } from "@/lib/fatigue";
+import { isCommittee } from "@/lib/roles";
 import {
   formatDayNumber,
   formatMonthShort,
@@ -31,13 +33,15 @@ const MAX_UPCOMING = 6;
  * <PenatalayanBoard> (interaksi: semua ↔ fokus-banding).
  */
 export default async function PenatalayanPage() {
-  const [events, profiles, session, crossNames] = await Promise.all([
+  const [events, profiles, role, crossNames] = await Promise.all([
     getEvents(),
     getProfiles(),
-    getMySessionInfo(),
+    getMyRole(),
     getProfileCrossNames(),
   ]);
 
+  // Server component: renders once per request, so "now" is stable here.
+  // eslint-disable-next-line react-hooks/purity
   const now = Date.now();
   const upcoming = events
     .filter((e) => new Date(e.date).getTime() >= now)
@@ -70,11 +74,7 @@ export default async function PenatalayanPage() {
     })),
   }));
 
-  const canManage =
-    !session ||
-    session.appRole === "admin" ||
-    session.appRole === "treasurer" ||
-    session.appRole === "ministry";
+  const canManage = isCommittee(role);
 
   const loaded = profiles
     .filter((p) => p.serviceCount30d > 0)
@@ -94,6 +94,11 @@ export default async function PenatalayanPage() {
             title="Belum ada ibadah terjadwal"
             body="Tambahkan jadwal dulu di halaman Ibadah — papan ini terisi sendiri begitu ada Sabtu yang terjadwal."
             icon={ClipboardList}
+            action={
+              <Link href="/dashboard/gatherings" className="btn-primary text-sm">
+                Ke halaman Ibadah
+              </Link>
+            }
           />
         </div>
       ) : (

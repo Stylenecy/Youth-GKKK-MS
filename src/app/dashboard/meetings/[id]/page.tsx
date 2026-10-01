@@ -3,7 +3,7 @@ import type { Metadata } from "next";
 import { getMeetingById, getProfiles } from "@/lib/data";
 import { PageHeader, BackLink, Monogram } from "@/components/page-parts";
 import { formatFullDate, formatTime } from "@/lib/datetime";
-import { FileText, Users, CheckCircle2 } from "lucide-react";
+
 
 export async function generateMetadata({
   params,
@@ -45,7 +45,7 @@ export default async function MeetingDetailPage({
         <PageHeader
           kicker="RISALAH RAPAT"
           title={meeting.title}
-          meta={`${formatFullDate(meeting.date)} · Pukul ${formatTime(meeting.date)} WIB`}
+          meta={`${formatFullDate(meeting.date)} · Pukul ${formatTime(meeting.date)}`}
         />
       </div>
 

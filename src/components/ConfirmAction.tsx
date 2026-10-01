@@ -3,6 +3,7 @@
 import { useState, useTransition } from "react";
 import { Modal } from "./Modal";
 import { AlertTriangle } from "lucide-react";
+import { useToast } from "./Toast";
 
 /**
  * Destructive / critical action behind a confirmation dialog with Nocturne styling.
@@ -14,6 +15,7 @@ export function ConfirmAction({
   confirmLabel,
   onConfirm,
   variant = "danger",
+  successMessage,
 }: {
   label: string;
   title: string;
@@ -21,7 +23,10 @@ export function ConfirmAction({
   confirmLabel: string;
   onConfirm: () => Promise<{ success: boolean; error?: string }>;
   variant?: "danger" | "outline";
+  /** Shown as a toast after success; without it the modal just closes. */
+  successMessage?: string;
 }) {
+  const toast = useToast();
   const [isOpen, setIsOpen] = useState(false);
   const [pending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
@@ -32,6 +37,7 @@ export function ConfirmAction({
       const result = await onConfirm();
       if (result.success) {
         setIsOpen(false);
+        if (successMessage) toast({ message: successMessage });
       } else {
         setError(result.error ?? "Gagal menyimpan perubahan.");
       }

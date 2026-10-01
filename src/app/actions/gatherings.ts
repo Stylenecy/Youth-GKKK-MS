@@ -7,6 +7,10 @@ import { isSupabaseConfigured } from "@/lib/supabase/env";
 import { isStewardRole } from "@/lib/validation";
 import { friendlyDbError } from "@/lib/db-errors";
 import { recordAudit } from "@/lib/audit";
+import { COMMITTEE_ROLES } from "@/lib/roles";
+import { requireRole, NOT_COMMITTEE, NOTHING_CHANGED } from "@/lib/role-guard";
+
+const requireCommittee = () => requireRole(COMMITTEE_ROLES, NOT_COMMITTEE);
 
 export async function createEvent(formData: FormData) {
   const rawData = {
@@ -26,8 +30,9 @@ export async function createEvent(formData: FormData) {
   }
 
   if (isSupabaseConfigured()) {
-    const { createClient } = await import("@/lib/supabase/server");
-    const supabase = await createClient();
+    const auth = await requireCommittee();
+    if (!auth.ok) return { success: false, errors: { form: [auth.error] } };
+    const { supabase } = auth;
 
     // PIC harus pengurus (keputusan Dex, 19 Sep 2026). Trigger 0013
     // menegakkan ini di database; cek di sini dulu supaya penolakannya
@@ -85,8 +90,9 @@ export async function updateEvent(id: string, formData: FormData) {
   }
 
   if (isSupabaseConfigured()) {
-    const { createClient } = await import("@/lib/supabase/server");
-    const supabase = await createClient();
+    const auth = await requireCommittee();
+    if (!auth.ok) return { success: false, errors: { form: [auth.error] } };
+    const { supabase } = auth;
 
     // Sama seperti createEvent di atas: PIC harus pengurus.
     const { data: picEligible } = await supabase.rpc("is_pic_eligible", {
@@ -101,7 +107,7 @@ export async function updateEvent(id: string, formData: FormData) {
       };
     }
 
-    const { error } = await supabase
+    const { data: changed, error } = await supabase
       .from("events")
       .update({
         date: wibToISO(validated.data.date, validated.data.time),
@@ -111,10 +117,14 @@ export async function updateEvent(id: string, formData: FormData) {
         speaker_name: validated.data.speakerName,
         description: validated.data.description || null,
       })
-      .eq("id", id);
+      .eq("id", id)
+      .select("id");
 
     if (error) {
       return { success: false, errors: { form: [friendlyDbError(error.message)] } };
+    }
+    if (!changed?.length) {
+      return { success: false, errors: { form: [NOTHING_CHANGED] } };
     }
 
     await recordAudit("Mengubah ibadah", "event", id, {
@@ -137,15 +147,17 @@ export async function updateEvent(id: string, formData: FormData) {
  */
 export async function archiveEvent(id: string) {
   if (isSupabaseConfigured()) {
-    const { createClient } = await import("@/lib/supabase/server");
-    const supabase = await createClient();
+    const auth = await requireCommittee();
+    if (!auth.ok) return { success: false, error: auth.error };
 
-    const { error } = await supabase
+    const { data: changed, error } = await auth.supabase
       .from("events")
       .update({ status: "archived", archived_at: new Date().toISOString() })
-      .eq("id", id);
+      .eq("id", id)
+      .select("id");
 
     if (error) return { success: false, error: friendlyDbError(error.message) };
+    if (!changed?.length) return { success: false, error: NOTHING_CHANGED };
 
     await recordAudit("Mengarsipkan ibadah", "event", id);
   }
@@ -158,15 +170,17 @@ export async function archiveEvent(id: string) {
 /** Undo an archive — the mirror of archiveEvent, so the action is reversible. */
 export async function restoreEvent(id: string) {
   if (isSupabaseConfigured()) {
-    const { createClient } = await import("@/lib/supabase/server");
-    const supabase = await createClient();
+    const auth = await requireCommittee();
+    if (!auth.ok) return { success: false, error: auth.error };
 
-    const { error } = await supabase
+    const { data: changed, error } = await auth.supabase
       .from("events")
       .update({ status: "draft", archived_at: null })
-      .eq("id", id);
+      .eq("id", id)
+      .select("id");
 
     if (error) return { success: false, error: friendlyDbError(error.message) };
+    if (!changed?.length) return { success: false, error: NOTHING_CHANGED };
 
     await recordAudit("Memulihkan ibadah", "event", id);
   }
@@ -174,21 +188,6 @@ export async function restoreEvent(id: string) {
   revalidatePath("/dashboard/gatherings");
   revalidatePath(`/dashboard/gatherings/${id}`);
   revalidatePath("/");
-  return { success: true };
-}
-
-export async function updateEventStatus(id: string, status: string) {
-  if (isSupabaseConfigured()) {
-    const { createClient } = await import("@/lib/supabase/server");
-    const supabase = await createClient();
-    // The error check comes first: auditing a write the database refused
-    // would leave a log line claiming something that never happened.
-    const { error } = await supabase.from("events").update({ status }).eq("id", id);
-    if (error) return { success: false, error: friendlyDbError(error.message) };
-
-    await recordAudit("Mengubah status ibadah", "event", id, { after: { status } });
-  }
-  revalidatePath("/dashboard/gatherings");
   return { success: true };
 }
 
@@ -202,9 +201,9 @@ export async function assignSteward(eventId: string, profileId: string, role: st
   }
 
   if (isSupabaseConfigured()) {
-    const { createClient } = await import("@/lib/supabase/server");
-    const supabase = await createClient();
-    const { data: created, error } = await supabase.from("steward_assignments").insert({
+    const auth = await requireCommittee();
+    if (!auth.ok) return { success: false, error: auth.error };
+    const { data: created, error } = await auth.supabase.from("steward_assignments").insert({
       event_id: eventId,
       profile_id: profileId,
       role,
@@ -212,8 +211,8 @@ export async function assignSteward(eventId: string, profileId: string, role: st
     }).select("id").single();
     if (error) return { success: false, error: friendlyDbError(error.message) };
 
-    await recordAudit("Menugaskan penatalayan", "steward_assignment", eventId, {
-      after: { role },
+    await recordAudit("Menugaskan penatalayan", "steward_assignment", created?.id ?? "?", {
+      after: { eventId, role },
     });
     revalidatePath(`/dashboard/gatherings/${eventId}`);
     revalidatePath("/dashboard/penatalayan");
@@ -229,8 +228,9 @@ export async function assignSteward(eventId: string, profileId: string, role: st
  *
  * Hard delete, bukan soft: barisnya berumur detik dan salah input — tidak
  * ada sejarah yang layak dipertahankan. Butuh migrasi 0014 (committee
- * boleh DELETE steward_assignments); tanpa itu RLS menolak dengan pesan
- * ramah, bukan kebocoran.
+ * boleh DELETE steward_assignments). Tanpa 0014, RLS tidak melempar error —
+ * DELETE cuma mengenai 0 baris — jadi jumlah baris dicek eksplisit supaya
+ * "Batalkan" tidak mengaku berhasil.
  */
 export async function removeStewardAssignment(id: string, eventId: string) {
   if (typeof id !== "string" || id.trim() === "") {
@@ -238,16 +238,23 @@ export async function removeStewardAssignment(id: string, eventId: string) {
   }
 
   if (isSupabaseConfigured()) {
-    const { createClient } = await import("@/lib/supabase/server");
-    const supabase = await createClient();
-    const { error } = await supabase
+    const auth = await requireCommittee();
+    if (!auth.ok) return { success: false, error: auth.error };
+    const { data: removed, error } = await auth.supabase
       .from("steward_assignments")
       .delete()
-      .eq("id", id);
+      .eq("id", id)
+      .select("id");
     if (error) return { success: false, error: friendlyDbError(error.message) };
+    if (!removed?.length) {
+      return {
+        success: false,
+        error: "Penugasan belum bisa dihapus dari aplikasi — izin hapus (migrasi 0014) belum aktif. Minta admin menghapusnya.",
+      };
+    }
 
-    await recordAudit("Membatalkan penugasan", "steward_assignment", eventId, {
-      after: { removedId: id },
+    await recordAudit("Membatalkan penugasan", "steward_assignment", id, {
+      after: { eventId },
     });
   }
   revalidatePath(`/dashboard/gatherings/${eventId}`);

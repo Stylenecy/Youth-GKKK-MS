@@ -1,7 +1,8 @@
 import Link from "next/link";
 import type { Metadata } from "next";
-import { ChevronRight, Calendar, Sparkles } from "lucide-react";
-import { getEvents, getProfiles, getPicEligibleProfiles, getMySessionInfo } from "@/lib/data";
+import { ChevronRight, Calendar } from "lucide-react";
+import { getEvents, getProfiles, getPicEligibleProfiles, getMyRole } from "@/lib/data";
+import { isCommittee } from "@/lib/roles";
 import { CreateEventForm } from "@/components/CreateEventForm";
 import { PageHeader, EmptyState } from "@/components/page-parts";
 import { eventStateLabel } from "@/lib/events";
@@ -19,21 +20,19 @@ export default async function GatheringsPage() {
   // The create form's PIC dropdown only offers pengurus (committee +
   // active Cross leaders, migration 0013). `profiles` stays whole because
   // the list below still needs every nickname for rows saved before the rule.
-  const [events, profiles, picOptions, session] = await Promise.all([
+  const [events, profiles, picOptions, role] = await Promise.all([
     getEvents(),
     getProfiles(),
     getPicEligibleProfiles(),
-    getMySessionInfo(),
+    getMyRole(),
   ]);
   // Event writes are committee-only in RLS (migration 0010) — the create
   // button hides for everyone else instead of failing on submit. Demo
-  // mode (session null) keeps it visible for preview.
-  const canManage =
-    !session ||
-    session.appRole === "admin" ||
-    session.appRole === "treasurer" ||
-    session.appRole === "ministry";
+  // mode (role null) keeps it visible for preview.
+  const canManage = isCommittee(role);
 
+  // Server component: renders once per request, so "now" is stable here.
+  // eslint-disable-next-line react-hooks/purity
   const now = Date.now();
   const sorted = [...events].sort(
     (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()
@@ -156,7 +155,7 @@ function GatheringSection({
                       {event.weeklyTheme}
                     </h3>
                     <p className="mt-1 truncate text-xs text-ink-muted sm:text-sm">
-                      {formatWeekdayDayMonth(event.date)} · {formatTime(event.date)} WIB
+                      {formatWeekdayDayMonth(event.date)} · {formatTime(event.date)}
                       {" · PIC: "}
                       <span className="font-medium text-ink">{nameOf(event.picId)}</span>
                       {event.speakerName && (

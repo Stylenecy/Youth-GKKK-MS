@@ -2,7 +2,7 @@ import Link from "next/link";
 import type { Metadata } from "next";
 import { getCrosses, getCrossMemberCounts, getAllCrossLeaderNicknames } from "@/lib/data";
 import { PageHeader, EmptyState } from "@/components/page-parts";
-import { Network, Users, Clock, ChevronRight } from "lucide-react";
+import { Network, Users, Clock } from "lucide-react";
 
 export const metadata: Metadata = { title: "Kelompok Cross" };
 

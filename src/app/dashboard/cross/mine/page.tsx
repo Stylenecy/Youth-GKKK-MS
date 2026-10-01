@@ -11,7 +11,7 @@ import {
 import { PageHeader, EmptyState, Monogram } from "@/components/page-parts";
 import { ClaimCrossCard } from "@/components/ClaimCrossCard";
 import { QuickAddMemberForm } from "@/components/QuickAddMemberForm";
-import { ShieldCheck, Users, Sparkles, KeyRound } from "lucide-react";
+import { ShieldCheck, Users, KeyRound } from "lucide-react";
 
 export const metadata: Metadata = { title: "Kelompokku" };
 

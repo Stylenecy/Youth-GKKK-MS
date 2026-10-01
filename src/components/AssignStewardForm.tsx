@@ -85,16 +85,21 @@ export function AssignStewardForm({
     selected.load !== null &&
     isOverloaded(selected.load);
 
+  // Fresh form on every open — reset in the handler, not in an effect
+  // (an effect would render once with stale values, then again).
+  function open() {
+    setQuery("");
+    setSelectedId(null);
+    setError(null);
+    if (!presetRole) setRole("");
+    setIsOpen(true);
+  }
+
   useEffect(() => {
-    if (isOpen) {
-      setQuery("");
-      setSelectedId(null);
-      setError(null);
-      if (!presetRole) setRole("");
-      const t = setTimeout(() => searchRef.current?.focus(), 60);
-      return () => clearTimeout(t);
-    }
-  }, [isOpen, presetRole]);
+    if (!isOpen) return;
+    const t = setTimeout(() => searchRef.current?.focus(), 60);
+    return () => clearTimeout(t);
+  }, [isOpen]);
 
   function close() {
     setIsOpen(false);
@@ -146,7 +151,7 @@ export function AssignStewardForm({
 
       <button
         type="button"
-        onClick={() => setIsOpen(true)}
+        onClick={open}
         className={
           compact
             ? "btn-outline w-full justify-center text-xs px-2 py-1.5"

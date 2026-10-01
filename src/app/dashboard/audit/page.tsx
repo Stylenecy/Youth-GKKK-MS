@@ -1,14 +1,19 @@
 import type { Metadata } from "next";
-import { getRecentActivity, isSupabaseConfigured } from "@/lib/data";
-import { PageHeader, EmptyState } from "@/components/page-parts";
+import { getRecentActivity, getMyRole, isSupabaseConfigured } from "@/lib/data";
+import { canViewAudit } from "@/lib/roles";
+import { PageHeader, EmptyState, SectionTitle } from "@/components/page-parts";
 import { formatDateTime } from "@/lib/datetime";
-import { ShieldCheck, History, Activity, AlertCircle } from "lucide-react";
+import { History, Activity, AlertCircle, Lock } from "lucide-react";
 
 export const metadata: Metadata = { title: "Log Audit" };
 
 export default async function AuditPage() {
-  const activities = await getRecentActivity(100);
+  const role = await getMyRole();
   const live = isSupabaseConfigured();
+  // audit_logs is admin-only in RLS (0010). Without this a non-admin read
+  // "Belum ada catatan" — which sounds like nothing ever happened.
+  const allowed = canViewAudit(role);
+  const activities = allowed ? await getRecentActivity(100) : [];
 
   return (
     <div className="px-5 py-7 sm:px-8 sm:py-9">
@@ -27,7 +32,15 @@ export default async function AuditPage() {
         </div>
       )}
 
-      {activities.length === 0 ? (
+      {!allowed ? (
+        <div className="mt-8">
+          <EmptyState
+            title="Log audit khusus admin"
+            body="Jejak perubahan berisi data keuangan dan akun, jadi hanya admin yang bisa membukanya. Kalau perlu tahu siapa mengubah sesuatu, tanyakan ke admin."
+            icon={Lock}
+          />
+        </div>
+      ) : activities.length === 0 ? (
         <div className="mt-8">
           <EmptyState
             title="Belum ada catatan aktivitas"
@@ -37,19 +50,9 @@ export default async function AuditPage() {
         </div>
       ) : (
         <div className="mt-8">
-          <div className="flex items-center justify-between border-b border-rule-soft pb-3 mb-6">
-            <div className="flex items-center gap-2">
-              <span className="h-1.5 w-1.5 rounded-full bg-accent" />
-              <h2 className="font-mono text-xs font-bold uppercase tracking-[0.2em] text-accent">
-                ( TIMELINE MUTASI SISTEM )
-              </h2>
-            </div>
-            <span className="font-mono text-xs text-ink-faint">
-              {activities.length} Log Peristiwa
-            </span>
-          </div>
+          <SectionTitle title="Riwayat perubahan" meta={`${activities.length} catatan`} />
 
-          <ol className="relative divide-y divide-rule-soft/60 rounded-2xl border border-line/40 bg-surface/75 backdrop-blur-xl overflow-hidden shadow-sm">
+          <ol className="mt-6 relative divide-y divide-rule-soft/60 rounded-2xl border border-line/40 bg-surface/75 backdrop-blur-xl overflow-hidden shadow-sm">
             {activities.map((a) => (
               <li
                 key={a.id}
@@ -63,7 +66,7 @@ export default async function AuditPage() {
                     {a.description}
                   </p>
                   <p className="mt-1.5 font-mono text-xs font-medium text-ink-muted">
-                    {formatDateTime(a.createdAt)} WIB
+                    {formatDateTime(a.createdAt)}
                   </p>
                 </div>
               </li>
