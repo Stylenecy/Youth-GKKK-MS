@@ -262,7 +262,7 @@ export function PenatalayanBoard({
                             profiles={profiles}
                             crossNames={crossNames}
                             presetRole={role}
-                            buttonLabel="+ Tambah"
+                            buttonLabel="Tambah"
                             compact
                           />
                         </div>

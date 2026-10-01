@@ -16,7 +16,7 @@ import type { StewardAssignment } from "@/lib/types";
 import { canRecordAttendance } from "@/lib/attendance";
 import { isSupabaseConfigured } from "@/lib/supabase/env";
 import { isCommittee as committeeRole } from "@/lib/roles";
-import { PageHeader, BackLink, DataPoint, EmptyState, Monogram } from "@/components/page-parts";
+import { PageHeader, BackLink, DataPoint, EmptyState, Monogram, SectionTitle } from "@/components/page-parts";
 import { EditEventForm } from "@/components/EditEventForm";
 import { AssignStewardForm } from "@/components/AssignStewardForm";
 import { ConfirmAction } from "@/components/ConfirmAction";
@@ -188,20 +188,7 @@ export default async function GatheringDetailPage({
           aria-labelledby="stewards-heading"
           className="rounded-2xl border border-line/40 bg-surface/70 p-6 backdrop-blur-xl shadow-sm"
         >
-          <div className="flex items-center justify-between border-b border-rule-soft pb-3">
-            <div className="flex items-center gap-2">
-              <span className="h-1.5 w-1.5 rounded-full bg-accent" />
-              <h2
-                id="stewards-heading"
-                className="font-mono text-xs font-bold uppercase tracking-[0.2em] text-accent"
-              >
-                ( Penatalayan Pelayanan )
-              </h2>
-            </div>
-            <span className="font-mono text-xs text-ink-faint">
-              {active.length} Petugas Terdaftar
-            </span>
-          </div>
+          <SectionTitle id="stewards-heading" title="Penatalayan Pelayanan" meta={<>{active.length} Petugas Terdaftar</>} />
 
           {stewards.length === 0 ? (
             <div className="mt-6">
@@ -253,12 +240,7 @@ export default async function GatheringDetailPage({
         {/* Aside: Event Metadata & Speaker Details */}
         <aside className="space-y-6">
           <div className="rounded-2xl border border-line/40 bg-surface/70 p-6 backdrop-blur-xl">
-            <div className="flex items-center gap-2 border-b border-rule-soft pb-3">
-              <span className="h-1.5 w-1.5 rounded-full bg-accent" />
-              <h2 className="font-mono text-xs font-bold uppercase tracking-[0.2em] text-accent">
-                ( Informasi Ibadah )
-              </h2>
-            </div>
+            <SectionTitle title="Informasi Ibadah" />
 
             <dl className="mt-4 space-y-3">
               <DataPoint
@@ -284,15 +266,7 @@ export default async function GatheringDetailPage({
           aria-labelledby="attendance-heading"
           className="mt-8 rounded-2xl border border-line/40 bg-surface/70 p-6 backdrop-blur-xl shadow-sm"
         >
-          <div className="flex items-center gap-2 border-b border-rule-soft pb-3">
-            <span className="h-1.5 w-1.5 rounded-full bg-accent" />
-            <h2
-              id="attendance-heading"
-              className="font-mono text-xs font-bold uppercase tracking-[0.2em] text-accent"
-            >
-              ( Kehadiran )
-            </h2>
-          </div>
+          <SectionTitle id="attendance-heading" title="Kehadiran" />
 
           <div className="mt-4">
             {!isSupabaseConfigured() ? (

@@ -8,7 +8,7 @@ import {
   MEMBER_STATUS_FILTERS,
   MEMBER_STATUS_TAG,
 } from "@/lib/members";
-import { PageHeader, EmptyState, Monogram } from "@/components/page-parts";
+import { PageHeader, EmptyState, Monogram, SectionTitle } from "@/components/page-parts";
 import { isOverloaded } from "@/lib/fatigue";
 import { Users, ChevronRight, Search } from "lucide-react";
 
@@ -114,19 +114,9 @@ export default async function MembersPage({
         </div>
       ) : (
         <div className="mt-8">
-          <div className="flex items-center justify-between border-b border-rule-soft pb-3 mb-6">
-            <div className="flex items-center gap-2">
-              <span className="h-1.5 w-1.5 rounded-full bg-accent" />
-              <h2 className="font-mono text-xs font-bold uppercase tracking-[0.2em] text-accent">
-                ( SEMUA ANGGOTA YOUTH )
-              </h2>
-            </div>
-            <span className="font-mono text-xs text-ink-faint" aria-live="polite">
-              {filtered
+          <div className="mb-6"><SectionTitle title="SEMUA ANGGOTA YOUTH" meta={filtered
                 ? `${visible.length} dari ${profiles.length} Anggota`
-                : `${profiles.length} Anggota`}
-            </span>
-          </div>
+                : `${profiles.length} Anggota`} /></div>
 
           <ul className="grid gap-3.5 sm:grid-cols-2 lg:grid-cols-3">
             {visible.map((profile) => {

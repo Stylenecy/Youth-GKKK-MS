@@ -1,7 +1,7 @@
 import Link from "next/link";
 import type { Metadata } from "next";
 import { getCrosses, getCrossMemberCounts, getAllCrossLeaderNicknames } from "@/lib/data";
-import { PageHeader, EmptyState } from "@/components/page-parts";
+import { PageHeader, EmptyState, SectionTitle } from "@/components/page-parts";
 import { Network, Users, Clock } from "lucide-react";
 
 export const metadata: Metadata = { title: "Kelompok Cross" };
@@ -42,17 +42,7 @@ export default async function CrossPage() {
         </div>
       ) : (
         <div className="mt-8">
-          <div className="flex items-center justify-between border-b border-rule-soft pb-3 mb-6">
-            <div className="flex items-center gap-2">
-              <span className="h-1.5 w-1.5 rounded-full bg-accent" />
-              <h2 className="font-mono text-xs font-bold uppercase tracking-[0.2em] text-accent">
-                ( DAFTAR SEL PEMURIDAN )
-              </h2>
-            </div>
-            <span className="font-mono text-xs text-ink-faint">
-              {crosses.length} Kelompok
-            </span>
-          </div>
+          <div className="mb-6"><SectionTitle title="DAFTAR SEL PEMURIDAN" meta={<>{crosses.length} Kelompok</>} /></div>
 
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
             {crosses.map((cross, idx) => {
