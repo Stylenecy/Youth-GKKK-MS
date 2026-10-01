@@ -1586,3 +1586,50 @@ pasti bingung**. IMK di atas kecanggihan.
 `86c5826` → `vercel --prod` (Ready 59s). Cek: `/` 200 · `/login` 200 ·
 `/dashboard/penatalayan` (rute BARU) → login (gate berlaku) · 404 benar.
 Git: `master...origin/master` sinkron penuh, 8 commit 28 Sep semua ter-push.
+
+---
+
+## 1 Okt 2026 — Tuntaskan area Pengurus (Claude Code)
+
+**Sesi:** Claude Code, lokal saja, mode demo (tanpa `.env.local`). Audit lengkap +
+hasil: `docs/AUDIT-PENGURUS-2026-10-01.md`. Panduan awam: `docs/PANDUAN-PENGURUS.md`.
+
+### Koreksi status live
+Deploy terakhir yang tercatat = `86c5826` (29 Sep dini hari), bukan `7d74dc8`.
+Belum live: `b89e270` … `f0103ef` (papan v2, combobox, undo) + 3 commit hari ini.
+
+### Commit (lokal, belum push)
+- `302b810` fix — `lib/roles.ts` satu sumber gate peran; `lib/role-guard.ts`: aksi
+  cek peran dulu dan anggap UPDATE/DELETE 0 baris = gagal (dulu RLS diam-diam →
+  "berhasil" + baris audit palsu). Ekspor CSV dicek peran + anti formula. Nav per
+  peran. Audit non-admin jujur. Antrean persetujuan kosong tampil. Peta beban
+  tidak lagi menyebar baris snake_case. WIB dobel, copy ">3", kartu latihan
+  hardcode dibuang. `Panel`/`SectionTitle`/`Toast` bersama.
+- `90661ef` feat — beranda per peran, kesiapan 8 slot + "Masih kurang", kas toast
+  + Batalkan hapus + pilihan ibadah (bukan ID mentah).
+- `f202da2` refactor — SectionTitle di 7 halaman, tombol papan bernama.
+
+### Angka verifikasi — diukur sendiri
+tsc bersih · 137/137 tes (dari 126) · build hijau 21 rute · lint 51→5 error
+(sisa: 4 landing, 1 DashboardTheme) · 24 screenshot 1440/390: 0 overflow, 0 error.
+
+### Catatan lingkungan
+Port 2990–3089 dicadangkan Windows → `next dev -p 4321`. Ekstensi Chrome tidak
+tersambung; screenshot via Chrome headless + CDP (emulasi 390 benar).
+
+### 🟡 Menunggu Dex (urut)
+1. Push: `git push origin master` (3 commit hari ini; `b89e270`…`f0103ef` sudah di origin tapi belum deploy).
+2. Deploy: `vercel --prod` → cek `/`, `/login`, dashboard → login, 404.
+   Risiko: akun yang RPC perannya bukan komite kini kehilangan tombol tulis
+   (dulu tampil lalu gagal diam-diam) — itu disengaja; ekspor CSV kini 403 untuk
+   non-bendahara.
+3. Migrasi `0014_committee_manage_stewards.sql` di SQL Editor. Tanpa itu
+   "Batalkan"/hapus chip kini menampilkan pesan jujur "izin hapus belum aktif".
+4. SQL cek: `select role, count(*) from steward_assignments group by role;`
+   (peran di luar 6 resmi tidak tampil di papan) dan
+   `select policyname from pg_policies where tablename='finance_transactions';`
+   (pastikan Opsi A kas admin+bendahara sudah jalan).
+5. Uji klik setelah deploy dengan akun Tim Ibadah + Anggota: menu Keuangan/Audit
+   hilang untuk yang bukan haknya, beranda tanpa Saldo, absensi muncul untuk admin.
+6. Keputusan produk (belum dikerjakan): CRUD notulen rapat; Penatalayan masuk
+   bilah bawah HP (sekarang di "Lainnya").
