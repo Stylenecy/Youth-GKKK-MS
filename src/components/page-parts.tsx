@@ -1,5 +1,5 @@
 import Link from "next/link";
-import type { ElementType, ReactNode } from "react";
+import type { ComponentPropsWithoutRef, ElementType, ReactNode } from "react";
 
 /** Standard dashboard page header: kicker, title, count/meta, optional action. */
 export function PageHeader({
@@ -124,28 +124,72 @@ export function Monogram({
   );
 }
 
-/** Reusable section kicker with trailing subtle rule. */
-export function SectionKickerHeader({
-  kicker,
-  title,
-  action,
+const PANEL_TONE = {
+  default: "border-line/40 bg-surface/75 backdrop-blur-xl",
+  accent: "border-line-accent/40 bg-surface/85 backdrop-blur-xl",
+  warning: "border-warning/50 bg-warning-wash/40 backdrop-blur-xl",
+  sunk: "border-rule-soft bg-canvas-sunk/60",
+} as const;
+
+/**
+ * The one dashboard card. Every page used to hand-roll
+ * `rounded-2xl border bg-surface/7x backdrop-blur…` with drifting values;
+ * this keeps radius, border, padding and tone in one place.
+ */
+export function Panel({
+  tone = "default",
+  className = "",
+  children,
+  ...rest
 }: {
-  kicker: string;
-  title?: string;
-  action?: ReactNode;
-}) {
+  tone?: keyof typeof PANEL_TONE;
+  className?: string;
+  children: ReactNode;
+} & Omit<ComponentPropsWithoutRef<"section">, "className" | "children">) {
   return (
-    <div className="flex items-center justify-between border-b border-rule-soft pb-3">
-      <div className="flex items-center gap-3">
-        <span className="h-1.5 w-1.5 rounded-full bg-accent" aria-hidden="true" />
-        <h2 className="font-mono text-xs font-bold uppercase tracking-[0.2em] text-accent">
-          {kicker}
+    <section
+      className={`rounded-2xl border p-5 shadow-sm sm:p-6 ${PANEL_TONE[tone]} ${className}`}
+      {...rest}
+    >
+      {children}
+    </section>
+  );
+}
+
+/**
+ * Section heading inside a Panel or between blocks: accent dot, mono
+ * kicker, optional count/meta on the right and an optional action.
+ * Pass `id` and point the Panel's aria-labelledby at it.
+ */
+export function SectionTitle({
+  id,
+  title,
+  meta,
+  action,
+  tone = "accent",
+}: {
+  id?: string;
+  title: string;
+  meta?: ReactNode;
+  action?: ReactNode;
+  tone?: "accent" | "warning";
+}) {
+  const color = tone === "warning" ? "text-warning" : "text-accent";
+  const dot = tone === "warning" ? "bg-warning" : "bg-accent";
+  return (
+    <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-2 border-b border-rule-soft pb-3">
+      <div className="flex min-w-0 items-center gap-2">
+        <span className={`h-1.5 w-1.5 shrink-0 rounded-full ${dot}`} aria-hidden="true" />
+        <h2 id={id} className={`font-mono text-xs font-bold uppercase tracking-[0.2em] ${color}`}>
+          ( {title} )
         </h2>
-        {title && (
-          <span className="text-sm font-medium text-ink-muted">· {title}</span>
-        )}
       </div>
-      {action && <div>{action}</div>}
+      {(meta || action) && (
+        <div className="flex items-center gap-3">
+          {meta && <span className="font-mono text-xs text-ink-faint">{meta}</span>}
+          {action}
+        </div>
+      )}
     </div>
   );
 }

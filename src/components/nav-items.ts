@@ -11,6 +11,7 @@ import {
   Settings,
   type LucideIcon,
 } from "lucide-react";
+import { canManageFinance, canViewAudit, type RoleOrDemo } from "@/lib/roles";
 
 export type NavItem = {
   href: string;
@@ -19,6 +20,8 @@ export type NavItem = {
   section: "utama" | "admin";
   /** Shown in the phone bottom bar. */
   primary?: boolean;
+  /** Hidden for roles whose RLS would only show them an empty page. */
+  visible?: (role: RoleOrDemo) => boolean;
 };
 
 export const NAV_ITEMS: NavItem[] = [
@@ -28,11 +31,16 @@ export const NAV_ITEMS: NavItem[] = [
   { href: "/dashboard/penatalayan", label: "Penatalayan", icon: ClipboardList, section: "utama" },
   { href: "/dashboard/members", label: "Anggota", icon: Users, section: "utama", primary: true },
   { href: "/dashboard/cross", label: "Cross", icon: Network, section: "utama" },
-  { href: "/dashboard/finance", label: "Keuangan", icon: Wallet, section: "admin" },
+  { href: "/dashboard/finance", label: "Keuangan", icon: Wallet, section: "admin", visible: canManageFinance },
   { href: "/dashboard/meetings", label: "Rapat", icon: NotebookPen, section: "admin" },
-  { href: "/dashboard/audit", label: "Audit", icon: History, section: "admin" },
+  { href: "/dashboard/audit", label: "Audit", icon: History, section: "admin", visible: canViewAudit },
   { href: "/dashboard/settings", label: "Pengaturan", icon: Settings, section: "admin" },
 ];
+
+/** Menu for one role. `null` = demo mode: everything, for preview. */
+export function navFor(role: RoleOrDemo): NavItem[] {
+  return NAV_ITEMS.filter((i) => !i.visible || i.visible(role));
+}
 
 export function isActive(pathname: string, href: string): boolean {
   if (href === "/dashboard") return pathname === "/dashboard";

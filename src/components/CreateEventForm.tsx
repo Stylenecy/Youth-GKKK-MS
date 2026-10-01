@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useTransition } from "react";
-import { Plus, Sparkles } from "lucide-react";
+import { Plus } from "lucide-react";
 import { createEvent } from "@/app/actions/gatherings";
 import type { Profile } from "@/lib/types";
 import { Modal, Field, fieldClass } from "./Modal";

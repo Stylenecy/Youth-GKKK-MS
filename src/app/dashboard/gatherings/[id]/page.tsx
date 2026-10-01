@@ -15,6 +15,7 @@ import {
 import type { StewardAssignment } from "@/lib/types";
 import { canRecordAttendance } from "@/lib/attendance";
 import { isSupabaseConfigured } from "@/lib/supabase/env";
+import { isCommittee as committeeRole } from "@/lib/roles";
 import { PageHeader, BackLink, DataPoint, EmptyState, Monogram } from "@/components/page-parts";
 import { EditEventForm } from "@/components/EditEventForm";
 import { AssignStewardForm } from "@/components/AssignStewardForm";
@@ -28,7 +29,7 @@ import {
   countdownLabel,
   eventTypeLabel,
 } from "@/lib/datetime";
-import { Users, Clock, Calendar, Sparkles, ClipboardCheck } from "lucide-react";
+import { Users, ClipboardCheck } from "lucide-react";
 
 const STEWARD_STATUS: Record<string, { label: string; cls: string }> = {
   confirmed: { label: "Sudah konfirmasi", cls: "tag tag-sage font-medium" },
@@ -88,20 +89,17 @@ export default async function GatheringDetailPage({
   // hidden for everyone else instead of failing on submit. The role comes
   // from the session (works even for admins without a profiles row);
   // demo mode keeps everything visible for preview.
-  const role = session?.appRole ?? current?.appRole;
-  const canManage =
-    !isSupabaseConfigured() ||
-    role === "admin" ||
-    role === "treasurer" ||
-    role === "ministry";
-  const isCommittee =
-    current?.appRole === "admin" ||
-    current?.appRole === "treasurer" ||
-    current?.appRole === "ministry";
+  // One role for both gates: the session's. Reading it from the profiles
+  // row instead hid attendance from admins who have no profile row.
+  const role = isSupabaseConfigured()
+    ? (session?.appRole ?? current?.appRole ?? "member")
+    : null;
+  const canManage = committeeRole(role);
+  const isCommittee = role !== null && committeeRole(role);
   const isPic = !!current && !!event.picId && current.id === event.picId;
   const showAttendance = isSupabaseConfigured()
     ? canRecordAttendance({
-        appRole: current?.appRole ?? null,
+        appRole: role,
         isEventPic: isPic,
         leadsAnyCross: leaderCrossIds.length > 0,
       })
@@ -137,7 +135,7 @@ export default async function GatheringDetailPage({
         <PageHeader
           kicker={eventTypeLabel(event.eventType)}
           title={event.weeklyTheme}
-          meta={`${formatFullDate(event.date)} · ${formatTime(event.date)} WIB · Ruang Hermon`}
+          meta={`${formatFullDate(event.date)} · ${formatTime(event.date)} · Ruang Hermon`}
         />
       </div>
 
@@ -167,6 +165,7 @@ export default async function GatheringDetailPage({
               title="Pulihkan ibadah ini?"
               body="Ibadah akan kembali muncul sebagai rencana dan bisa dijadwalkan ulang."
               confirmLabel="Pulihkan"
+              successMessage="Ibadah dipulihkan."
               onConfirm={restoreThis}
             />
           ) : (
@@ -175,6 +174,7 @@ export default async function GatheringDetailPage({
               title="Arsipkan ibadah ini?"
               body="Ibadah akan hilang dari halaman depan dan agenda publik, tapi datanya tetap tersimpan untuk audit dan bisa dipulihkan kapan saja."
               confirmLabel="Arsipkan"
+              successMessage="Ibadah diarsipkan. Bisa dipulihkan dari halaman ini kapan saja."
               onConfirm={archiveThis}
             />
           )}
@@ -274,15 +274,6 @@ export default async function GatheringDetailPage({
                 value={event.description || "Tidak ada catatan tambahan."}
               />
             </dl>
-          </div>
-
-          <div className="rounded-2xl border border-rule-soft bg-canvas-sunk/60 p-5">
-            <p className="font-mono text-[0.6875rem] font-bold uppercase tracking-[0.16em] text-accent">
-              Catatan Penatalayan
-            </p>
-            <p className="mt-2 text-xs leading-relaxed text-ink-muted">
-              Latihan awal diadakan Rabu pukul 19:00 WIB. Gladi bersih ibadah dilaksanakan Sabtu pukul 15:00 WIB di Ruang Hermon.
-            </p>
           </div>
         </aside>
       </div>

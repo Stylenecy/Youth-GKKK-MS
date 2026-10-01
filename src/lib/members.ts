@@ -1,5 +1,13 @@
 import type { MemberStatus, Profile } from "./types";
 
+/** One status, one label, one tag style — list and detail pages share it. */
+export const MEMBER_STATUS_TAG: Record<MemberStatus, { label: string; cls: string }> = {
+  active: { label: "Aktif", cls: "tag tag-sage font-medium" },
+  away: { label: "Berhalangan", cls: "tag tag-warning font-medium" },
+  alumni: { label: "Alumni", cls: "tag font-medium opacity-75" },
+  inactive: { label: "Tidak aktif", cls: "tag font-medium opacity-60" },
+};
+
 export type MemberStatusFilter = MemberStatus | "all";
 
 export const MEMBER_STATUS_FILTERS: { value: MemberStatusFilter; label: string }[] = [

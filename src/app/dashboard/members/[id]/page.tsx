@@ -7,19 +7,12 @@ import {
   isSupabaseConfigured,
 } from "@/lib/data";
 import { canViewContacts } from "@/lib/phone";
-import { isOverloaded } from "@/lib/fatigue";
+import { isOverloaded, FATIGUE_THRESHOLD, FATIGUE_WINDOW_DAYS } from "@/lib/fatigue";
+import { MEMBER_STATUS_TAG } from "@/lib/members";
 import { PageHeader, BackLink, DataPoint, Monogram } from "@/components/page-parts";
 import WhatsAppButton from "@/components/WhatsAppButton";
 import { formatDayMonth } from "@/lib/datetime";
-import { User, AlertTriangle, ShieldCheck } from "lucide-react";
-
-// Same labels as the directory list — one status, one name everywhere.
-const STATUS: Record<string, { label: string; cls: string }> = {
-  active: { label: "Aktif", cls: "tag tag-sage font-medium" },
-  away: { label: "Berhalangan", cls: "tag tag-warning font-medium" },
-  alumni: { label: "Alumni", cls: "tag font-medium opacity-75" },
-  inactive: { label: "Tidak aktif", cls: "tag font-medium opacity-60" },
-};
+import { AlertTriangle } from "lucide-react";
 
 export async function generateMetadata({
   params,
@@ -48,7 +41,7 @@ export default async function MemberDetailPage({
     : true;
   const whatsapp = canView ? await getMemberWhatsapp(id) : null;
 
-  const status = STATUS[profile.status] ?? STATUS.inactive;
+  const status = MEMBER_STATUS_TAG[profile.status] ?? MEMBER_STATUS_TAG.inactive;
   const isFatigued = isOverloaded(profile.serviceCount30d);
 
   return (
@@ -87,7 +80,7 @@ export default async function MemberDetailPage({
           <div>
             <p className="font-bold">Perlu Diistirahatkan ({profile.serviceCount30d}&times; Pelayanan)</p>
             <p className="mt-1 text-xs text-ink-muted leading-relaxed">
-              Anggota ini telah melayani lebih dari 3 kali dalam 30 hari terakhir. Berikan waktu jeda pelayanan agar keseimbangan rohani dan fisiknya tetap terjaga.
+              Anggota ini telah melayani lebih dari {FATIGUE_THRESHOLD} kali dalam {FATIGUE_WINDOW_DAYS} hari terakhir. Berikan waktu jeda pelayanan agar keseimbangan rohani dan fisiknya tetap terjaga.
             </p>
           </div>
         </div>

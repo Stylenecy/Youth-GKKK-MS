@@ -1,6 +1,6 @@
 import Link from "next/link";
 import type { Metadata } from "next";
-import { ChevronRight, FileText, Calendar, Users } from "lucide-react";
+import { ChevronRight, FileText, Users } from "lucide-react";
 import { getMeetings } from "@/lib/data";
 import { PageHeader, EmptyState } from "@/components/page-parts";
 import { formatWeekdayDayMonth, formatTime } from "@/lib/datetime";
@@ -56,7 +56,7 @@ export default async function MeetingsPage() {
                       <span className="text-accent font-bold">
                         {formatWeekdayDayMonth(meeting.date)}
                       </span>
-                      <span>{formatTime(meeting.date)} WIB</span>
+                      <span>{formatTime(meeting.date)}</span>
                     </div>
 
                     <h2 className="mt-3 font-serif text-xl font-bold text-ink group-hover:text-accent transition-colors">

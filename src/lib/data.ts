@@ -1,3 +1,4 @@
+import type { SupabaseClient } from "@supabase/supabase-js";
 import { isSupabaseConfigured } from "./supabase/env";
 import { mapAttendanceRow } from "./attendance";
 import { FATIGUE_THRESHOLD } from "./fatigue";
@@ -195,6 +196,23 @@ interface MeetingRow {
   created_at: string;
 }
 
+/** Narrow projections — only the columns a query actually selects. */
+interface ProfileIdRow { profile_id: string }
+interface CrossIdRow { cross_id: string }
+interface MembershipPairRow { cross_id: string; profile_id: string }
+interface NameRow { id: string; name: string }
+interface NicknameRow { id: string; nickname: string }
+interface AmountRow { amount: number; type: FinanceType }
+interface AuditRow { id: string; action: string; timestamp: string }
+interface ApprovalRow {
+  user_id: string;
+  email: string;
+  display_name: string | null;
+  status: AccountStatus;
+  requested_at: string;
+  note: string | null;
+}
+
 function mapMeetingRow(row: MeetingRow): Meeting {
   return {
     id: row.id,
@@ -256,8 +274,11 @@ export async function getDashboardStats(): Promise<DashboardStats> {
       supabase.from("finance_transactions").select("amount,type").is("deleted_at", null),
     ]);
 
-    const income = (finance.data ?? []).filter((f: any) => f.type === "income").reduce((a: number, b: any) => a + b.amount, 0);
-    const expense = (finance.data ?? []).filter((f: any) => f.type === "expense").reduce((a: number, b: any) => a + b.amount, 0);
+    const rows: AmountRow[] = finance.data ?? [];
+    const sum = (type: FinanceType) =>
+      rows.filter((f) => f.type === type).reduce((a, b) => a + b.amount, 0);
+    const income = sum("income");
+    const expense = sum("expense");
 
     return {
       totalMembers: members.count ?? 0,
@@ -320,12 +341,12 @@ export async function getFatigueAlerts(): Promise<FatigueAlert[]> {
       .gte("events.date", thirtyDaysAgo);
 
     const countMap: Record<string, number> = {};
-    (assignments ?? []).forEach((a: any) => {
+    ((assignments ?? []) as ProfileIdRow[]).forEach((a) => {
       countMap[a.profile_id] = (countMap[a.profile_id] || 0) + 1;
     });
 
     const alertIds = Object.entries(countMap)
-      .filter(([_, count]) => count > FATIGUE_THRESHOLD)
+      .filter(([, count]) => count > FATIGUE_THRESHOLD)
       .map(([id]) => id);
 
     if (alertIds.length === 0) return [];
@@ -335,9 +356,11 @@ export async function getFatigueAlerts(): Promise<FatigueAlert[]> {
       .select(PROFILE_COLUMNS)
       .in("id", alertIds);
 
-    return (profiles ?? []).map((p: any) => ({
-      member: { ...p, serviceCount30d: countMap[p.id] },
-      serviceCount: countMap[p.id],
+    // Map, never spread: the raw row is snake_case, so `{ ...row }` left
+    // fullName/createdAt undefined on every alert card.
+    return ((profiles ?? []) as ProfileRow[]).map((row) => ({
+      member: { ...mapProfileRow(row), serviceCount30d: countMap[row.id] },
+      serviceCount: countMap[row.id],
     }));
   }
 
@@ -359,7 +382,7 @@ export async function getRecentActivity(limit = 5): Promise<RecentActivity[]> {
       .order("timestamp", { ascending: false })
       .limit(limit);
 
-    return (data ?? []).map((log: any) => ({
+    return ((data ?? []) as AuditRow[]).map((log) => ({
       id: log.id,
       description: log.action,
       createdAt: log.timestamp,
@@ -367,7 +390,7 @@ export async function getRecentActivity(limit = 5): Promise<RecentActivity[]> {
   }
 
   const { getRecentActivity } = await import("./seed");
-  return getRecentActivity();
+  return (await getRecentActivity()).slice(0, limit);
 }
 
 /**
@@ -379,7 +402,7 @@ export async function getRecentActivity(limit = 5): Promise<RecentActivity[]> {
  * pengurus.
  */
 async function serviceCounts30d(
-  supabase: { from: (t: string) => any }
+  supabase: SupabaseClient
 ): Promise<Record<string, number>> {
   const since = new Date(Date.now() - 30 * 86400000).toISOString();
   const { data } = await supabase
@@ -388,7 +411,7 @@ async function serviceCounts30d(
     .gte("events.date", since);
 
   const counts: Record<string, number> = {};
-  (data ?? []).forEach((row: any) => {
+  ((data ?? []) as ProfileIdRow[]).forEach((row) => {
     counts[row.profile_id] = (counts[row.profile_id] ?? 0) + 1;
   });
   return counts;
@@ -563,10 +586,10 @@ export async function getProfileCrossNames(): Promise<Record<string, string[]>> 
     ]);
 
     const names = new Map(
-      ((crosses ?? []) as any[]).map((c) => [c.id as string, c.name as string])
+      ((crosses ?? []) as NameRow[]).map((c) => [c.id, c.name])
     );
     const out: Record<string, string[]> = {};
-    for (const m of (memberships ?? []) as any[]) {
+    for (const m of (memberships ?? []) as MembershipPairRow[]) {
       const name = names.get(m.cross_id);
       if (!name) continue;
       (out[m.profile_id] ??= []).push(name);
@@ -616,7 +639,7 @@ export async function getCrossMembers(crossId: string): Promise<Profile[]> {
       .eq("cross_id", crossId)
       .eq("is_active", true);
 
-    const ids = [...new Set((memberships ?? []).map((m: any) => m.profile_id))];
+    const ids = [...new Set(((memberships ?? []) as ProfileIdRow[]).map((m) => m.profile_id))];
     if (ids.length === 0) return [];
 
     const { data: profiles } = await supabase
@@ -649,7 +672,7 @@ export async function getCrossLeaders(crossId: string): Promise<Profile[]> {
       .eq("role", "leader")
       .eq("is_active", true);
 
-    const ids = [...new Set((memberships ?? []).map((m: any) => m.profile_id))];
+    const ids = [...new Set(((memberships ?? []) as ProfileIdRow[]).map((m) => m.profile_id))];
     if (ids.length === 0) return [];
 
     const { data: profiles } = await supabase
@@ -779,6 +802,19 @@ export async function getMySessionInfo(): Promise<SessionInfo | null> {
   };
 }
 
+/**
+ * The role every UI gate reads (see lib/roles.ts).
+ *
+ * null = demo mode, where every control stays visible for preview. In live
+ * mode a missing session falls back to "member" — fail closed, so a glitch
+ * hides buttons instead of offering ones RLS will refuse.
+ */
+export async function getMyRole(): Promise<AppRole | null> {
+  if (!isSupabaseConfigured()) return null;
+  const session = await getMySessionInfo();
+  return session?.appRole ?? "member";
+}
+
 /** The approval queue. Empty for non-admins — RLS decides, not this code. */
 export async function getAccountApprovals(): Promise<AccountApproval[]> {
   if (!isSupabaseConfigured()) return [];
@@ -790,11 +826,11 @@ export async function getAccountApprovals(): Promise<AccountApproval[]> {
     .select("user_id,email,display_name,status,requested_at,note")
     .order("requested_at", { ascending: false });
 
-  return (data ?? []).map((r: any) => ({
+  return ((data ?? []) as ApprovalRow[]).map((r) => ({
     userId: r.user_id,
     email: r.email,
     displayName: r.display_name,
-    status: r.status as AccountStatus,
+    status: r.status,
     requestedAt: r.requested_at,
     note: r.note,
   }));
@@ -816,7 +852,7 @@ export async function getMyLeaderCrossIds(): Promise<string[]> {
     .eq("role", "leader")
     .eq("is_active", true);
 
-  return [...new Set((data ?? []).map((r: any) => r.cross_id as string))];
+  return [...new Set(((data ?? []) as CrossIdRow[]).map((r) => r.cross_id))];
 }
 
 /** Leader nicknames for every Cross, keyed by cross id — one query for a list page. */
@@ -830,15 +866,17 @@ export async function getAllCrossLeaderNicknames(): Promise<Record<string, strin
       .eq("role", "leader")
       .eq("is_active", true);
 
-    const ids = [...new Set((memberships ?? []).map((m: any) => m.profile_id))];
+    const ids = [...new Set(((memberships ?? []) as ProfileIdRow[]).map((m) => m.profile_id))];
     if (ids.length === 0) return {};
     const { data: profiles } = await supabase
       .from("profiles")
       .select("id,nickname")
       .in("id", ids);
-    const nicknameById = new Map((profiles ?? []).map((p: any) => [p.id, p.nickname]));
+    const nicknameById = new Map(
+      ((profiles ?? []) as NicknameRow[]).map((p) => [p.id, p.nickname])
+    );
 
-    return (memberships ?? []).reduce((acc: Record<string, string[]>, m: any) => {
+    return ((memberships ?? []) as MembershipPairRow[]).reduce((acc: Record<string, string[]>, m) => {
       const nickname = nicknameById.get(m.profile_id);
       if (!nickname) return acc;
       (acc[m.cross_id] ??= []).push(nickname);
@@ -867,7 +905,7 @@ export async function getCrossMemberCounts(): Promise<Record<string, number>> {
       .select("cross_id")
       .eq("is_active", true);
 
-    return (data ?? []).reduce((acc: Record<string, number>, row: any) => {
+    return ((data ?? []) as CrossIdRow[]).reduce((acc: Record<string, number>, row) => {
       acc[row.cross_id] = (acc[row.cross_id] ?? 0) + 1;
       return acc;
     }, {});

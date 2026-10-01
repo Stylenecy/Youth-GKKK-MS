@@ -2,7 +2,7 @@
 
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { KeyRound, ShieldCheck } from "lucide-react";
+import { KeyRound } from "lucide-react";
 import { claimCrossLeadership } from "@/app/actions/cross";
 import type { Cross } from "@/lib/types";
 

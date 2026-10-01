@@ -2,16 +2,18 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { NAV_ITEMS, isActive } from "./nav-items";
+import { navFor, isActive } from "./nav-items";
+import type { RoleOrDemo } from "@/lib/roles";
 import { Logomark } from "./Masthead";
 import { ThemeToggle } from "./DashboardTheme";
 
 /** Persistent rail. Hidden below `lg`, where MobileNav takes over. */
-export function Sidebar() {
+export function Sidebar({ role }: { role: RoleOrDemo }) {
   const pathname = usePathname();
 
-  const mainItems = NAV_ITEMS.filter((i) => i.section === "utama");
-  const adminItems = NAV_ITEMS.filter((i) => i.section === "admin");
+  const items = navFor(role);
+  const mainItems = items.filter((i) => i.section === "utama");
+  const adminItems = items.filter((i) => i.section === "admin");
 
   return (
     <aside className="sticky top-0 hidden h-screen w-64 shrink-0 flex-col border-r border-rule-soft bg-surface/90 backdrop-blur-xl lg:flex z-30">

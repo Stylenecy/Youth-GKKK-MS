@@ -152,7 +152,7 @@ export default async function LandingPage() {
                           ( Waktu )
                         </dt>
                         <dd className="num mt-2 font-serif text-lg font-semibold text-accent">
-                          {formatTime(upcoming.date)} WIB
+                          {formatTime(upcoming.date)}
                         </dd>
                       </div>
                       <div>

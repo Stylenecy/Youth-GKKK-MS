@@ -4,7 +4,8 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useId, useRef, useState } from "react";
 import { MoreHorizontal, X } from "lucide-react";
-import { NAV_ITEMS, isActive } from "./nav-items";
+import { navFor, isActive } from "./nav-items";
+import type { RoleOrDemo } from "@/lib/roles";
 import { Logomark } from "./Masthead";
 import { ThemeToggle } from "./DashboardTheme";
 
@@ -12,16 +13,19 @@ import { ThemeToggle } from "./DashboardTheme";
  * Responsive Mobile Navigation for phone & tablet.
  * Bottom tab bar with thumb-reachable primary items and modal sheet for administrative modules.
  */
-export function MobileNav() {
+export function MobileNav({ role }: { role: RoleOrDemo }) {
   const pathname = usePathname();
   const [open, setOpen] = useState(false);
   const sheetId = useId();
   const closeRef = useRef<HTMLButtonElement>(null);
 
-  // Close the sheet whenever navigation happens.
-  useEffect(() => {
+  // Close the sheet whenever navigation happens — adjusted during render
+  // (React's "storing information from previous renders"), not in an effect.
+  const [lastPath, setLastPath] = useState(pathname);
+  if (pathname !== lastPath) {
+    setLastPath(pathname);
     setOpen(false);
-  }, [pathname]);
+  }
 
   useEffect(() => {
     if (!open) return;
@@ -41,8 +45,9 @@ export function MobileNav() {
     };
   }, [open]);
 
-  const primary = NAV_ITEMS.filter((i) => i.primary);
-  const secondary = NAV_ITEMS.filter((i) => !i.primary);
+  const items = navFor(role);
+  const primary = items.filter((i) => i.primary);
+  const secondary = items.filter((i) => !i.primary);
   const secondaryActive = secondary.some((i) => isActive(pathname, i.href));
 
   return (

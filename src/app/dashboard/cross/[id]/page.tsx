@@ -3,7 +3,7 @@ import { notFound } from "next/navigation";
 import type { Metadata } from "next";
 import { getCrosses, getCrossMembers, getCrossLeaders } from "@/lib/data";
 import { PageHeader, BackLink, DataPoint, Monogram } from "@/components/page-parts";
-import { Users, AlertTriangle, Clock, ArrowRight } from "lucide-react";
+import { Users, AlertTriangle } from "lucide-react";
 
 export async function generateMetadata({
   params,

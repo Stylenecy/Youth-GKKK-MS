@@ -112,7 +112,7 @@ export const seedEvents: Event[] = [
 
 export const seedStewards: StewardAssignment[] = [
   { id: "s1", eventId: "e1", profileId: "3", role: "WL", status: "confirmed", reason: null, createdAt: daysAgo(6) },
-  { id: "s2", eventId: "e1", profileId: "1", role: "Musik", status: "confirmed", reason: null, createdAt: daysAgo(6) },
+  { id: "s2", eventId: "e1", profileId: "1", role: "Pemusik", status: "confirmed", reason: null, createdAt: daysAgo(6) },
   { id: "s3", eventId: "e1", profileId: "7", role: "Singer", status: "confirmed", reason: null, createdAt: daysAgo(6) },
   { id: "s4", eventId: "e1", profileId: "2", role: "Multimedia", status: "confirmed", reason: null, createdAt: daysAgo(6) },
   { id: "s5", eventId: "e1", profileId: "8", role: "Sound", status: "assigned", reason: null, createdAt: daysAgo(5) },

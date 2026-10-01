@@ -1,21 +1,12 @@
 import type { Metadata } from "next";
 import { isSupabaseConfigured } from "@/lib/supabase/env";
 import { getMySessionInfo } from "@/lib/data";
-import type { AppRole } from "@/lib/types";
+import { ROLE_LABEL } from "@/lib/roles";
 import { PageHeader, DataPoint } from "@/components/page-parts";
 import { AccountApprovals } from "@/components/AccountApprovals";
 import { SignOutButton } from "@/components/SignOutButton";
-import { Settings, Shield, Database, Lock, Globe, CheckCircle2 } from "lucide-react";
 
 export const metadata: Metadata = { title: "Pengaturan Sistem" };
-
-const ROLE_LABELS: Record<AppRole, string> = {
-  admin: "Pengurus Inti (Admin)",
-  treasurer: "Bendahara",
-  leader: "Pemimpin Cross",
-  ministry: "Tim Ibadah",
-  member: "Anggota",
-};
 
 export default async function SettingsPage() {
   const live = isSupabaseConfigured();
@@ -61,7 +52,7 @@ export default async function SettingsPage() {
               />
               <DataPoint
                 label="Peran"
-                value={ROLE_LABELS[session.appRole] ?? session.appRole}
+                value={ROLE_LABEL[session.appRole] ?? session.appRole}
               />
             </dl>
 

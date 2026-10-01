@@ -6,19 +6,13 @@ import {
   countByStatus,
   parseMemberStatusFilter,
   MEMBER_STATUS_FILTERS,
+  MEMBER_STATUS_TAG,
 } from "@/lib/members";
 import { PageHeader, EmptyState, Monogram } from "@/components/page-parts";
 import { isOverloaded } from "@/lib/fatigue";
 import { Users, ChevronRight, Search } from "lucide-react";
 
 export const metadata: Metadata = { title: "Direktori Anggota" };
-
-const STATUS: Record<string, { label: string; cls: string }> = {
-  active: { label: "Aktif", cls: "tag tag-sage font-medium" },
-  away: { label: "Berhalangan", cls: "tag tag-warning font-medium" },
-  alumni: { label: "Alumni", cls: "tag font-medium opacity-75" },
-  inactive: { label: "Tidak aktif", cls: "tag font-medium opacity-60" },
-};
 
 export default async function MembersPage({
   searchParams,
@@ -136,7 +130,7 @@ export default async function MembersPage({
 
           <ul className="grid gap-3.5 sm:grid-cols-2 lg:grid-cols-3">
             {visible.map((profile) => {
-              const s = STATUS[profile.status] ?? STATUS.inactive;
+              const s = MEMBER_STATUS_TAG[profile.status] ?? MEMBER_STATUS_TAG.inactive;
               const isFatigued = isOverloaded(profile.serviceCount30d);
               const crosses = crossNames[profile.id] ?? [];
               return (
@@ -179,7 +173,7 @@ export default async function MembersPage({
                                 : "border-line-accent/30 bg-accent-wash/60 text-accent"
                             }`}
                           >
-                            {profile.serviceCount30d}&times; bulan ini
+                            {profile.serviceCount30d}&times; / 30 hari
                           </span>
                         )}
                       </div>
