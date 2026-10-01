@@ -3,6 +3,7 @@ import {
   SLOT_NEEDS,
   slotStatus,
   sortStewardCandidates,
+  serviceReadiness,
   type StewardCandidate,
 } from "../src/lib/stewards";
 
@@ -110,5 +111,32 @@ describe("urutan kandidat (spek IMK 29 Sep 2026)", () => {
   it("saat mencari, cocok-nama menang atas beban", () => {
     const rows = sortStewardCandidates(base, "dian");
     expect(rows.map((r) => r.cand.id)).toEqual(["f", "a"]);
+  });
+});
+
+describe("serviceReadiness", () => {
+  const s = (role: string, status = "assigned") => ({ role, status });
+
+  it("counts 8 minimum slots for an empty Saturday", () => {
+    const r = serviceReadiness([]);
+    expect(r.needed).toBe(8);
+    expect(r.filled).toBe(0);
+    expect(r.missing.map((m) => m.role)).toEqual([
+      "WL", "Singer", "Pemusik", "Multimedia", "Sound", "Usher",
+    ]);
+  });
+
+  it("does not let extra musicians cover a missing usher", () => {
+    const r = serviceReadiness([
+      s("WL"), s("Singer"), s("Singer"), s("Pemusik"), s("Pemusik"), s("Pemusik"),
+      s("Multimedia"), s("Sound"),
+    ]);
+    expect(r.filled).toBe(6);
+    expect(r.missing).toEqual([{ role: "Usher", count: 2 }]);
+  });
+
+  it("ignores replaced rows and roles outside the official list", () => {
+    const r = serviceReadiness([s("WL", "replaced"), s("Musik")]);
+    expect(r.filled).toBe(0);
   });
 });

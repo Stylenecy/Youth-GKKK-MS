@@ -38,3 +38,9 @@ export function categoryKeyFromLabel(label: string): string | null {
   const hit = ALL_CATEGORIES.find(([, l]) => l.toLowerCase() === normalized);
   return hit ? hit[0] : null;
 }
+
+/** An event the treasurer can link a transaction to — label, never a raw id. */
+export interface EventOption {
+  id: string;
+  label: string;
+}

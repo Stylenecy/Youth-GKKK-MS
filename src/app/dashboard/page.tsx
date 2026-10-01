@@ -5,13 +5,13 @@ import {
   Network,
   CalendarDays,
   Wallet,
-  AlertTriangle,
   ArrowRight,
-  Plus,
   Clock,
-  Sparkles,
   ChevronRight,
-  ShieldAlert,
+  ClipboardList,
+  NotebookPen,
+  UsersRound,
+  UserCog,
 } from "lucide-react";
 import {
   getDashboardStats,
@@ -19,6 +19,7 @@ import {
   getFatigueAlerts,
   getRecentActivity,
   getProfiles,
+  getMyRole,
 } from "@/lib/data";
 import type { StewardAssignment } from "@/lib/types";
 import {
@@ -29,20 +30,37 @@ import {
   eventTypeLabel,
   formatRupiahCompact,
 } from "@/lib/datetime";
-import { Monogram } from "@/components/page-parts";
+import { FATIGUE_THRESHOLD, FATIGUE_WINDOW_DAYS } from "@/lib/fatigue";
+import { serviceReadiness } from "@/lib/stewards";
+import {
+  isCommittee,
+  canManageFinance,
+  canViewAudit,
+  ROLE_LABEL,
+} from "@/lib/roles";
+import {
+  PageHeader,
+  Panel,
+  SectionTitle,
+  EmptyState,
+  Monogram,
+} from "@/components/page-parts";
 
 export const metadata: Metadata = { title: "Dashboard Pengurus" };
 
-/** Roles a Saturday service needs filled, used for the readiness meter. */
-const REQUIRED_ROLES = 6;
-
 export default async function DashboardPage() {
+  const role = await getMyRole();
+  const committee = isCommittee(role);
+  const finance = canManageFinance(role);
+  const audit = canViewAudit(role);
+
   const [stats, upcoming, fatigueAlerts, activities, profiles] =
     await Promise.all([
       getDashboardStats(),
       getUpcomingGathering(),
       getFatigueAlerts(),
-      getRecentActivity(),
+      // audit_logs is admin-only (RLS 0010): don't fetch what we won't show.
+      audit ? getRecentActivity(6) : Promise.resolve([]),
       getProfiles(),
     ]);
 
@@ -52,405 +70,354 @@ export default async function DashboardPage() {
   const stewards = (upcoming?.stewardAssignments ?? []).filter(
     (s: StewardAssignment) => s.status !== "replaced"
   );
-  const filled = stewards.length;
-  const readiness = Math.min(100, Math.round((filled / REQUIRED_ROLES) * 100));
+  const ready = serviceReadiness(stewards);
+  const readiness = Math.round((ready.filled / ready.needed) * 100);
+  const complete = ready.missing.length === 0;
 
   const statCards = [
     {
-      kicker: "ANGGOTA",
-      label: "Total Terdaftar",
+      kicker: "Anggota",
+      label: "Total terdaftar",
       value: String(stats.totalMembers),
       icon: Users,
       href: "/dashboard/members",
-      hint: "Data jemaat pemuda",
     },
     {
-      kicker: "CROSS",
-      label: "Kelompok Aktif",
+      kicker: "Cross",
+      label: "Kelompok aktif",
       value: String(stats.activeCrossGroups),
       icon: Network,
       href: "/dashboard/cross",
-      hint: "Pemuridan sel",
     },
     {
-      kicker: "IBADAH",
-      label: "Bulan Ini",
+      kicker: "Ibadah",
+      label: "Bulan ini",
       value: String(stats.monthGatherings),
       icon: CalendarDays,
       href: "/dashboard/gatherings",
-      hint: "Ibadah raya terjadwal",
     },
-    {
-      kicker: "KAS KEUANGAN",
-      label: "Saldo Kas",
-      value: formatRupiahCompact(stats.totalBalance),
-      icon: Wallet,
-      href: "/dashboard/finance",
-      hint: "Kas besar & kecil",
-    },
+    // Saldo only for those who can open the cash book — for everyone else
+    // RLS returns no rows and the card would claim "Rp 0".
+    ...(finance
+      ? [
+          {
+            kicker: "Kas",
+            label: "Saldo kas",
+            value: formatRupiahCompact(stats.totalBalance),
+            icon: Wallet,
+            href: "/dashboard/finance",
+          },
+        ]
+      : []),
+  ];
+
+  const shortcuts = [
+    ...(committee
+      ? [
+          { href: "/dashboard/penatalayan", label: "Papan Penatalayan", sub: "Isi petugas per Sabtu", icon: ClipboardList },
+          { href: "/dashboard/gatherings", label: "Jadwal Ibadah", sub: "Tema, PIC, arsip", icon: CalendarDays },
+        ]
+      : [
+          { href: "/dashboard/gatherings", label: "Jadwal Ibadah", sub: "Siapa melayani kapan", icon: CalendarDays },
+        ]),
+    { href: "/dashboard/cross/mine", label: "Kelompokku", sub: "Anggota Cross-mu", icon: UsersRound },
+    { href: "/dashboard/members", label: "Data Anggota", sub: "Cari nama & Cross", icon: Users },
+    ...(finance
+      ? [{ href: "/dashboard/finance", label: "Catat Kas", sub: "Buku transaksi", icon: Wallet }]
+      : []),
+    { href: "/dashboard/meetings", label: "Notulen Rapat", sub: "Arsip keputusan", icon: NotebookPen },
   ];
 
   return (
     <div className="px-5 py-7 sm:px-8 sm:py-9">
-      {/* Editorial Header Banner */}
-      <header className="relative flex flex-col gap-4 border-b border-rule-soft pb-7 sm:flex-row sm:items-end sm:justify-between">
-        <div>
-          <div className="flex items-center gap-2">
-            <p className="kicker">
-              <span className="kicker-num">( RINGKASAN PELAYANAN )</span>
-            </p>
-            <span className="hidden sm:inline-block text-xs font-mono text-ink-faint">
-              · {formatFullDate(new Date())}
-            </span>
-          </div>
-          <h1 className="section-heading mt-2.5 text-3xl font-bold tracking-tight text-ink sm:text-4xl">
-            Dashboard Pengurus
-          </h1>
-          <p className="mt-1 text-sm text-ink-muted leading-relaxed">
-            Pusat koordinasi ritme mingguan, penatalayanan ibadah, dan administrasi Youth GKKK.
-          </p>
-        </div>
+      <PageHeader
+        kicker="RINGKASAN MINGGU INI"
+        title="Dashboard Pengurus"
+        meta={`${formatFullDate(new Date())} · ${
+          role ? `Masuk sebagai ${ROLE_LABEL[role]}` : "Mode demo"
+        }`}
+        action={
+          committee ? (
+            <Link href="/dashboard/penatalayan" className="btn-primary text-sm">
+              <ClipboardList className="h-4 w-4" aria-hidden="true" />
+              Atur Penatalayan
+            </Link>
+          ) : undefined
+        }
+      />
 
-        <div className="flex shrink-0 items-center gap-3">
-          <Link
-            href="/dashboard/gatherings"
-            className="btn-primary text-xs sm:text-sm shadow-[0_0_16px_rgba(253,190,2,0.25)]"
-          >
-            <Plus className="h-4 w-4" aria-hidden="true" />
-            Ibadah Baru
-          </Link>
-        </div>
-      </header>
-
-      {/* 4 Architectural KPI Stat Cards */}
-      <div className="mt-8 grid grid-cols-2 gap-3.5 lg:grid-cols-4">
+      {/* KPI cards */}
+      <div
+        className={`mt-8 grid grid-cols-2 gap-3.5 ${
+          statCards.length === 4 ? "lg:grid-cols-4" : "lg:grid-cols-3"
+        }`}
+      >
         {statCards.map((s) => {
           const Icon = s.icon;
           return (
             <Link
               key={s.kicker}
               href={s.href}
-              className="group relative flex flex-col justify-between overflow-hidden rounded-2xl border border-line/40 bg-surface/70 p-5 backdrop-blur-xl transition-all duration-300 hover:-translate-y-1 hover:border-accent hover:bg-surface hover:shadow-[0_12px_32px_rgba(253,190,2,0.15)]"
+              className="group flex flex-col justify-between rounded-2xl border border-line/40 bg-surface/75 p-5 shadow-sm backdrop-blur-xl transition-colors duration-200 hover:border-line-accent"
             >
-              {/* Subtle Ambient Glow */}
-              <div
-                aria-hidden="true"
-                className="pointer-events-none absolute -right-8 -top-8 h-24 w-24 rounded-full bg-accent/5 blur-xl transition-opacity group-hover:bg-accent/15"
-              />
-
               <div className="flex items-center justify-between">
-                <span className="font-mono text-[0.625rem] font-bold uppercase tracking-[0.2em] text-accent">
-                  ( {s.kicker} )
+                <span className="font-mono text-[0.6875rem] font-bold uppercase tracking-[0.18em] text-accent">
+                  {s.kicker}
                 </span>
-                <div className="flex h-8 w-8 items-center justify-center rounded-lg border border-rule-soft bg-surface-2/80 text-ink-faint transition-colors group-hover:border-line-accent group-hover:text-accent">
-                  <Icon className="h-4 w-4" strokeWidth={1.9} aria-hidden="true" />
-                </div>
+                <Icon className="h-4 w-4 text-ink-faint group-hover:text-accent" strokeWidth={1.9} aria-hidden="true" />
               </div>
-
-              <div className="mt-4">
-                <p className="num font-serif text-2xl font-bold tracking-tight text-ink sm:text-3xl group-hover:text-accent transition-colors">
-                  {s.value}
-                </p>
-                <div className="mt-1 flex items-center justify-between">
-                  <p className="text-xs font-medium text-ink-muted">{s.label}</p>
-                  <ChevronRight className="h-3.5 w-3.5 text-ink-faint opacity-0 transition-all group-hover:opacity-100 group-hover:translate-x-0.5" />
-                </div>
-              </div>
+              <p className="num mt-4 font-serif text-2xl font-bold tracking-tight text-ink sm:text-3xl">
+                {s.value}
+              </p>
+              <p className="mt-1 flex items-center justify-between text-xs font-medium text-ink-muted">
+                {s.label}
+                <ChevronRight className="h-3.5 w-3.5 text-ink-faint group-hover:text-accent" aria-hidden="true" />
+              </p>
             </Link>
           );
         })}
       </div>
 
-      {/* Main Grid: Left Column (Next Gathering & Alerts) vs Right Column (Activity & Quick Actions) */}
       <div className="mt-8 grid gap-7 lg:grid-cols-3">
-        {/* Left Column (2 Cols) */}
         <div className="space-y-7 lg:col-span-2">
-          {/* Next Gathering Spotlight Card */}
+          {/* Next service */}
           {upcoming ? (
-            <section
-              aria-labelledby="next-heading"
-              className="relative overflow-hidden rounded-2xl border border-line-accent/40 bg-surface/85 p-6 backdrop-blur-2xl shadow-[0_16px_40px_rgba(0,0,0,0.5)] transition-all duration-300 hover:border-accent/60 sm:p-7"
-            >
-              {/* Top Accent Rim */}
-              <div
-                aria-hidden="true"
-                className="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-accent to-transparent opacity-60"
-              />
-
+            <Panel tone="accent" aria-labelledby="next-heading">
               <div className="flex flex-wrap items-center justify-between gap-3">
                 <div className="flex flex-wrap items-center gap-2.5">
-                  <div className="inline-flex items-center gap-2 rounded-full border border-line-accent bg-accent-wash/80 px-3.5 py-1 shadow-sm">
-                    <span className="relative flex h-2 w-2">
-                      <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-accent opacity-75" />
-                      <span className="relative inline-flex rounded-full h-2 w-2 bg-accent" />
-                    </span>
-                    <span className="font-mono text-xs font-bold uppercase tracking-wider text-accent">
-                      {countdownLabel(upcoming.date)}
-                    </span>
-                  </div>
-
+                  <span className="inline-flex items-center gap-2 rounded-full border border-line-accent bg-accent-wash/80 px-3.5 py-1 font-mono text-xs font-bold uppercase tracking-wider text-accent">
+                    <span className="h-2 w-2 rounded-full bg-accent" aria-hidden="true" />
+                    {countdownLabel(upcoming.date)}
+                  </span>
                   <span className="tag border-line text-ink-muted">
                     {eventTypeLabel(upcoming.eventType)}
                   </span>
                 </div>
-
-                <div className="flex items-center gap-1.5 text-xs font-mono text-ink-faint">
-                  <Clock className="h-3.5 w-3.5 text-accent" />
-                  <span>{formatTime(upcoming.date)} WIB</span>
-                </div>
+                <span className="flex items-center gap-1.5 font-mono text-xs text-ink-muted">
+                  <Clock className="h-3.5 w-3.5 text-accent" aria-hidden="true" />
+                  {formatTime(upcoming.date)}
+                </span>
               </div>
 
-              {/* Theme & Meta */}
               <h2
                 id="next-heading"
-                className="font-serif text-2xl font-bold tracking-tight text-ink sm:text-3xl mt-4"
+                className="mt-4 font-serif text-2xl font-bold tracking-tight text-ink sm:text-3xl"
               >
                 {upcoming.weeklyTheme}
               </h2>
-
               <p className="mt-1.5 text-sm text-ink-muted">
                 {formatFullDate(upcoming.date)} · Ruang Hermon
               </p>
 
-              {/* Readiness progress meter */}
+              {/* Readiness: slots per role, not a head count */}
               <div className="mt-6 rounded-xl border border-rule-soft bg-canvas-sunk/70 p-4">
-                <div className="flex items-baseline justify-between">
+                <div className="flex flex-wrap items-baseline justify-between gap-2">
                   <span className="font-mono text-[0.6875rem] font-bold uppercase tracking-[0.16em] text-accent">
-                    Kesiapan Penatalayan
+                    Kesiapan penatalayan
                   </span>
                   <span className="num font-mono text-xs font-bold text-ink">
-                    {filled} / {REQUIRED_ROLES} Petugas ({readiness}%)
+                    {ready.filled} / {ready.needed} slot
                   </span>
                 </div>
-
                 <div
                   className="mt-2.5 h-2 w-full overflow-hidden rounded-full bg-surface-2"
                   role="progressbar"
-                  aria-valuenow={filled}
+                  aria-valuenow={ready.filled}
                   aria-valuemin={0}
-                  aria-valuemax={REQUIRED_ROLES}
-                  aria-label="Jumlah penatalayan yang sudah terisi"
+                  aria-valuemax={ready.needed}
+                  aria-label="Slot penatalayan yang sudah terisi"
                 >
                   <div
-                    className={
-                      filled >= REQUIRED_ROLES
-                        ? "h-full rounded-full bg-sage shadow-[0_0_8px_rgba(123,160,108,0.5)]"
-                        : "meter-fill h-full rounded-full"
-                    }
+                    className={complete ? "h-full rounded-full bg-sage" : "meter-fill h-full rounded-full"}
                     style={{ width: `${readiness}%` }}
                   />
                 </div>
-              </div>
-
-              {/* Stewards Roster Grid */}
-              <div className="mt-6">
-                <p className="font-mono text-[0.6875rem] font-bold uppercase tracking-[0.18em] text-ink-faint mb-3">
-                  ( Petugas Pelayanan Terjadwal )
+                <p className={`mt-2.5 text-sm ${complete ? "text-sage" : "text-ink"}`}>
+                  {complete
+                    ? "Semua peran sudah terisi."
+                    : `Masih kurang: ${ready.missing
+                        .map((m) => `${m.role} ${m.count}`)
+                        .join(" · ")}`}
                 </p>
-
-                {stewards.length > 0 ? (
-                  <ul className="grid gap-2.5 sm:grid-cols-2">
-                    {stewards.map((s: StewardAssignment) => (
-                      <li
-                        key={s.id}
-                        className="flex items-center gap-3 rounded-xl border border-line/40 bg-canvas-sunk/60 px-3.5 py-2.5 transition-colors hover:border-line-accent"
-                      >
-                        <Monogram name={nameOf(s.profileId)} size="sm" />
-                        <div className="min-w-0 flex-1">
-                          <p className="truncate text-sm font-semibold text-ink">
-                            {nameOf(s.profileId)}
-                          </p>
-                          <p className="font-mono text-[0.625rem] uppercase tracking-[0.12em] text-accent">
-                            {s.role}
-                          </p>
-                        </div>
-                      </li>
-                    ))}
-                  </ul>
-                ) : (
-                  <div className="rounded-xl border border-dashed border-rule bg-canvas-sunk/40 px-4 py-5 text-center text-sm text-ink-muted">
-                    Belum ada penatalayan yang ditetapkan untuk ibadah ini.
-                  </div>
-                )}
               </div>
 
-              <div className="mt-6 flex items-center justify-between border-t border-rule-soft pt-4">
-                <Link
-                  href={`/dashboard/gatherings/${upcoming.id}`}
-                  className="btn-quiet text-xs sm:text-sm font-semibold"
-                >
-                  Kelola Detail Ibadah & Penatalayan
-                  <ArrowRight className="h-4 w-4 ml-1" aria-hidden="true" />
-                </Link>
-              </div>
-            </section>
-          ) : (
-            <div className="rounded-2xl border border-dashed border-rule bg-surface/40 p-8 text-center">
-              <Sparkles className="mx-auto h-8 w-8 text-accent opacity-80" />
-              <h3 className="font-serif text-xl font-bold text-ink mt-3">
-                Belum ada jadwal ibadah terdekat
-              </h3>
-              <p className="mt-2 text-sm text-ink-muted max-w-sm mx-auto">
-                Silakan buat jadwal ibadah raya pemuda berikutnya untuk mulai mengatur penatalayanan.
-              </p>
-              <Link href="/dashboard/gatherings" className="btn-primary mt-5 text-xs sm:text-sm">
-                Jadwalkan Ibadah Baru
-              </Link>
-            </div>
-          )}
-
-          {/* Perhatian beban pelayanan */}
-          {fatigueAlerts.length > 0 && (
-            <section
-              aria-labelledby="fatigue-heading"
-              className="rounded-2xl border border-warning/50 bg-warning-wash/40 p-5 sm:p-6 backdrop-blur-xl"
-            >
-              <div className="flex items-center justify-between border-b border-warning/20 pb-3">
-                <h2
-                  id="fatigue-heading"
-                  className="flex items-center gap-2 font-mono text-xs font-bold uppercase tracking-[0.18em] text-warning"
-                >
-                  <AlertTriangle className="h-4 w-4 shrink-0" aria-hidden="true" />
-                  Perhatian Beban Pelayanan
-                </h2>
-                <span className="font-mono text-xs font-bold text-warning">
-                  {fatigueAlerts.length} Orang
-                </span>
-              </div>
-
-              <p className="mt-3 text-xs leading-relaxed text-ink-muted">
-                Anggota berikut telah melayani &gt;2 kali dalam 30 hari terakhir. Pertimbangkan untuk mengistirahatkan mereka agar tidak jenuh/kelelahan.
-              </p>
-
-              <ul className="mt-4 space-y-2.5">
-                {fatigueAlerts.map((alert) => (
-                  <li
-                    key={alert.member.id}
-                    className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-warning/30 bg-surface/80 px-4 py-3"
-                  >
-                    <div className="flex items-center gap-3">
-                      <Monogram name={alert.member.nickname} size="sm" />
-                      <div>
-                        <p className="font-serif text-base font-semibold text-ink">
-                          {alert.member.nickname}
+              {stewards.length > 0 ? (
+                <ul className="mt-5 grid gap-2.5 sm:grid-cols-2" aria-label="Petugas terjadwal">
+                  {stewards.map((s: StewardAssignment) => (
+                    <li
+                      key={s.id}
+                      className="flex items-center gap-3 rounded-xl border border-line/40 bg-canvas-sunk/60 px-3.5 py-2.5"
+                    >
+                      <Monogram name={nameOf(s.profileId)} size="sm" />
+                      <div className="min-w-0 flex-1">
+                        <p className="truncate text-sm font-semibold text-ink">
+                          {nameOf(s.profileId)}
                         </p>
-                        <p className="font-mono text-xs text-warning">
-                          {alert.serviceCount}&times; pelayanan bulan ini
+                        <p className="font-mono text-[0.6875rem] uppercase tracking-[0.12em] text-accent">
+                          {s.role}
                         </p>
                       </div>
-                    </div>
+                    </li>
+                  ))}
+                </ul>
+              ) : (
+                <p className="mt-5 rounded-xl border border-dashed border-rule bg-canvas-sunk/40 px-4 py-5 text-center text-sm text-ink-muted">
+                  Belum ada petugas untuk ibadah ini.
+                </p>
+              )}
+
+              <div className="mt-6 flex flex-wrap items-center gap-3 border-t border-rule-soft pt-4">
+                {committee && !complete && (
+                  <Link href="/dashboard/penatalayan" className="btn-primary text-sm">
+                    Isi yang kurang
+                    <ArrowRight className="h-4 w-4" aria-hidden="true" />
+                  </Link>
+                )}
+                <Link
+                  href={`/dashboard/gatherings/${upcoming.id}`}
+                  className="btn-quiet text-sm font-semibold"
+                >
+                  Detail ibadah
+                  <ArrowRight className="h-4 w-4" aria-hidden="true" />
+                </Link>
+              </div>
+            </Panel>
+          ) : (
+            <EmptyState
+              title="Belum ada ibadah terjadwal"
+              body={
+                committee
+                  ? "Buat jadwal Sabtu berikutnya dulu — setelah itu papan penatalayan bisa diisi."
+                  : "Jadwal berikutnya belum dibuat oleh pengurus."
+              }
+              icon={CalendarDays}
+              action={
+                committee ? (
+                  <Link href="/dashboard/gatherings" className="btn-primary text-sm">
+                    Buat jadwal ibadah
+                  </Link>
+                ) : undefined
+              }
+            />
+          )}
+
+          {/* Load warning */}
+          {fatigueAlerts.length > 0 && (
+            <Panel tone="warning" aria-labelledby="fatigue-heading">
+              <SectionTitle
+                id="fatigue-heading"
+                title="Perlu istirahat"
+                tone="warning"
+                meta={`${fatigueAlerts.length} orang`}
+              />
+              <p className="mt-3 text-sm leading-relaxed text-ink-muted">
+                Sudah melayani lebih dari {FATIGUE_THRESHOLD}&times; dalam{" "}
+                {FATIGUE_WINDOW_DAYS} hari. Pertimbangkan orang lain dulu saat mengisi papan.
+              </p>
+              <ul className="mt-4 space-y-2.5">
+                {fatigueAlerts.map((alert) => (
+                  <li key={alert.member.id}>
                     <Link
                       href={`/dashboard/members/${alert.member.id}`}
-                      className="btn-outline text-xs px-3 py-1.5 rounded-full"
+                      className="flex min-h-[44px] items-center justify-between gap-3 rounded-xl border border-warning/30 bg-surface/80 px-4 py-2.5 transition-colors hover:border-warning"
                     >
-                      Lihat Profil &rarr;
+                      <span className="flex min-w-0 items-center gap-3">
+                        <Monogram name={alert.member.nickname} size="sm" />
+                        <span className="truncate font-semibold text-ink">
+                          {alert.member.nickname}
+                        </span>
+                      </span>
+                      <span className="num shrink-0 font-mono text-xs font-bold text-warning">
+                        {alert.serviceCount}&times; / {FATIGUE_WINDOW_DAYS} hari
+                      </span>
                     </Link>
                   </li>
                 ))}
               </ul>
-            </section>
+            </Panel>
           )}
-
-          {/* Quick Actions Deck */}
-          <section aria-labelledby="quick-heading" className="rounded-2xl border border-rule-soft bg-surface/40 p-5 sm:p-6">
-            <h2
-              id="quick-heading"
-              className="font-mono text-xs font-bold uppercase tracking-[0.2em] text-accent mb-4"
-            >
-              ( Aksi Cepat Pengurus )
-            </h2>
-
-            <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-              {[
-                { href: "/dashboard/gatherings", label: "Kelola Ibadah", sub: "Jadwal & Tim" },
-                { href: "/dashboard/members", label: "Data Anggota", sub: "Direktori Jemaat" },
-                { href: "/dashboard/finance", label: "Catat Kas", sub: "Buku Transaksi" },
-                { href: "/dashboard/meetings", label: "Notulen Rapat", sub: "Arsip Keputusan" },
-              ].map((a) => (
-                <Link
-                  key={a.href}
-                  href={a.href}
-                  className="group relative flex flex-col justify-between rounded-xl border border-rule bg-surface/70 p-4 transition-all duration-300 hover:-translate-y-0.5 hover:border-accent hover:bg-surface hover:shadow-md"
-                >
-                  <Plus
-                    className="h-4 w-4 text-accent transition-transform group-hover:scale-125"
-                    strokeWidth={2.2}
-                    aria-hidden="true"
-                  />
-                  <div className="mt-3">
-                    <p className="font-serif text-base font-bold text-ink group-hover:text-accent transition-colors leading-tight">
-                      {a.label}
-                    </p>
-                    <p className="font-mono text-[0.625rem] text-ink-faint uppercase tracking-wider mt-0.5">
-                      {a.sub}
-                    </p>
-                  </div>
-                </Link>
-              ))}
-            </div>
-          </section>
         </div>
 
-        {/* Right Column (1 Col: Recent Activities & Fast Feed) */}
+        {/* Right column */}
         <div className="space-y-7">
-          <section
-            aria-labelledby="activity-heading"
-            className="rounded-2xl border border-line/40 bg-surface/70 p-5 sm:p-6 backdrop-blur-xl"
-          >
-            <div className="flex items-center justify-between border-b border-rule-soft pb-3">
-              <h2
-                id="activity-heading"
-                className="font-mono text-xs font-bold uppercase tracking-[0.2em] text-accent"
-              >
-                ( Aktivitas Terakhir )
-              </h2>
-              <Link
-                href="/dashboard/audit"
-                className="font-mono text-[0.625rem] uppercase tracking-wider text-ink-faint hover:text-accent transition-colors"
-              >
-                Semua &rarr;
-              </Link>
-            </div>
-
-            {activities.length > 0 ? (
-              <ol className="mt-4 space-y-4">
-                {activities.slice(0, 6).map((activity) => (
-                  <li
-                    key={activity.id}
-                    className="border-b border-rule-soft/60 pb-3.5 last:border-0 last:pb-0"
-                  >
-                    <p className="text-sm font-medium leading-relaxed text-ink-muted">
-                      {activity.description}
-                    </p>
-                    <p className="mt-1 font-mono text-[0.625rem] uppercase tracking-[0.1em] text-ink-faint">
-                      {formatDateTime(activity.createdAt)}
-                    </p>
+          <Panel aria-labelledby="shortcut-heading">
+            <SectionTitle id="shortcut-heading" title="Pintasan" />
+            <ul className="mt-3 divide-y divide-rule-soft/60">
+              {shortcuts.map((a) => {
+                const Icon = a.icon;
+                return (
+                  <li key={a.href}>
+                    <Link
+                      href={a.href}
+                      className="group flex min-h-[52px] items-center gap-3 py-2.5"
+                    >
+                      <Icon className="h-[18px] w-[18px] shrink-0 text-ink-faint group-hover:text-accent" strokeWidth={1.9} aria-hidden="true" />
+                      <span className="min-w-0 flex-1">
+                        <span className="block text-sm font-semibold text-ink group-hover:text-accent">
+                          {a.label}
+                        </span>
+                        <span className="block text-xs text-ink-muted">{a.sub}</span>
+                      </span>
+                      <ChevronRight className="h-4 w-4 text-ink-faint group-hover:text-accent" aria-hidden="true" />
+                    </Link>
                   </li>
-                ))}
-              </ol>
-            ) : (
-              <p className="mt-4 text-sm text-ink-muted">Belum ada aktivitas tercatat.</p>
-            )}
-          </section>
+                );
+              })}
+            </ul>
+          </Panel>
 
-          {/* Quick System Note */}
-          <div className="rounded-2xl border border-rule-soft bg-canvas-sunk/60 p-5">
-            <div className="flex items-center gap-2">
-              <span className="h-2 w-2 rounded-full bg-sage" />
-              <p className="font-mono text-xs font-bold uppercase tracking-wider text-ink">
-                Sistem Youth MS Aktif
+          {audit ? (
+            <Panel aria-labelledby="activity-heading">
+              <SectionTitle
+                id="activity-heading"
+                title="Aktivitas terakhir"
+                action={
+                  <Link
+                    href="/dashboard/audit"
+                    className="font-mono text-[0.6875rem] uppercase tracking-wider text-ink-muted hover:text-accent"
+                  >
+                    Semua &rarr;
+                  </Link>
+                }
+              />
+              {activities.length > 0 ? (
+                <ol className="mt-4 space-y-4">
+                  {activities.map((activity) => (
+                    <li
+                      key={activity.id}
+                      className="border-b border-rule-soft/60 pb-3.5 last:border-0 last:pb-0"
+                    >
+                      <p className="text-sm leading-relaxed text-ink">
+                        {activity.description}
+                      </p>
+                      <p className="mt-1 font-mono text-[0.6875rem] text-ink-muted">
+                        {formatDateTime(activity.createdAt)}
+                      </p>
+                    </li>
+                  ))}
+                </ol>
+              ) : (
+                <p className="mt-4 text-sm text-ink-muted">Belum ada aktivitas tercatat.</p>
+              )}
+            </Panel>
+          ) : (
+            <Panel tone="sunk" aria-labelledby="account-heading">
+              <SectionTitle id="account-heading" title="Akunmu" />
+              <p className="mt-3 flex items-center gap-2 text-sm text-ink">
+                <UserCog className="h-4 w-4 text-accent" aria-hidden="true" />
+                {role ? ROLE_LABEL[role] : "Mode demo"}
               </p>
-            </div>
-            <p className="mt-2 text-xs leading-relaxed text-ink-muted">
-              Data tersinkronisasi dengan aman. Segala perubahan yang kamu lakukan tercatat di sistem audit log.
-            </p>
-            <Link
-              href="/dashboard/settings"
-              className="mt-3 inline-block font-mono text-xs text-accent hover:underline"
-            >
-              Lihat status pengaturan &rarr;
-            </Link>
-          </div>
+              <p className="mt-2 text-sm leading-relaxed text-ink-muted">
+                Menu yang kamu lihat menyesuaikan peranmu. Kalau ada yang seharusnya bisa kamu buka tapi tidak muncul, hubungi admin.
+              </p>
+              <Link
+                href="/dashboard/settings"
+                className="mt-3 inline-flex min-h-[44px] items-center font-mono text-xs text-accent hover:underline"
+              >
+                Lihat akun &amp; keluar &rarr;
+              </Link>
+            </Panel>
+          )}
         </div>
       </div>
     </div>
