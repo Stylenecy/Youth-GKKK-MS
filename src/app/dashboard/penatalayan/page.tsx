@@ -1,6 +1,6 @@
 import Link from "next/link";
 import type { Metadata } from "next";
-import { ClipboardList } from "lucide-react";
+import { AlertTriangle, ClipboardList } from "lucide-react";
 import {
   getEvents,
   getProfiles,
@@ -12,7 +12,7 @@ import {
   FATIGUE_THRESHOLD,
   FATIGUE_WINDOW_DAYS,
 } from "@/lib/fatigue";
-import { PageHeader, EmptyState, Monogram, SectionTitle } from "@/components/page-parts";
+import { PageHeader, EmptyState, SectionTitle } from "@/components/page-parts";
 import { isOverloaded } from "@/lib/fatigue";
 import { isCommittee } from "@/lib/roles";
 import {
@@ -85,7 +85,7 @@ export default async function PenatalayanPage() {
       <PageHeader
         kicker="PERENCANAAN"
         title="Papan Penatalayan"
-        meta={`${past.length} riwayat · ${upcoming.length} mendatang · merah = sudah >${FATIGUE_THRESHOLD}× dalam ${FATIGUE_WINDOW_DAYS} hari`}
+        meta={`${upcoming.length} Sabtu mendatang · ${past.length} riwayat`}
       />
 
       {columns.length === 0 ? (
@@ -103,43 +103,8 @@ export default async function PenatalayanPage() {
         </div>
       ) : (
         <>
-          <section aria-labelledby="beban-heading" className="mt-8">
-            <SectionTitle id="beban-heading" title="BEBAN 30 HARI" />
-            {loaded.length === 0 ? (
-              <p className="mt-4 text-sm text-ink-muted">
-                Belum ada yang tercatat pelayanan 30 hari terakhir.
-              </p>
-            ) : (
-              <ul className="mt-4 flex flex-wrap gap-2">
-                {loaded.map((p) => {
-                  const hot = isOverloaded(p.serviceCount30d);
-                  return (
-                    <li
-                      key={p.id}
-                      title={`${p.fullName} — ${p.serviceCount30d}× dalam 30 hari`}
-                      className={`flex items-center gap-2 rounded-full border px-3 py-1.5 text-xs font-medium ${
-                        hot
-                          ? "border-danger/50 bg-danger-wash/60 text-danger"
-                          : "border-line/50 bg-surface/70 text-ink-muted"
-                      }`}
-                    >
-                      <Monogram name={p.nickname} size="sm" />
-                      <span className="max-w-24 truncate font-semibold text-ink">
-                        {p.nickname}
-                      </span>
-                      <span className="num font-mono font-bold">
-                        {p.serviceCount30d}&times;
-                      </span>
-                    </li>
-                  );
-                })}
-              </ul>
-            )}
-          </section>
-
-          <section aria-labelledby="papan-heading" className="mt-10">
-            <SectionTitle id="papan-heading" title="PAPAN" />
-
+          <section aria-labelledby="papan-heading" className="mt-8">
+            <SectionTitle id="papan-heading" title="Papan" />
             <div className="mt-4">
               <PenatalayanBoard
                 columns={columns}
@@ -148,6 +113,53 @@ export default async function PenatalayanPage() {
                 canManage={canManage}
               />
             </div>
+          </section>
+
+          <section aria-labelledby="beban-heading" className="mt-10">
+            <SectionTitle
+              id="beban-heading"
+              title="Beban 30 hari"
+              meta={`>${FATIGUE_THRESHOLD}× = istirahatkan`}
+            />
+            {loaded.length === 0 ? (
+              <p className="mt-4 text-sm text-ink-muted">
+                Belum ada yang tercatat pelayanan 30 hari terakhir.
+              </p>
+            ) : (
+              <>
+                <ul className="mt-3 grid grid-cols-2 gap-x-6 lg:grid-cols-4">
+                  {loaded.map((p) => {
+                    const hot = isOverloaded(p.serviceCount30d);
+                    return (
+                      <li
+                        key={p.id}
+                        className="flex items-baseline justify-between gap-2 border-b border-rule-soft py-2.5"
+                      >
+                        <span className="min-w-0 truncate text-sm text-ink">{p.nickname}</span>
+                        <span
+                          className={`num inline-flex shrink-0 items-center gap-1 font-mono text-sm ${
+                            hot ? "text-warning" : "text-ink-muted"
+                          }`}
+                        >
+                          {p.serviceCount30d}&times;
+                          {hot && (
+                            <>
+                              <AlertTriangle className="h-3.5 w-3.5 self-center" aria-hidden="true" />
+                              <span className="sr-only">beban tinggi</span>
+                            </>
+                          )}
+                        </span>
+                      </li>
+                    );
+                  })}
+                </ul>
+                <p className="mt-3 flex items-center gap-1.5 text-xs text-ink-muted">
+                  <AlertTriangle className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
+                  = sudah lebih dari {FATIGUE_THRESHOLD}&times; dalam {FATIGUE_WINDOW_DAYS} hari. Tetap
+                  bisa dipilih — utamakan yang lebih ringan.
+                </p>
+              </>
+            )}
           </section>
         </>
       )}

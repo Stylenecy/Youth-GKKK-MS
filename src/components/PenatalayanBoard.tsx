@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from "react";
 import Link from "next/link";
-import { Crosshair, Rows3 } from "lucide-react";
+import { AlertTriangle, Crosshair, Rows3 } from "lucide-react";
 import type { Profile } from "@/lib/types";
 import type { StewardRole } from "@/lib/validation";
 import { STEWARD_ROLES } from "@/lib/validation";
@@ -10,6 +10,7 @@ import { isOverloaded } from "@/lib/fatigue";
 import { slotStatus } from "@/lib/stewards";
 import { AssignStewardForm } from "./AssignStewardForm";
 import { StewardRemoveButton } from "./StewardRemoveButton";
+import { PenatalayanPhone } from "./PenatalayanPhone";
 
 export interface BoardSteward {
   id: string;
@@ -90,6 +91,18 @@ export function PenatalayanBoard({
 
   return (
     <div>
+      {/* Phone/tablet: one Saturday per screen. */}
+      <div className="lg:hidden">
+        <PenatalayanPhone
+          columns={columns}
+          profiles={profiles}
+          crossNames={crossNames}
+          canManage={canManage}
+        />
+      </div>
+
+      {/* Desktop: the Peran × Sabtu grid, mirroring the team's spreadsheet. */}
+      <div className="hidden lg:block">
       <div className="mb-3 flex flex-wrap items-center gap-2">
         {focusId ? (
           <button
@@ -122,7 +135,10 @@ export function PenatalayanBoard({
 
       <div
         key={viewKey}
-        className="board-enter overflow-x-auto rounded-2xl border border-line/40 bg-surface/60 backdrop-blur-xl shadow-sm"
+        role="region"
+        aria-label="Papan penatalayan: peran per Sabtu"
+        tabIndex={0}
+        className="board-enter overflow-x-auto rounded-xl border border-line/50 bg-surface"
       >
         <table className="w-full min-w-[560px] border-collapse text-sm">
           <thead>
@@ -157,7 +173,7 @@ export function PenatalayanBoard({
                           {col.monthShort}
                         </span>
                         {col.isPast && (
-                          <span className="font-mono text-[0.625rem] uppercase tracking-wider text-ink-faint">
+                          <span className="font-mono text-[0.625rem] uppercase tracking-wider text-ink-muted">
                             · lewat
                           </span>
                         )}
@@ -165,7 +181,7 @@ export function PenatalayanBoard({
                       <span className="mt-1 block truncate text-xs font-semibold text-ink">
                         {col.theme}
                       </span>
-                      <span className="block text-[0.6875rem] text-ink-faint">
+                      <span className="block text-[0.6875rem] text-ink-muted">
                         {col.weekdayLabel}
                       </span>
                     </Link>
@@ -173,7 +189,7 @@ export function PenatalayanBoard({
                       <button
                         type="button"
                         onClick={() => setFocusId(col.id)}
-                        className="mt-2 inline-flex min-h-[36px] items-center gap-1.5 rounded-lg border border-line/40 px-2.5 text-xs text-ink-muted transition-colors hover:border-accent/60 hover:text-accent"
+                        className="mt-2 inline-flex min-h-[44px] items-center gap-1.5 rounded-lg border border-line/40 px-2.5 text-xs text-ink-muted transition-colors hover:border-accent/60 hover:text-accent"
                       >
                         <Crosshair className="h-3.5 w-3.5" aria-hidden="true" />
                         Fokus
@@ -205,20 +221,20 @@ export function PenatalayanBoard({
                         className={`font-mono text-xs font-bold ${
                           slot.tone === "full" || slot.tone === "over"
                             ? "text-ink-muted"
-                            : "text-accent"
+                            : "text-warning"
                         }`}
                       >
                         {slot.head}
                       </p>
                       <p
                         className={`text-[0.6875rem] ${
-                          slot.tone === "full" ? "text-sage" : "text-ink-faint"
+                          slot.tone === "full" ? "text-sage" : "text-ink-muted"
                         }`}
                       >
                         {slot.sub}
                       </p>
                       {stewards.length === 0 ? (
-                        <p className="mt-2 text-xs text-ink-faint">
+                        <p className="mt-2 text-xs text-ink-muted">
                           Belum ada penatalayan
                         </p>
                       ) : (
@@ -229,17 +245,25 @@ export function PenatalayanBoard({
                               <li
                                 key={s.id}
                                 title={`${nameOf(s.profileId)} — ${loadOf(s.profileId)}× dalam 30 hari`}
-                                className={`flex items-center justify-between gap-1 rounded-lg border px-2.5 py-1.5 text-xs ${
-                                  hot
-                                    ? "border-danger/50 bg-danger-wash/60 font-semibold text-danger"
-                                    : "border-line/40 bg-canvas-sunk/60 text-ink"
+                                className={`flex items-center justify-between gap-1 rounded-lg border bg-canvas-sunk/60 px-2.5 py-1.5 text-xs text-ink ${
+                                  hot ? "border-warning/60" : "border-line/40"
                                 }`}
                               >
                                 <span className="min-w-0 flex-1 truncate">
                                   {nameOf(s.profileId)}
                                 </span>
-                                <span className="num shrink-0 font-mono font-bold opacity-80">
+                                <span
+                                  className={`num inline-flex shrink-0 items-center gap-1 font-mono ${
+                                    hot ? "font-semibold text-warning" : "text-ink-muted"
+                                  }`}
+                                >
                                   {loadOf(s.profileId)}&times;
+                                  {hot && (
+                                    <>
+                                      <AlertTriangle className="h-3 w-3" aria-hidden="true" />
+                                      <span className="sr-only">beban tinggi</span>
+                                    </>
+                                  )}
                                 </span>
                                 {canManage && !readOnly && (
                                   <StewardRemoveButton
@@ -279,11 +303,12 @@ export function PenatalayanBoard({
       <p className="mt-4 flex items-start gap-2 text-xs leading-relaxed text-ink-muted">
         <Rows3 className="mt-0.5 h-3.5 w-3.5 shrink-0" aria-hidden="true" />
         <span>
-          Merah = sudah &gt;2&times; dalam 30 hari — pertimbangkan orang lain
-          dulu. Kolom “lewat” = riwayat (tidak bisa diubah dari sini). Klik
+          Tanda peringatan = sudah &gt;2&times; dalam 30 hari — pertimbangkan
+          orang lain dulu. Kolom “lewat” = riwayat (tidak bisa diubah dari sini). Klik
           tanggal untuk buka detail (ubah, arsip, absensi).
         </span>
       </p>
+      </div>
     </div>
   );
 }
