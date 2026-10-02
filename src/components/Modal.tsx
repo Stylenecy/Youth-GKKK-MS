@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useId, useRef, type ReactNode } from "react";
+import { createPortal } from "react-dom";
 import { X } from "lucide-react";
 
 const FOCUSABLE =
@@ -75,7 +76,11 @@ export function Modal({
 
   if (!open) return null;
 
-  return (
+  // Portal to <body>: forms open from inside cards that use backdrop-blur or
+  // motion transforms, which start their own stacking context — rendered in
+  // place, z-50 lost to the phone's bottom bar (z-40) and hid Simpan/Batal.
+  // `open` is only ever true after a client interaction, so document exists.
+  return createPortal(
     <div className="fixed inset-0 z-50 flex items-end justify-center overflow-y-auto p-0 sm:items-center sm:p-4">
       {/* Backdrop */}
       <button
@@ -126,7 +131,8 @@ export function Modal({
         </div>
         {children}
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }
 
