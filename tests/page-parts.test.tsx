@@ -87,3 +87,23 @@ describe("Field", () => {
     expect(failed).toContain('id="amount-error"');
   });
 });
+
+describe("DataTable footer", () => {
+  it("puts totals under the last numeric column, not under an actions column", () => {
+    const html = renderToStaticMarkup(
+      <DataTable
+        caption="Kas"
+        rows={rows}
+        rowKey={(r) => r.id}
+        columns={[
+          { key: "desc", header: "Uraian", primary: true, cell: (r) => r.desc },
+          { key: "amount", header: "Jumlah", align: "right", cell: (r) => r.amount },
+          { key: "aksi", header: "Aksi", srOnlyHeader: true, align: "right", cell: () => "x" },
+        ]}
+        footer={[{ label: "Pemasukan", value: "Rp 350.000" }]}
+      />
+    );
+    // label spans the text column, value sits under "Jumlah", one empty cell under actions
+    expect(html).toMatch(/<th scope="row" colSpan="1"[^>]*>Pemasukan<\/th><td[^>]*>Rp 350\.000<\/td><td colSpan="1" aria-hidden="true"><\/td>/);
+  });
+});

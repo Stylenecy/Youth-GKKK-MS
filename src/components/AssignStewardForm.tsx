@@ -174,7 +174,13 @@ export function AssignStewardForm({
         }
         // .btn-* sets a solid border shorthand outside Tailwind's layers,
         // so the dashed "empty slot" look has to be inline.
-        style={variant === "dashed" ? { borderStyle: "dashed" } : undefined}
+        // Tighter side padding too: "Tambah Multimedia" must stay on one line
+        // in the ~160 px roster column of a 360 px phone.
+        style={
+          variant === "dashed"
+            ? { borderStyle: "dashed", paddingInline: "0.75rem" }
+            : undefined
+        }
       >
         {/* The dashed empty-slot button sits in a narrow roster column on a
             360 px phone; its label already says the action, so no icon. */}

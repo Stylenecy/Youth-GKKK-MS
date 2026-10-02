@@ -205,7 +205,7 @@ export function PenatalayanBoard({
               <tr key={role} className="border-t border-rule-soft/60">
                 <th
                   scope="row"
-                  className="sticky left-0 bg-surface p-4 text-left font-mono text-xs font-bold uppercase tracking-[0.14em] text-ink"
+                  className="sticky left-0 bg-surface px-4 pt-3 pb-4 text-left align-top font-mono text-xs font-bold uppercase tracking-[0.14em] text-ink"
                 >
                   {role}
                 </th>
@@ -221,7 +221,8 @@ export function PenatalayanBoard({
                   const canAdd =
                     slot.tone === "empty" ||
                     slot.tone === "partial" ||
-                    SLOT_NEEDS[role].max === null;
+                    SLOT_NEEDS[role].max === null ||
+                    stewards.some((s) => s.status === "change_requested");
                   return (
                     <td key={col.id} className="p-3 align-top">
                       <p
