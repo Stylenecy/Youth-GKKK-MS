@@ -81,8 +81,10 @@ export function RoleRoster({
           const slot = slotStatus(role, rows.length);
           const need = SLOT_NEEDS[role];
           const missing = slot.tone === "empty" || slot.tone === "partial";
-          // Pemusik has no upper limit, so it can always take one more.
-          const canAdd = manage && (missing || need.max === null);
+          // Pemusik has no upper limit, so it can always take one more; and
+          // someone who asked to be replaced needs a replacement offered.
+          const replacing = rows.some((s) => s.status === "change_requested");
+          const canAdd = manage && (missing || need.max === null || replacing);
           const count =
             need.max === null ? `${rows.length}` : `${rows.length}/${need.max}`;
           return (

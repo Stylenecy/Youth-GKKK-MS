@@ -37,7 +37,7 @@ Peranmu tertulis di **Dashboard** (baris di bawah judul) dan di **Pengaturan**.
 
 **Hari Sabtu:** buka ibadahnya (**Ibadah → pilih tanggal**) → bagian **Kehadiran** → centang yang hadir.
 
-**Bendahara:** **Keuangan → Catat transaksi**. Pilih "Terkait ibadah" kalau perlu. Banyak baris dari Google Sheets? Tekan **Tempel dari spreadsheet** di bagian bawah (kalau satu baris salah, tidak ada yang masuk — betulkan lalu coba lagi). **Ekspor CSV** kapan saja.
+**Bendahara:** **Keuangan → Catat transaksi**. Pilih "Terkait ibadah" kalau perlu. Banyak baris dari Google Sheets? Tekan **Tempel dari spreadsheet** di bagian bawah (kalau satu baris salah, tidak ada yang masuk — betulkan lalu coba lagi). **Ekspor CSV** kapan saja selama sudah ada transaksi.
 
 ## 4. Kalau salah
 
