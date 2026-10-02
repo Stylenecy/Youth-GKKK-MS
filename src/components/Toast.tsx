@@ -53,12 +53,22 @@ export function ToastProvider({ children }: { children: ReactNode }) {
     if (!toast?.action) return;
     const current = toast;
     setToast({ ...current, status: "working" });
-    const result = await current.action!.run();
-    setToast(
-      result.success
-        ? { id: current.id + 0.5, message: "Perubahan dibatalkan.", status: "idle" }
-        : { ...current, status: "failed", error: result.error ?? "Gagal membatalkan." }
-    );
+    try {
+      const result = await current.action!.run();
+      setToast(
+        result.success
+          ? { id: current.id + 0.5, message: "Perubahan dibatalkan.", status: "idle" }
+          : { ...current, status: "failed", error: result.error ?? "Gagal membatalkan." }
+      );
+    } catch {
+      // A thrown server action (network drop, server error) must not leave
+      // the button stuck on "Memproses…" — surface it and let them close.
+      setToast({
+        ...current,
+        status: "failed",
+        error: "Gagal membatalkan — koneksi atau server bermasalah. Muat ulang halaman lalu periksa lagi.",
+      });
+    }
   }
 
   return (
