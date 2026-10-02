@@ -12,13 +12,21 @@ import {
   getMySessionInfo,
   getProfileCrossNames,
 } from "@/lib/data";
-import type { StewardAssignment } from "@/lib/types";
 import { canRecordAttendance } from "@/lib/attendance";
 import { isSupabaseConfigured } from "@/lib/supabase/env";
 import { isCommittee as committeeRole } from "@/lib/roles";
-import { PageHeader, BackLink, DataPoint, EmptyState, Monogram, SectionTitle } from "@/components/page-parts";
+import {
+  PageHeader,
+  BackLink,
+  EmptyState,
+  SectionTitle,
+  SummaryRows,
+  StatusChip,
+  Meter,
+} from "@/components/page-parts";
+import { RoleRoster } from "@/components/RoleRoster";
+import { serviceReadiness } from "@/lib/stewards";
 import { EditEventForm } from "@/components/EditEventForm";
-import { AssignStewardForm } from "@/components/AssignStewardForm";
 import { ConfirmAction } from "@/components/ConfirmAction";
 import { AttendanceTaker } from "@/components/AttendanceTaker";
 import { archiveEvent, restoreEvent } from "@/app/actions/gatherings";
@@ -30,13 +38,6 @@ import {
   eventTypeLabel,
 } from "@/lib/datetime";
 import { Users, ClipboardCheck } from "lucide-react";
-
-const STEWARD_STATUS: Record<string, { label: string; cls: string }> = {
-  confirmed: { label: "Sudah konfirmasi", cls: "tag tag-sage font-medium" },
-  assigned: { label: "Menunggu konfirmasi", cls: "tag font-medium" },
-  change_requested: { label: "Minta diganti", cls: "tag tag-warning font-medium" },
-  replaced: { label: "Sudah diganti", cls: "tag font-medium opacity-60" },
-};
 
 
 export async function generateMetadata({
@@ -78,7 +79,7 @@ export default async function GatheringDetailPage({
       ? [pic, ...picEligible]
       : picEligible;
   const status = eventStateLabel(event);
-  const active = stewards.filter((s) => s.status !== "replaced");
+  const ready = serviceReadiness(stewards);
 
   // Attendance visibility mirrors migration 0012's SQL policy at the UI
   // layer: committee + PIC see everyone, a leader sees only their own
@@ -142,22 +143,13 @@ export default async function GatheringDetailPage({
       {/* Status & Countdown Badges */}
       <div className="mt-6 flex flex-wrap items-center gap-3">
         <span className={status.cls}>{status.label}</span>
-        <div className="inline-flex items-center gap-2 rounded-full border border-line-accent bg-accent-wash/80 px-3.5 py-1 text-xs font-mono font-bold uppercase text-accent">
-          <span className="h-1.5 w-1.5 rounded-full bg-accent" />
-          {countdownLabel(event.date)}
-        </div>
+        <StatusChip tone="accent">{countdownLabel(event.date)}</StatusChip>
       </div>
 
       {/* Action Shelf — committee only (see canManage above) */}
       {canManage && (
         <div className="mt-6 flex flex-wrap items-center gap-3 border-t border-rule-soft pt-6">
         <EditEventForm event={event} profiles={picOptions} />
-        <AssignStewardForm
-          eventId={id}
-          eventLabel={formatFullDate(event.date)}
-          profiles={profiles}
-          crossNames={crossNames}
-        />
           {event.status === "archived" ? (
             <ConfirmAction
               label="Pulihkan Ibadah"
@@ -181,91 +173,57 @@ export default async function GatheringDetailPage({
         </div>
       )}
 
-      {/* Main Grid Content: Stewards Roster vs Metadata Details */}
-      <div className="mt-8 grid gap-8 lg:grid-cols-[1.6fr_1fr]">
-        {/* Stewards Roster Card */}
-        <section
-          aria-labelledby="stewards-heading"
-          className="rounded-2xl border border-line/40 bg-surface/70 p-6 backdrop-blur-xl shadow-sm"
-        >
-          <SectionTitle id="stewards-heading" title="Penatalayan Pelayanan" meta={<>{active.length} Petugas Terdaftar</>} />
-
-          {stewards.length === 0 ? (
-            <div className="mt-6">
-              <EmptyState
-                title="Belum ada penatalayan"
-                body="Tugaskan tim pelayanan (WL, Singer, Pemusik, Multimedia, Usher) agar mereka memiliki cukup waktu untuk menyiapkan diri dan berlatih."
-                icon={Users}
-              />
-            </div>
-          ) : (
-            <ul className="mt-4 divide-y divide-rule-soft/60">
-              {stewards.map((s: StewardAssignment) => {
-                const member = profiles.find((p) => p.id === s.profileId);
-                const st = STEWARD_STATUS[s.status] ?? STEWARD_STATUS.assigned;
-                return (
-                  <li
-                    key={s.id}
-                    className={`flex flex-wrap items-center justify-between gap-4 py-4 first:pt-2 last:pb-2 transition-colors hover:bg-surface-2/40 px-2 rounded-xl ${
-                      s.status === "replaced" ? "opacity-50 line-through" : ""
-                    }`}
-                  >
-                    <div className="flex items-center gap-3.5 min-w-0">
-                      <Monogram name={member?.nickname ?? "?"} size="md" />
-                      <div className="min-w-0">
-                        <p className="font-serif text-lg font-bold text-ink">
-                          {member?.nickname ?? "—"}
-                        </p>
-                        <p className="font-mono text-xs font-bold uppercase tracking-[0.14em] text-accent">
-                          {s.role}
-                        </p>
-                      </div>
-                    </div>
-
-                    <div className="flex flex-col items-end gap-1">
-                      <span className={st.cls}>{st.label}</span>
-                      {s.reason && (
-                        <span className="text-xs text-ink-muted italic">
-                          Ket: {s.reason}
-                        </span>
-                      )}
-                    </div>
-                  </li>
-                );
-              })}
-            </ul>
-          )}
+      {/* Roster (same Peran · Petugas · Slot table as the phone board) + facts */}
+      <div className="mt-8 grid gap-8 lg:grid-cols-[minmax(0,1.6fr)_minmax(0,1fr)] lg:items-start">
+        <section aria-labelledby="stewards-heading" className="min-w-0">
+          <SectionTitle
+            id="stewards-heading"
+            title="Penatalayan"
+            meta={`${ready.filled}/${ready.needed} slot`}
+          />
+          <div className="mt-3">
+            <Meter value={ready.filled} max={ready.needed} label="Slot penatalayan terisi" />
+          </div>
+          <p className={`mt-2 text-sm ${ready.missing.length ? "text-ink" : "text-sage"}`}>
+            {ready.missing.length
+              ? `Masih kurang: ${ready.missing.map((m) => `${m.role} ${m.count}`).join(" · ")}`
+              : "Semua peran sudah terisi."}
+          </p>
+          <div className="mt-4">
+            <RoleRoster
+              eventId={id}
+              eventLabel={formatFullDate(event.date)}
+              stewards={stewards}
+              profiles={profiles}
+              crossNames={crossNames}
+              canManage={canManage}
+              showStatus
+            />
+          </div>
         </section>
 
-        {/* Aside: Event Metadata & Speaker Details */}
-        <aside className="space-y-6">
-          <div className="rounded-2xl border border-line/40 bg-surface/70 p-6 backdrop-blur-xl">
-            <SectionTitle title="Informasi Ibadah" />
-
-            <dl className="mt-4 space-y-3">
-              <DataPoint
-                label="Penanggung Jawab (PIC)"
-                value={pic?.nickname ?? pic?.fullName ?? "—"}
-              />
-              <DataPoint
-                label="Pembicara"
-                value={event.speakerName || "Pengurus Youth"}
-              />
-              <DataPoint
-                label="Keterangan / Rangkuman"
-                value={event.description || "Tidak ada catatan tambahan."}
-              />
-            </dl>
+        <aside aria-labelledby="info-heading" className="min-w-0">
+          <SectionTitle id="info-heading" title="Informasi" />
+          <div className="mt-3">
+            <SummaryRows
+              mono={false}
+              label="Informasi ibadah"
+              rows={[
+                { label: "PIC", value: pic?.nickname ?? pic?.fullName ?? "—" },
+                { label: "Pembicara", value: event.speakerName || "Pengurus Youth" },
+                { label: "Mulai", value: formatTime(event.date) },
+              ]}
+            />
           </div>
+          <p className="mt-3 text-sm leading-relaxed text-ink-muted">
+            {event.description || "Tidak ada catatan tambahan."}
+          </p>
         </aside>
       </div>
 
       {/* Attendance: only rendered for recorders, never for ordinary members */}
       {showAttendance && (
-        <section
-          aria-labelledby="attendance-heading"
-          className="mt-8 rounded-2xl border border-line/40 bg-surface/70 p-6 backdrop-blur-xl shadow-sm"
-        >
+        <section aria-labelledby="attendance-heading" className="mt-10">
           <SectionTitle id="attendance-heading" title="Kehadiran" />
 
           <div className="mt-4">

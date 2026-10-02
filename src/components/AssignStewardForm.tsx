@@ -36,6 +36,7 @@ export function AssignStewardForm({
   presetRole,
   buttonLabel,
   compact = false,
+  variant = "outline",
 }: {
   eventId: string;
   eventLabel: string;
@@ -44,6 +45,8 @@ export function AssignStewardForm({
   presetRole?: StewardRole;
   buttonLabel?: string;
   compact?: boolean;
+  /** dashed = empty slot in a roster; primary = the one gold action. */
+  variant?: "outline" | "dashed" | "primary";
 }) {
   const [isOpen, setIsOpen] = useState(false);
   const [role, setRole] = useState<StewardRole | "">(presetRole ?? "");
@@ -152,13 +155,26 @@ export function AssignStewardForm({
       <button
         type="button"
         onClick={open}
-        // Many identical "Tambah" buttons on the board: name each one.
-        aria-label={presetRole ? `Tambah ${presetRole} untuk ${eventLabel}` : undefined}
-        className={
-          compact
-            ? "btn-outline w-full justify-center text-xs px-2 py-1.5"
-            : "btn-outline text-xs sm:text-sm"
+        // Many identical bare "Tambah" buttons on the desktop board: name
+        // each one. Labels that already say what they do keep their text as
+        // the accessible name (WCAG 2.5.3).
+        aria-label={
+          presetRole && (buttonLabel ?? "Tambah") === "Tambah"
+            ? `Tambah ${presetRole} untuk ${eventLabel}`
+            : undefined
         }
+        className={
+          variant === "primary"
+            ? "btn-primary w-full justify-center text-sm"
+            : variant === "dashed"
+              ? "btn-outline w-full justify-center border-dashed text-sm"
+              : compact
+                ? "btn-outline w-full justify-center text-xs px-2 py-1.5"
+                : "btn-outline text-xs sm:text-sm"
+        }
+        // .btn-* sets a solid border shorthand outside Tailwind's layers,
+        // so the dashed "empty slot" look has to be inline.
+        style={variant === "dashed" ? { borderStyle: "dashed" } : undefined}
       >
         <UserPlus className="h-4 w-4" aria-hidden="true" />
         {buttonLabel ?? "Tugaskan Penatalayan"}
