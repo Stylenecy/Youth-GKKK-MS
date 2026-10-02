@@ -1,7 +1,7 @@
 # Audit Area Pengurus — 1 Okt 2026
 
-Sesi: Claude Code (lead engineer). Basis: `f0103ef` di `master`.
-Cara uji: dev server lokal **mode demo** (tidak ada `.env.local` → data seed, nol kontak ke Supabase produksi), Chrome headless via CDP dengan emulasi 1440 px dan 390 px. Screenshot sebelum perbaikan ada di `docs/screens/2026-10-01/before/`.
+Basis: `f0103ef` di `master`.
+Cara uji: dev server lokal **mode demo** (tidak ada `.env.local` → data seed, nol kontak ke Supabase produksi), Chrome headless via CDP dengan emulasi 1440 px dan 390 px. Screenshot sebelum/sesudah disimpan lokal, tidak di repo (memuat tangkapan layar kerja).
 
 Batas uji yang jujur: mode demo tidak punya login, peran, maupun RLS. Semua temuan peran/izin di bawah berasal dari **baca kode + migrasi**, bukan klik di produksi.
 
@@ -53,7 +53,7 @@ Status: **tuntas** · **patah** (salah/berbahaya) · **setengah** (jalan tapi bu
 
 ## Hasil (akhir sesi 1 Okt)
 
-Commit lokal: `302b810` (fix peran/tulis/ekspor), `90661ef` (beranda + kas), `f202da2` (SectionTitle bersama). **Belum di-push, belum di-deploy.**
+Commit lokal: `99a6ed9` (fix peran/tulis/ekspor), `9009e27` (beranda + kas), `798d872` (SectionTitle bersama). Rilis ke produksi: lihat `PROJECT_MASTER.md` bagian 2 Okt 2026.
 
 | # | Status sekarang |
 |---|---|
@@ -72,6 +72,6 @@ Commit lokal: `302b810` (fix peran/tulis/ekspor), `90661ef` (beranda + kas), `f2
 | 16 | tuntas — seed "Pemusik" |
 | 12 | tetap — notulen read-only, menunggu spek Dex |
 
-Verifikasi akhir: `tsc` bersih · `npm test` **137/137** (16 berkas) · `npm run build` hijau 21 rute · lint **5 error / 6 warning** (4 di landing yang sengaja tidak disentuh, 1 `DashboardTheme` pola baca-localStorage) · 24 tangkapan 1440/390: 0 overflow, 0 error konsol. Screenshot: `docs/screens/2026-10-01/{before,after,after-light}/`.
+Verifikasi akhir: `tsc` bersih · `npm test` **137/137** (16 berkas) · `npm run build` hijau 21 rute · lint **5 error / 6 warning** (4 di landing yang sengaja tidak disentuh, 1 `DashboardTheme` pola baca-localStorage) · 24 tangkapan 1440/390: 0 overflow, 0 error konsol. Screenshot disimpan lokal, tidak di repo.
 
 Belum terbukti: semua perilaku peran/RLS baru hanya diuji lewat kode + tes unit + mode demo. Uji klik dengan akun Tim Ibadah dan Anggota sungguhan belum dilakukan.

@@ -1589,25 +1589,25 @@ Git: `master...origin/master` sinkron penuh, 8 commit 28 Sep semua ter-push.
 
 ---
 
-## 1 Okt 2026 — Tuntaskan area Pengurus (Claude Code)
+## 1 Okt 2026 — Tuntaskan area Pengurus
 
-**Sesi:** Claude Code, lokal saja, mode demo (tanpa `.env.local`). Audit lengkap +
+**Sesi:** lokal saja, mode demo (tanpa `.env.local`). Audit lengkap +
 hasil: `docs/AUDIT-PENGURUS-2026-10-01.md`. Panduan awam: `docs/PANDUAN-PENGURUS.md`.
 
 ### Koreksi status live
 Deploy terakhir yang tercatat = `86c5826` (29 Sep dini hari), bukan `7d74dc8`.
 Belum live: `b89e270` … `f0103ef` (papan v2, combobox, undo) + 3 commit hari ini.
 
-### Commit (lokal, belum push)
-- `302b810` fix — `lib/roles.ts` satu sumber gate peran; `lib/role-guard.ts`: aksi
+### Commit (dirapikan 2 Okt sebelum push; SHA baru)
+- `99a6ed9` fix — `lib/roles.ts` satu sumber gate peran; `lib/role-guard.ts`: aksi
   cek peran dulu dan anggap UPDATE/DELETE 0 baris = gagal (dulu RLS diam-diam →
   "berhasil" + baris audit palsu). Ekspor CSV dicek peran + anti formula. Nav per
   peran. Audit non-admin jujur. Antrean persetujuan kosong tampil. Peta beban
   tidak lagi menyebar baris snake_case. WIB dobel, copy ">3", kartu latihan
   hardcode dibuang. `Panel`/`SectionTitle`/`Toast` bersama.
-- `90661ef` feat — beranda per peran, kesiapan 8 slot + "Masih kurang", kas toast
+- `9009e27` feat — beranda per peran, kesiapan 8 slot + "Masih kurang", kas toast
   + Batalkan hapus + pilihan ibadah (bukan ID mentah).
-- `f202da2` refactor — SectionTitle di 7 halaman, tombol papan bernama.
+- `798d872` refactor — SectionTitle di 7 halaman, tombol papan bernama.
 
 ### Angka verifikasi — diukur sendiri
 tsc bersih · 137/137 tes (dari 126) · build hijau 21 rute · lint 51→5 error
@@ -1617,19 +1617,17 @@ tsc bersih · 137/137 tes (dari 126) · build hijau 21 rute · lint 51→5 error
 Port 2990–3089 dicadangkan Windows → `next dev -p 4321`. Ekstensi Chrome tidak
 tersambung; screenshot via Chrome headless + CDP (emulasi 390 benar).
 
-### 🟡 Menunggu Dex (urut)
-1. Push: `git push origin master` (3 commit hari ini; `b89e270`…`f0103ef` sudah di origin tapi belum deploy).
-2. Deploy: `vercel --prod` → cek `/`, `/login`, dashboard → login, 404.
-   Risiko: akun yang RPC perannya bukan komite kini kehilangan tombol tulis
-   (dulu tampil lalu gagal diam-diam) — itu disengaja; ekspor CSV kini 403 untuk
-   non-bendahara.
-3. Migrasi `0014_committee_manage_stewards.sql` di SQL Editor. Tanpa itu
-   "Batalkan"/hapus chip kini menampilkan pesan jujur "izin hapus belum aktif".
-4. SQL cek: `select role, count(*) from steward_assignments group by role;`
-   (peran di luar 6 resmi tidak tampil di papan) dan
-   `select policyname from pg_policies where tablename='finance_transactions';`
-   (pastikan Opsi A kas admin+bendahara sudah jalan).
-5. Uji klik setelah deploy dengan akun Tim Ibadah + Anggota: menu Keuangan/Audit
-   hilang untuk yang bukan haknya, beranda tanpa Saldo, absensi muncul untuk admin.
-6. Keputusan produk (belum dikerjakan): CRUD notulen rapat; Penatalayan masuk
-   bilah bawah HP (sekarang di "Lainnya").
+### Rencana rilis 2 Okt
+1. Push branch `dex/ygms-rilis-pengurus` → PR ke `master` → merge setelah tes +
+   build hijau, lalu `vercel --prod` dari `master` dan cek `/`, `/login`,
+   route dashboard → login, 404. Efek yang disengaja: akun non-komite tidak lagi
+   melihat tombol tulis yang pasti ditolak RLS; ekspor CSV 403 untuk non-bendahara.
+2. Migrasi `0014` (UPDATE + DELETE penatalayan untuk pengurus) dan `0015`
+   (mencerminkan dua policy prod 28 Sep ke repo), masing-masing dengan rollback di
+   `supabase/rollback/`.
+3. Cek DB baca-saja sebelum migrasi: peran penatalayan (`steward_assignments.role`)
+   dan policy kas `finance_transactions`.
+4. Uji login akun asli (Tim Ibadah, Anggota) setelah deploy: menu Keuangan/Audit
+   sesuai hak, beranda tanpa Saldo untuk non-bendahara, absensi tampil untuk admin.
+5. Belum dikerjakan (keputusan produk): CRUD notulen rapat; Penatalayan di bilah
+   bawah HP (sekarang di "Lainnya").

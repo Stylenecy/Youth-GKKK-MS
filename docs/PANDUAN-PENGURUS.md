@@ -47,6 +47,6 @@ Peranmu tertulis di **Dashboard** (baris di bawah judul) dan di **Pengaturan**.
 
 ## 5. Yang perlu diingat
 
-- Semua perubahan tercatat (siapa, kapan) — admin bisa melihatnya di **Audit**.
+- Perubahan dicatat (siapa, kapan) dan admin bisa melihatnya di **Audit** — tapi **hanya untuk akun yang sudah punya data anggota** di sistem. Akun yang belum terhubung ke data anggota tetap bisa bekerja, hanya saja perubahannya belum tercatat. Kalau ragu akunmu sudah terhubung, tanyakan ke admin.
 - Nomor WhatsApp hanya terlihat oleh pengurus dan pemimpin Cross.
 - Tampilan terang/gelap: tombol matahari/bulan di menu.
