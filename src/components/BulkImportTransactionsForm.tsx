@@ -42,7 +42,7 @@ export function BulkImportTransactionsForm() {
         className="btn-outline text-xs sm:text-sm font-semibold"
       >
         <FileSpreadsheet className="h-4 w-4 mr-1.5" />
-        Buka Format Tempel Data Spreadsheet
+        Tempel dari spreadsheet
       </button>
     );
   }

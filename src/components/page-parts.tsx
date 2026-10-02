@@ -314,6 +314,16 @@ export function DataTable<T>({
 }) {
   const primary = columns.filter((c) => c.primary);
   const rest = columns.filter((c) => !c.primary);
+  // Footer totals line up under the last visible numeric column, not under
+  // a trailing actions column.
+  let valueIdx = columns.length - 1;
+  for (let i = columns.length - 1; i >= 0; i--) {
+    if (columns[i].align === "right" && !columns[i].srOnlyHeader) {
+      valueIdx = i;
+      break;
+    }
+  }
+  const trailing = columns.length - valueIdx - 1;
   return (
     <div className="overflow-hidden rounded-xl border border-line/50 bg-surface">
       <table className="hidden w-full border-collapse text-sm sm:table">
@@ -355,12 +365,13 @@ export function DataTable<T>({
               <tr key={f.label} className="border-t border-rule">
                 <th
                   scope="row"
-                  colSpan={columns.length - 1}
+                  colSpan={valueIdx}
                   className="px-4 py-2.5 text-right text-sm font-normal text-ink-muted"
                 >
                   {f.label}
                 </th>
                 <td className="num px-4 py-2.5 text-right font-mono text-ink">{f.value}</td>
+                {trailing > 0 && <td colSpan={trailing} aria-hidden="true" />}
               </tr>
             ))}
           </tfoot>
