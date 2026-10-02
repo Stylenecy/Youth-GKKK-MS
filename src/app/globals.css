@@ -835,7 +835,9 @@ a.card:hover .lucide {
   /* --- Rules, hairlines & object boundaries --- */
   --color-rule: #ded4c6;
   --color-rule-soft: #ece5da;
-  --color-line: #a2937f;
+  --color-line: #92836f; /* 3.44:1 canvas · 3.68:1 surface · 3.18:1 canvas-sunk —
+                             was #a2937f (2.80:1 on canvas), under the 3:1
+                             component-boundary threshold (WCAG 1.4.11) */
   --color-line-accent: #a94d08;
 
   /* --- Compatibility aliases --- */
@@ -847,4 +849,12 @@ a.card:hover .lucide {
   --color-success: #4f6b44;
   --color-glow: rgba(180, 83, 9, 0.05);
   --color-glow-strong: rgba(180, 83, 9, 0.09);
+}
+
+/* Dashboard type scope: Geist Mono for figures, dates and tags (brand
+   trio, .agent/AGENT.md "Typography"). Set only inside the dashboard so
+   the landing page's faces are untouched. */
+.dash-type {
+  --font-mono: var(--font-geist-mono), ui-monospace, "SF Mono", "Roboto Mono",
+    Menlo, Consolas, monospace;
 }

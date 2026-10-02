@@ -52,7 +52,9 @@ export function StewardRemoveButton({
         }}
         aria-label={`Hapus ${name} dari ${role}`}
         title={`Hapus ${name}`}
-        className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg text-ink-faint transition-colors hover:bg-danger-wash hover:text-danger"
+        // 44 × 44 touch target (repo standard since 28 Sep); the negative
+        // margin keeps the chip/row as compact as the old 28 px icon.
+        className="-my-2.5 -mr-2 flex h-11 w-11 shrink-0 items-center justify-center rounded-lg text-ink-muted transition-colors hover:bg-danger-wash hover:text-danger"
       >
         <X className="h-3.5 w-3.5" aria-hidden="true" />
       </button>
