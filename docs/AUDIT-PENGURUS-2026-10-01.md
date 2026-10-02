@@ -39,10 +39,10 @@ Status: **tuntas** · **patah** (salah/berbahaya) · **setengah** (jalan tapi bu
 | 15 | Kode | — | 19 `any` di `data.ts`; cek komite disalin 4×; peta status anggota disalin 2× | P2 |
 | 16 | Data demo | jelek | seed memakai peran "Musik" (bukan "Pemusik") → papan menghitung Pemusik 0 | P2 |
 
-## Dugaan yang perlu dicek Dex di DB (bukan fakta)
+## Cek DB (baca-saja, 2 Okt 2026)
 
-- Apakah ada baris `steward_assignments.role` di luar 6 peran resmi (mis. "Musik" dari impor Excel)? Kalau ada, baris itu tidak muncul di papan. Query: `select role, count(*) from steward_assignments group by role;`
-- Apakah SQL "Kas hanya admin+bendahara" (28 Sep, Opsi A) sudah dijalankan? Kalau belum, ekspor tanpa cek peran = kebocoran nyata.
+- Peran penatalayan: hanya 6 peran resmi yang dipakai di `steward_assignments`; tidak ada baris yang hilang dari papan.
+- Kas "Opsi A" (28 Sep) sudah aktif di prod: `finance_transactions` hanya dibaca admin + bendahara. Ekspor kini juga dicek peran di server.
 
 ## Rencana eksekusi (urut)
 
@@ -53,7 +53,7 @@ Status: **tuntas** · **patah** (salah/berbahaya) · **setengah** (jalan tapi bu
 
 ## Hasil (akhir sesi 1 Okt)
 
-Commit lokal: `99a6ed9` (fix peran/tulis/ekspor), `9009e27` (beranda + kas), `798d872` (SectionTitle bersama). Rilis ke produksi: lihat `PROJECT_MASTER.md` bagian 2 Okt 2026.
+Perubahan masuk lewat PR #1 (fix peran/tulis/ekspor, beranda + kas, SectionTitle bersama). Rilis ke produksi: lihat `PROJECT_MASTER.md` bagian 2 Okt 2026.
 
 | # | Status sekarang |
 |---|---|
@@ -70,7 +70,7 @@ Commit lokal: `99a6ed9` (fix peran/tulis/ekspor), `9009e27` (beranda + kas), `79
 | 13 | tuntas — non-admin melihat "Log audit khusus admin" |
 | 15 | tuntas — 0 `any` di `data.ts`, `lib/roles.ts` satu sumber, `MEMBER_STATUS_TAG` bersama |
 | 16 | tuntas — seed "Pemusik" |
-| 12 | tetap — notulen read-only, menunggu spek Dex |
+| 12 | tetap — notulen read-only; keputusan produk, belum dikerjakan |
 
 Verifikasi akhir: `tsc` bersih · `npm test` **137/137** (16 berkas) · `npm run build` hijau 21 rute · lint **5 error / 6 warning** (4 di landing yang sengaja tidak disentuh, 1 `DashboardTheme` pola baca-localStorage) · 24 tangkapan 1440/390: 0 overflow, 0 error konsol. Screenshot disimpan lokal, tidak di repo.
 
