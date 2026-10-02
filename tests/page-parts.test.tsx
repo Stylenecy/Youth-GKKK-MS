@@ -64,3 +64,26 @@ describe("Meter", () => {
     expect(full).toContain("bg-sage");
   });
 });
+
+describe("Field", () => {
+  it("ties the hint to the control, then the error (with aria-invalid)", async () => {
+    const { Field } = await import("@/components/Modal");
+    const hinted = renderToStaticMarkup(
+      <Field name="amount" label="Nominal" hint="Angka saja">
+        <input id="amount" name="amount" />
+      </Field>
+    );
+    expect(hinted).toContain('aria-describedby="amount-hint"');
+    expect(hinted).toContain('id="amount-hint"');
+    expect(hinted).not.toContain("aria-invalid");
+
+    const failed = renderToStaticMarkup(
+      <Field name="amount" label="Nominal" hint="Angka saja" error="Wajib diisi">
+        <input id="amount" name="amount" />
+      </Field>
+    );
+    expect(failed).toContain('aria-describedby="amount-error"');
+    expect(failed).toContain('aria-invalid="true"');
+    expect(failed).toContain('id="amount-error"');
+  });
+});

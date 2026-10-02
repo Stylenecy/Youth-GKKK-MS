@@ -1,6 +1,14 @@
 "use client";
 
-import { useEffect, useId, useRef, type ReactNode } from "react";
+import {
+  cloneElement,
+  isValidElement,
+  useEffect,
+  useId,
+  useRef,
+  type ReactElement,
+  type ReactNode,
+} from "react";
 import { createPortal } from "react-dom";
 import { X } from "lucide-react";
 
@@ -138,7 +146,13 @@ export function Modal({
   );
 }
 
-/** Shared field wrapper so all forms label and space controls identically. */
+/**
+ * Shared field wrapper so all forms label and space controls identically.
+ *
+ * The hint or error is tied to the control with aria-describedby (and
+ * aria-invalid on error), so a screen reader repeats it whenever the field
+ * gets focus — not only once when role="alert" announces it.
+ */
 export function Field({
   name,
   label,
@@ -152,6 +166,15 @@ export function Field({
   error?: string;
   children: ReactNode;
 }) {
+  const hintId = `${name}-hint`;
+  const errorId = `${name}-error`;
+  const describedBy = error ? errorId : hint ? hintId : undefined;
+  const control = isValidElement(children)
+    ? cloneElement(children as ReactElement<Record<string, unknown>>, {
+        "aria-describedby": describedBy,
+        "aria-invalid": error ? true : undefined,
+      })
+    : children;
   return (
     <div className="flex flex-col gap-1.5">
       <label
@@ -160,12 +183,14 @@ export function Field({
       >
         {label}
       </label>
-      {children}
+      {control}
       {hint && !error && (
-        <span className="text-xs text-ink-faint leading-relaxed">{hint}</span>
+        <span id={hintId} className="text-xs text-ink-muted leading-relaxed">
+          {hint}
+        </span>
       )}
       {error && (
-        <span role="alert" className="text-xs font-medium text-danger">
+        <span id={errorId} role="alert" className="text-xs font-medium text-danger">
           {error}
         </span>
       )}
