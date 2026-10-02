@@ -1681,3 +1681,24 @@ disimpan lokal) + berkas `.down.sql`.
 ### Belum diuji
 - Login akun asli (Tim Ibadah, Anggota) di produksi: login Google hanya bisa oleh
   pemilik akun.
+
+### Rilis 1b — patch keamanan (live 12:57)
+- PR #2 https://github.com/Stylenecy/Youth-GKKK-MS/pull/2 merged → `master` `02f71c0`:
+  `next`/`eslint-config-next` 16.2.9 → 16.3.8 (advisory critical: bypass Proxy pada
+  App Router + Turbopack). `npm audit --omit=dev`: 5 → 0 kerentanan.
+- Deployment `youth-gkkk-m5udpxnzy-…` READY; `package.json` + lockfile terunggah =
+  `02f71c0`.
+
+### Rilis 2 — visual area Pengurus, arah A "buku kerja tenang" (live 14:16)
+- PR #3 https://github.com/Stylenecy/Youth-GKKK-MS/pull/3 merged → `master` `77be0b6`;
+  deployment `youth-gkkk-4dtuiqi2q-stylenecys-projects.vercel.app` READY, smoke sama
+  dengan Rilis 1. Rollback: deployment Rilis 1b.
+- Keuangan: saldo per kas sebagai daftar rata kanan, satu tombol "Catat transaksi",
+  transaksi sebagai tabel (kartu-baris di HP) dengan total, "Tempel dari spreadsheet".
+- Detail Ibadah + Penatalayan: roster Peran · Petugas · Slot yang sama; HP = satu
+  Sabtu per layar + "Isi N slot yang kurang"; desktop tetap grid Peran × Sabtu.
+- Sistem: primitif `page-parts` (SummaryRows, DataTable, StatusChip, Meter),
+  loading/error per route, Geist Mono hanya di dashboard, `Field` dengan
+  `aria-describedby`, token `line` terang 3,44:1, target sentuh 44 px.
+- Bukti: 154/154 tes, build 21 rute, 360 px tanpa scroll horizontal (3 halaman ×
+  2 tema), Escape + fokus 12/12, lint 0 galat baru.
