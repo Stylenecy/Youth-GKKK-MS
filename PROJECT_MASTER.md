@@ -1669,9 +1669,9 @@ disimpan lokal) + berkas `.down.sql`.
   Multimedia 22, Sound 21).
 - Trigger `check_event_pic`: satu trigger (INSERT + UPDATE); "dua baris" di
   `information_schema` = satu baris per event, bukan trigger ganda.
-- Akun: 4 akun login, 2 tanpa baris anggota (perubahan mereka belum tercatat di
-  audit). Akun disetujui: 2 admin, 1 bendahara; belum ada akun Tim Ibadah atau
-  anggota biasa yang disetujui.
+- Akun: 4 akun login, 2 belum terhubung ke data anggota (lihat panduan soal
+  audit). Akun disetujui: 2 admin, 1 bendahara; satu-satunya email Tim Ibadah
+  yang disetujui juga terdaftar admin, dan belum ada anggota biasa yang disetujui.
 - Daftar email peran: admin 4 · bendahara 1 · tim ibadah 6.
 - Advisor keamanan: 0 ERROR; 21 fungsi SECURITY DEFINER bisa dipanggil anon
   (sama seperti 19 Sep).
