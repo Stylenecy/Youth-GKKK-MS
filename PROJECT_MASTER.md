@@ -1598,16 +1598,16 @@ hasil: `docs/AUDIT-PENGURUS-2026-10-01.md`. Panduan awam: `docs/PANDUAN-PENGURUS
 Deploy terakhir yang tercatat = `86c5826` (29 Sep dini hari), bukan `7d74dc8`.
 Belum live: `b89e270` … `f0103ef` (papan v2, combobox, undo) + 3 commit hari ini.
 
-### Commit (dirapikan 2 Okt sebelum push; SHA baru)
-- `99a6ed9` fix — `lib/roles.ts` satu sumber gate peran; `lib/role-guard.ts`: aksi
+### Commit (dirapikan 2 Okt sebelum push; masuk lewat PR #1 — SHA final di catatan 2 Okt)
+- fix(pengurus): role gates, honest writes, guarded cash export — `lib/roles.ts` satu sumber gate peran; `lib/role-guard.ts`: aksi
   cek peran dulu dan anggap UPDATE/DELETE 0 baris = gagal (dulu RLS diam-diam →
   "berhasil" + baris audit palsu). Ekspor CSV dicek peran + anti formula. Nav per
   peran. Audit non-admin jujur. Antrean persetujuan kosong tampil. Peta beban
   tidak lagi menyebar baris snake_case. WIB dobel, copy ">3", kartu latihan
   hardcode dibuang. `Panel`/`SectionTitle`/`Toast` bersama.
-- `9009e27` feat — beranda per peran, kesiapan 8 slot + "Masih kurang", kas toast
+- feat(pengurus): role-aware home, slot readiness, cash feedback + undo — beranda per peran, kesiapan 8 slot + "Masih kurang", kas toast
   + Batalkan hapus + pilihan ibadah (bukan ID mentah).
-- `798d872` refactor — SectionTitle di 7 halaman, tombol papan bernama.
+- refactor(dashboard): shared SectionTitle across pages, named board buttons — SectionTitle di 7 halaman, tombol papan bernama.
 
 ### Angka verifikasi — diukur sendiri
 tsc bersih · 137/137 tes (dari 126) · build hijau 21 rute · lint 51→5 error
@@ -1618,16 +1618,17 @@ Port 2990–3089 dicadangkan Windows → `next dev -p 4321`. Ekstensi Chrome tid
 tersambung; screenshot via Chrome headless + CDP (emulasi 390 benar).
 
 ### Rencana rilis 2 Okt
-1. Push branch `dex/ygms-rilis-pengurus` → PR ke `master` → merge setelah tes +
-   build hijau, lalu `vercel --prod` dari `master` dan cek `/`, `/login`,
-   route dashboard → login, 404. Efek yang disengaja: akun non-komite tidak lagi
-   melihat tombol tulis yang pasti ditolak RLS; ekspor CSV 403 untuk non-bendahara.
-2. Migrasi `0014` (UPDATE + DELETE penatalayan untuk pengurus) dan `0015`
-   (mencerminkan dua policy prod 28 Sep ke repo), masing-masing dengan rollback di
-   `supabase/rollback/`.
-3. Cek DB baca-saja sebelum migrasi: peran penatalayan (`steward_assignments.role`)
-   dan policy kas `finance_transactions`.
-4. Uji login akun asli (Tim Ibadah, Anggota) setelah deploy: menu Keuangan/Audit
+1. Cek DB baca-saja sebelum migrasi — hasil 2 Okt: Opsi A kas sudah aktif di prod,
+   INSERT penatalayan oleh pengurus sudah ada, policy ubah/hapus belum ada; hanya 6
+   peran penatalayan resmi yang dipakai; trigger `check_event_pic` hanya satu.
+2. Push branch `dex/ygms-rilis-pengurus` → PR #1 → tes + build hijau.
+3. Migrasi `0014` (UPDATE + DELETE penatalayan untuk pengurus) dan `0015`
+   (mencerminkan dua policy prod 28 Sep ke repo) diterapkan sebelum merge, masing-
+   masing dengan rollback di `supabase/rollback/`.
+4. Merge PR #1, lalu `vercel --prod` dari `master` dan cek `/`, `/login`, route
+   dashboard → login, 404. Efek yang disengaja: akun non-komite tidak lagi melihat
+   tombol tulis yang pasti ditolak RLS; ekspor CSV 403 untuk non-bendahara.
+5. Uji login akun asli (Tim Ibadah, Anggota) setelah deploy: menu Keuangan/Audit
    sesuai hak, beranda tanpa Saldo untuk non-bendahara, absensi tampil untuk admin.
-5. Belum dikerjakan (keputusan produk): CRUD notulen rapat; Penatalayan di bilah
+6. Belum dikerjakan (keputusan produk): CRUD notulen rapat; Penatalayan di bilah
    bawah HP (sekarang di "Lainnya").
