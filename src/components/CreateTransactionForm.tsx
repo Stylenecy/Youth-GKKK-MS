@@ -10,7 +10,14 @@ import { INCOME_CATEGORIES, EXPENSE_CATEGORIES, ACCOUNT_LABEL, type EventOption 
 
 type FieldErrors = Record<string, string[] | undefined>;
 
-export function CreateTransactionForm({ events: eventOptions = [] }: { events?: EventOption[] }) {
+export function CreateTransactionForm({
+  events: eventOptions = [],
+  label = "Transaksi Baru",
+}: {
+  events?: EventOption[];
+  /** Button text — say the result ("Catat transaksi pertama"). */
+  label?: string;
+}) {
   const [isOpen, setIsOpen] = useState(false);
   const [pending, startTransition] = useTransition();
   const [errors, setErrors] = useState<FieldErrors>({});
@@ -34,10 +41,10 @@ export function CreateTransactionForm({ events: eventOptions = [] }: { events?: 
       <button
         type="button"
         onClick={() => setIsOpen(true)}
-        className="btn-primary text-xs sm:text-sm shadow-[0_0_16px_rgba(253,190,2,0.25)]"
+        className="btn-primary w-full justify-center text-sm"
       >
         <Plus className="h-4 w-4" aria-hidden="true" />
-        Transaksi Baru
+        {label}
       </button>
 
       <Modal

@@ -1,15 +1,22 @@
 import type { Metadata } from "next";
-import { Download, Wallet, ArrowDownRight, ArrowUpRight, Lock } from "lucide-react";
+import { Download, Lock, Wallet } from "lucide-react";
 import { getFinanceTransactions, getMyRole, getEvents } from "@/lib/data";
 import { canManageFinance } from "@/lib/roles";
+import type { FinanceTransaction } from "@/lib/types";
 import { CreateTransactionForm } from "@/components/CreateTransactionForm";
 import { TransactionRowActions } from "@/components/TransactionRowActions";
 import { BulkImportTransactionsForm } from "@/components/BulkImportTransactionsForm";
-import { PageHeader, EmptyState, SectionTitle } from "@/components/page-parts";
-import { formatShortDate, formatRupiah, formatRupiahCompact } from "@/lib/datetime";
+import {
+  PageHeader,
+  EmptyState,
+  SectionTitle,
+  SummaryRows,
+  DataTable,
+} from "@/components/page-parts";
+import { formatShortDate, formatRupiah } from "@/lib/datetime";
 import { CATEGORY_LABEL, ACCOUNT_LABEL } from "@/lib/finance";
 
-export const metadata: Metadata = { title: "Kas Keuangan" };
+export const metadata: Metadata = { title: "Buku Kas" };
 
 export default async function FinancePage() {
   // Gate on the server, before any cash data is fetched. RLS "Opsi A"
@@ -21,7 +28,7 @@ export default async function FinancePage() {
   if (!canManageFinance(role)) {
     return (
       <div className="px-5 py-7 sm:px-8 sm:py-9">
-        <PageHeader kicker="BENDAHARA" title="Buku Kas & Keuangan" />
+        <PageHeader kicker="BENDAHARA" title="Buku Kas" />
         <div className="mt-8">
           <EmptyState
             title="Buku kas khusus bendahara dan admin"
@@ -42,10 +49,11 @@ export default async function FinancePage() {
     .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
     .slice(0, 12)
     .map((e) => ({ id: e.id, label: `${formatShortDate(e.date)} · ${e.weeklyTheme}` }));
-  const income = transactions.filter((t) => t.type === "income").reduce((a, b) => a + b.amount, 0);
-  const expense = transactions.filter((t) => t.type === "expense").reduce((a, b) => a + b.amount, 0);
-  const totalBalance = income - expense;
 
+  const sumOf = (rows: FinanceTransaction[], type: "income" | "expense") =>
+    rows.filter((t) => t.type === type).reduce((a, b) => a + b.amount, 0);
+  const income = sumOf(transactions, "income");
+  const expense = sumOf(transactions, "expense");
   const balanceOf = (account: "kas_besar" | "kas_kecil") =>
     transactions
       .filter((t) => t.account === account)
@@ -55,166 +63,118 @@ export default async function FinancePage() {
     (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
   );
 
-  const summary = [
-    {
-      kicker: "KAS BESAR",
-      label: "Rekening Utama Komisi",
-      value: formatRupiah(balanceOf("kas_besar")),
-      compact: formatRupiahCompact(balanceOf("kas_besar")),
-      highlight: false,
-    },
-    {
-      kicker: "KAS KECIL",
-      label: "Kas Operasional Tunai",
-      value: formatRupiah(balanceOf("kas_kecil")),
-      compact: formatRupiahCompact(balanceOf("kas_kecil")),
-      highlight: false,
-    },
-    {
-      kicker: "TOTAL SALDO KAS",
-      label: "Akumulasi Keseluruhan",
-      value: formatRupiah(totalBalance),
-      compact: formatRupiahCompact(totalBalance),
-      highlight: true,
-    },
-  ];
-
   return (
     <div className="px-5 py-7 sm:px-8 sm:py-9">
       <PageHeader
         kicker="BENDAHARA"
-        title="Buku Kas & Keuangan"
-        meta={`${transactions.length} total transaksi tercatat · Saldo realtime berdasarkan entri transaksi`}
-        action={
-          <div className="flex flex-wrap items-center gap-2.5">
-              <a
-                href="/dashboard/finance/export"
-                aria-label="Ekspor CSV buku kas"
-                className="btn-outline text-xs sm:text-sm font-semibold"
-              >
-                <Download className="h-4 w-4" aria-hidden="true" />
-                <span className="hidden sm:inline">Ekspor CSV</span>
-              </a>
-              <CreateTransactionForm events={eventOptions} />
-          </div>
-        }
+        title="Buku Kas"
+        meta={`${transactions.length} transaksi tercatat`}
       />
 
-      {/* 3 Luxury Balance KPI Cards */}
-      <div className="mt-8 grid grid-cols-1 gap-4 sm:grid-cols-3">
-        {summary.map((s) => (
-          <div
-            key={s.kicker}
-            className={`relative overflow-hidden rounded-2xl border p-5 sm:p-6 backdrop-blur-xl transition-all duration-300 ${
-              s.highlight
-                ? "border-accent/60 bg-gradient-to-b from-surface to-accent-wash/40 shadow-[0_12px_32px_rgba(253,190,2,0.15)]"
-                : "border-line/40 bg-surface/75"
-            }`}
-          >
-            {s.highlight && (
-              <div
-                aria-hidden="true"
-                className="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-accent to-transparent opacity-80"
+      <div className="mt-6 grid gap-6 lg:grid-cols-[minmax(0,22rem)_1fr] lg:items-start">
+        {/* Balance + the one primary action, kept together */}
+        <section aria-labelledby="saldo-heading" className="space-y-4">
+          <h2 id="saldo-heading" className="sr-only">
+            Saldo
+          </h2>
+          <SummaryRows
+            label="Saldo per kas"
+            rows={[
+              { label: ACCOUNT_LABEL.kas_besar, value: formatRupiah(balanceOf("kas_besar")) },
+              { label: ACCOUNT_LABEL.kas_kecil, value: formatRupiah(balanceOf("kas_kecil")) },
+              { label: "Total saldo", value: formatRupiah(income - expense), emphasis: true },
+            ]}
+          />
+          <div className="grid gap-2.5 sm:grid-cols-[1fr_auto] lg:grid-cols-1 xl:grid-cols-[1fr_auto]">
+            <CreateTransactionForm events={eventOptions} label="Catat transaksi" />
+            <a href="/dashboard/finance/export" className="btn-outline justify-center text-sm">
+              <Download className="h-4 w-4" aria-hidden="true" />
+              Ekspor CSV
+            </a>
+          </div>
+        </section>
+
+        <section aria-labelledby="tx-heading" className="min-w-0">
+          <SectionTitle id="tx-heading" title="Transaksi" meta={`${sorted.length} baris`} />
+          <div className="mt-4">
+            {sorted.length === 0 ? (
+              <EmptyState
+                title="Belum ada transaksi"
+                body="Catat pemasukan atau pengeluaran pertama, atau tempel baris dari spreadsheet lama lewat Impor di bawah."
+                icon={Wallet}
+                action={
+                  <CreateTransactionForm events={eventOptions} label="Catat transaksi pertama" />
+                }
+              />
+            ) : (
+              <DataTable
+                caption="Daftar transaksi kas, terbaru di atas"
+                rows={sorted}
+                rowKey={(t) => t.id}
+                columns={[
+                  {
+                    key: "tanggal",
+                    header: "Tanggal",
+                    cell: (t) => (
+                      <span className="num whitespace-nowrap font-mono text-ink-muted">
+                        {formatShortDate(t.createdAt)}
+                      </span>
+                    ),
+                  },
+                  {
+                    key: "uraian",
+                    header: "Uraian",
+                    primary: true,
+                    cell: (t) => (
+                      <>
+                        <span className="block font-semibold text-ink">{t.description}</span>
+                        <span className="mt-0.5 block text-xs text-ink-muted">
+                          {CATEGORY_LABEL[t.category] ?? t.category} · {ACCOUNT_LABEL[t.account]}
+                        </span>
+                      </>
+                    ),
+                  },
+                  {
+                    key: "jumlah",
+                    header: "Jumlah",
+                    align: "right",
+                    cell: (t) => (
+                      <span className={t.type === "income" ? "text-sage" : "text-ink"}>
+                        {t.type === "income" ? "+" : "−"}
+                        {formatRupiah(t.amount)}
+                        <span className="sr-only">
+                          {t.type === "income" ? " pemasukan" : " pengeluaran"}
+                        </span>
+                      </span>
+                    ),
+                  },
+                  {
+                    key: "aksi",
+                    header: "Ubah atau hapus",
+                    srOnlyHeader: true,
+                    align: "right",
+                    cell: (t) => <TransactionRowActions transaction={t} events={eventOptions} />,
+                  },
+                ]}
+                footer={[
+                  { label: "Pemasukan", value: formatRupiah(income) },
+                  { label: "Pengeluaran", value: formatRupiah(expense) },
+                ]}
               />
             )}
+          </div>
 
-            <div className="flex items-center justify-between">
-              <span className="font-mono text-[0.625rem] font-bold uppercase tracking-[0.2em] text-accent">
-                ( {s.kicker} )
-              </span>
-              <Wallet className="h-4 w-4 text-ink-faint" />
+          <div className="mt-8 border-t border-rule-soft pt-6">
+            <h2 className="text-sm font-semibold text-ink">Banyak baris dari Google Sheets?</h2>
+            <p className="mt-1 text-sm text-ink-muted">
+              Tempel sekaligus; kalau satu baris salah, tidak ada yang masuk.
+            </p>
+            <div className="mt-3">
+              <BulkImportTransactionsForm />
             </div>
-
-            <p
-              className={`num mt-3 font-serif text-2xl font-bold tracking-tight sm:text-3xl ${
-                s.highlight ? "text-accent" : "text-ink"
-              }`}
-            >
-              {s.value}
-            </p>
-
-            <p className="mt-1 text-xs text-ink-muted">
-              {s.label}
-            </p>
           </div>
-        ))}
+        </section>
       </div>
-
-      {/* Financial Health Shelf (Income vs Expense) */}
-      <div className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-2">
-        <div className="flex items-center justify-between rounded-xl border border-sage/30 bg-sage-wash/60 px-4 py-3 text-xs sm:text-sm">
-          <div className="flex items-center gap-2">
-            <ArrowDownRight className="h-4 w-4 text-sage" />
-            <span className="font-mono uppercase tracking-wider text-ink-muted">Total Pemasukan:</span>
-          </div>
-          <span className="num font-mono font-bold text-sage">{formatRupiah(income)}</span>
-        </div>
-
-        <div className="flex items-center justify-between rounded-xl border border-danger/30 bg-danger-wash/60 px-4 py-3 text-xs sm:text-sm">
-          <div className="flex items-center gap-2">
-            <ArrowUpRight className="h-4 w-4 text-danger" />
-            <span className="font-mono uppercase tracking-wider text-ink-muted">Total Pengeluaran:</span>
-          </div>
-          <span className="num font-mono font-bold text-danger">{formatRupiah(expense)}</span>
-        </div>
-      </div>
-
-      {/* Bulk Import Module */}
-      <section className="mt-10" aria-labelledby="import-heading">
-        <SectionTitle id="import-heading" title="IMPOR DARI SPREADSHEET / EXCEL LAMA" />
-        <div className="mt-3">
-          <BulkImportTransactionsForm />
-        </div>
-      </section>
-
-      {/* Transaction History Ledger */}
-      <section className="mt-10" aria-labelledby="tx-heading">
-        <SectionTitle id="tx-heading" title="BUKU BESAR TRANSAKSI" meta={<>{sorted.length} Baris</>} />
-
-        {sorted.length === 0 ? (
-          <div className="mt-4">
-            <EmptyState
-              title="Belum ada transaksi tercatat"
-              body="Catat pemasukan atau pengeluaran per kegiatan di atas, atau gunakan fitur impor dari spreadsheet lama."
-              icon={Wallet}
-            />
-          </div>
-        ) : (
-          <ul className="mt-4 divide-y divide-rule-soft/60 rounded-2xl border border-line/40 bg-surface/75 backdrop-blur-xl overflow-hidden shadow-sm">
-            {sorted.map((t) => (
-              <li
-                key={t.id}
-                className="group flex flex-wrap items-center justify-between gap-4 p-4 transition-colors hover:bg-surface-2/60 sm:px-6 sm:py-4.5"
-              >
-                {/* Description & Metadata */}
-                <div className="min-w-0 flex-1">
-                  <p className="truncate text-base font-bold text-ink group-hover:text-accent transition-colors">
-                    {t.description}
-                  </p>
-                  <p className="mt-1 truncate font-mono text-xs text-ink-muted">
-                    {formatShortDate(t.createdAt)} ·{" "}
-                    <span className="text-accent font-semibold">{ACCOUNT_LABEL[t.account]}</span> ·{" "}
-                    <span className="text-ink-faint">{CATEGORY_LABEL[t.category] ?? t.category}</span>
-                  </p>
-                </div>
-
-                {/* Amount & Actions */}
-                <div className="flex items-center gap-4">
-                  <span
-                    className={`num font-mono text-base font-bold tabular-nums sm:text-lg ${
-                      t.type === "income" ? "text-sage" : "text-danger"
-                    }`}
-                  >
-                    {t.type === "income" ? "+" : "−"}
-                    {formatRupiah(t.amount)}
-                  </span>
-                  <TransactionRowActions transaction={t} events={eventOptions} />
-                </div>
-              </li>
-            ))}
-          </ul>
-        )}
-      </section>
     </div>
   );
 }
