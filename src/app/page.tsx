@@ -39,6 +39,8 @@ export default async function LandingPage() {
     getCrosses(),
   ]);
 
+  // Server component: renders once per request, so "now" is stable here.
+  // eslint-disable-next-line react-hooks/purity
   const now = Date.now();
   const agenda = events
     .filter((e) => new Date(e.date).getTime() > now && e.status !== "archived")
