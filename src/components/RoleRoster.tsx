@@ -11,6 +11,8 @@ export interface RosterSteward {
   profileId: string;
   role: string;
   status: string;
+  /** Why someone asked to be replaced — shown with the status note. */
+  reason?: string | null;
 }
 
 const STATUS_NOTE: Record<string, string> = {
@@ -85,12 +87,14 @@ export function RoleRoster({
             need.max === null ? `${rows.length}` : `${rows.length}/${need.max}`;
           return (
             <tr key={role} className="border-t border-rule-soft align-top first:border-t-0">
-              <th scope="row" className="py-3 pr-2 text-left font-semibold text-ink">
-                {role}
+              <th scope="row" className="py-2.5 pr-2 text-left font-semibold text-ink">
+                {/* Same 44 px line box as a name row, so role, name and slot
+                    share one baseline. */}
+                <span className="flex min-h-[44px] items-center">{role}</span>
               </th>
               <td className="py-2.5 pr-2">
                 {rows.length === 0 && !canAdd && (
-                  <span className="text-ink-muted">Belum ada</span>
+                  <span className="flex min-h-[44px] items-center text-ink-muted">Belum ada</span>
                 )}
                 <ul className="space-y-1">
                   {rows.map((s) => {
@@ -105,6 +109,7 @@ export function RoleRoster({
                           {showStatus && STATUS_NOTE[s.status] && (
                             <span className="block text-xs text-ink-muted">
                               {STATUS_NOTE[s.status]}
+                              {s.reason ? ` — ${s.reason}` : ""}
                             </span>
                           )}
                         </span>
@@ -142,14 +147,14 @@ export function RoleRoster({
                       profiles={profiles}
                       crossNames={crossNames}
                       presetRole={role}
-                      buttonLabel="Tambah"
+                      buttonLabel={`Tambah ${role}`}
                       variant="dashed"
                     />
                   </div>
                 )}
               </td>
               <td
-                className={`num py-3 text-right font-mono ${
+                className={`num py-2.5 font-mono ${
                   slot.tone === "full"
                     ? "text-sage"
                     : missing
@@ -157,8 +162,10 @@ export function RoleRoster({
                       : "text-ink-muted"
                 }`}
               >
-                {count}
-                <span className="sr-only"> — {slot.sub}</span>
+                <span className="flex min-h-[44px] items-center justify-end">
+                  {count}
+                  <span className="sr-only"> — {slot.sub}</span>
+                </span>
               </td>
             </tr>
           );
