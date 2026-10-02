@@ -228,8 +228,8 @@ export async function assignSteward(eventId: string, profileId: string, role: st
  *
  * Hard delete, bukan soft: barisnya berumur detik dan salah input — tidak
  * ada sejarah yang layak dipertahankan. Butuh migrasi 0014 (committee
- * boleh DELETE steward_assignments). Tanpa 0014, RLS tidak melempar error —
- * DELETE cuma mengenai 0 baris — jadi jumlah baris dicek eksplisit supaya
+ * boleh DELETE steward_assignments). RLS yang menolak DELETE tidak melempar
+ * error — cuma mengenai 0 baris — jadi jumlah baris dicek eksplisit supaya
  * "Batalkan" tidak mengaku berhasil.
  */
 export async function removeStewardAssignment(id: string, eventId: string) {
@@ -246,12 +246,9 @@ export async function removeStewardAssignment(id: string, eventId: string) {
       .eq("id", id)
       .select("id");
     if (error) return { success: false, error: friendlyDbError(error.message) };
-    if (!removed?.length) {
-      return {
-        success: false,
-        error: "Penugasan belum bisa dihapus dari aplikasi — izin hapus (migrasi 0014) belum aktif. Minta admin menghapusnya.",
-      };
-    }
+    // 0 rows = RLS refused (no committee DELETE policy, i.e. 0014 missing)
+    // or the row is already gone. Either way nothing changed — say so.
+    if (!removed?.length) return { success: false, error: NOTHING_CHANGED };
 
     await recordAudit("Membatalkan penugasan", "steward_assignment", id, {
       after: { eventId },
