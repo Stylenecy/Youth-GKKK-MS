@@ -65,8 +65,7 @@ export function StewardRemoveButton({
       >
         <p className="text-sm leading-relaxed text-ink-muted">
           <strong className="text-ink">{name}</strong> tidak lagi tercatat
-          sebagai {role} di ibadah ini. Riwayat audit tetap menyimpan bahwa
-          penugasan ini pernah ada.
+          sebagai {role} di ibadah ini.
         </p>
 
         {error && (
