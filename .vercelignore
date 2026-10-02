@@ -27,5 +27,10 @@ tests/
 docs/
 vitest.config.ts
 
+# Local working files: process notes, screenshots, dev logs, editor config.
+.dex/
+*.log
+.claude/
+
 .next/
 node_modules/
