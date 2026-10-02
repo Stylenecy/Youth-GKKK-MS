@@ -1632,3 +1632,52 @@ tersambung; screenshot via Chrome headless + CDP (emulasi 390 benar).
    sesuai hak, beranda tanpa Saldo untuk non-bendahara, absensi tampil untuk admin.
 6. Belum dikerjakan (keputusan produk): CRUD notulen rapat; Penatalayan di bilah
    bawah HP (sekarang di "Lainnya").
+
+---
+
+## 2 Okt 2026 — Rilis Pengurus
+
+### Rilis 1 — live
+- PR #1 https://github.com/Stylenecy/Youth-GKKK-MS/pull/1 merged (rebase) → `master`
+  `4761f68` (= `git ls-remote origin master`).
+- Produksi: `vercel --prod` → https://youth-gkkk-ms.vercel.app = deployment
+  `youth-gkkk-2lq6pkdhy-stylenecys-projects.vercel.app` READY. Deploy CLI tidak
+  membawa metadata git; kecocokan dibuktikan lewat hash berkas terunggah
+  (`Modal.tsx`, `role-guard.ts`) = berkas di `4761f68`.
+- Smoke: `/` 200 · `/login` 200 · `/dashboard`, `/dashboard/finance`,
+  `/dashboard/finance/export`, `/dashboard/penatalayan`, `/dashboard/gatherings`
+  → 307 ke `/login` · route ngawur 404.
+- Target rollback: `youth-gkkk-7bmwww5z7-stylenecys-projects.vercel.app`
+  (29 Sep, kode `86c5826`).
+- Ikut live untuk pertama kali: Papan Penatalayan v2 (fokus-banding, warna
+  minggu, × per chip, combobox beban, undo) yang ada di `master` sejak 29 Sep.
+
+### Migrasi prod (policy saja, tanpa menyentuh baris data)
+| Berkas repo | Nama di riwayat Supabase | Versi |
+|---|---|---|
+| `0014_committee_manage_stewards.sql` | `committee_manage_stewards` | `20261002050812` |
+| `0015_mirror_prod_policies.sql` | `mirror_prod_policies` | `20261002050834` |
+Rollback: `supabase/rollback/0014_….down.sql`, `supabase/rollback/0015_….down.sql`.
+Cadangan yang relevan = definisi policy sebelum migrasi (snapshot `pg_policies`,
+disimpan lokal) + berkas `.down.sql`.
+
+### Cek DB baca-saja (hitungan saja)
+- Sebelum migrasi: kas Opsi A (admin + bendahara) sudah aktif; INSERT
+  penatalayan oleh pengurus sudah ada; ubah/hapus penatalayan oleh pengurus belum
+  ada → kini ada (0014).
+- Peran penatalayan: hanya 6 peran resmi (Pemusik 64, Usher 45, Singer 42, WL 23,
+  Multimedia 22, Sound 21).
+- Trigger `check_event_pic`: satu trigger (INSERT + UPDATE); "dua baris" di
+  `information_schema` = satu baris per event, bukan trigger ganda.
+- Akun: 4 akun login, 2 tanpa baris anggota (perubahan mereka belum tercatat di
+  audit). Akun disetujui: 2 admin, 1 bendahara; belum ada akun Tim Ibadah atau
+  anggota biasa yang disetujui.
+- Daftar email peran: admin 4 · bendahara 1 · tim ibadah 6.
+- Advisor keamanan: 0 ERROR; 21 fungsi SECURITY DEFINER bisa dipanggil anon
+  (sama seperti 19 Sep).
+- Simulasi peran (baca-saja): bendahara → kas terlihat; email tim ibadah →
+  pengurus, kas 0; email lain → anggota, kas 0, penatalayan 0.
+
+### Belum diuji
+- Login akun asli (Tim Ibadah, Anggota) di produksi: login Google hanya bisa oleh
+  pemilik akun.
