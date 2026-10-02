@@ -4,6 +4,7 @@ import { DashboardThemeShell, ThemeInitScript } from "@/components/DashboardThem
 import { getMyAccountStatus, getMyRole } from "@/lib/data";
 import { PendingApproval } from "@/components/PendingApproval";
 import { ToastProvider } from "@/components/Toast";
+import { GeistMono } from "geist/font/mono";
 
 export default async function DashboardLayout({
   children,
@@ -30,6 +31,10 @@ export default async function DashboardLayout({
     <>
       <ThemeInitScript />
       <DashboardThemeShell>
+      {/* Geist Mono (brand: numbers, dates, tags) is loaded for the dashboard
+          only; the landing keeps its current faces. Modals portal into
+          [data-modal-root] below so they inherit the face and theme. */}
+      <div className={`${GeistMono.variable} dash-type`}>
       <ToastProvider>
       <div className="flex min-h-screen bg-canvas text-ink selection:bg-accent selection:text-canvas">
       <Sidebar role={role} />
@@ -50,6 +55,8 @@ export default async function DashboardLayout({
       </div>
     </div>
       </ToastProvider>
+      <div data-modal-root />
+      </div>
       </DashboardThemeShell>
     </>
   );

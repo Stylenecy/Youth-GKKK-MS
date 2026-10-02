@@ -76,9 +76,11 @@ export function Modal({
 
   if (!open) return null;
 
-  // Portal to <body>: forms open from inside cards that use backdrop-blur or
-  // motion transforms, which start their own stacking context — rendered in
-  // place, z-50 lost to the phone's bottom bar (z-40) and hid Simpan/Batal.
+  // Portal out of the card: forms open from inside cards that use
+  // backdrop-blur or motion transforms, which start their own stacking
+  // context — rendered in place, z-50 lost to the phone's bottom bar (z-40)
+  // and hid Simpan/Batal. The dashboard provides [data-modal-root] (outside
+  // every card, inside the font scope); body is the fallback elsewhere.
   // `open` is only ever true after a client interaction, so document exists.
   return createPortal(
     <div className="fixed inset-0 z-50 flex items-end justify-center overflow-y-auto p-0 sm:items-center sm:p-4">
@@ -132,7 +134,7 @@ export function Modal({
         {children}
       </div>
     </div>,
-    document.body
+    document.querySelector("[data-modal-root]") ?? document.body
   );
 }
 
