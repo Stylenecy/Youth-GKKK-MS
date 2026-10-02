@@ -89,6 +89,7 @@ export default async function FinancePage() {
           <div className="flex flex-wrap items-center gap-2.5">
               <a
                 href="/dashboard/finance/export"
+                aria-label="Ekspor CSV buku kas"
                 className="btn-outline text-xs sm:text-sm font-semibold"
               >
                 <Download className="h-4 w-4" aria-hidden="true" />
