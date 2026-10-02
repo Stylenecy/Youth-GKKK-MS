@@ -176,7 +176,9 @@ export function AssignStewardForm({
         // so the dashed "empty slot" look has to be inline.
         style={variant === "dashed" ? { borderStyle: "dashed" } : undefined}
       >
-        <UserPlus className="h-4 w-4" aria-hidden="true" />
+        {/* The dashed empty-slot button sits in a narrow roster column on a
+            360 px phone; its label already says the action, so no icon. */}
+        {variant !== "dashed" && <UserPlus className="h-4 w-4" aria-hidden="true" />}
         {buttonLabel ?? "Tugaskan Penatalayan"}
       </button>
 

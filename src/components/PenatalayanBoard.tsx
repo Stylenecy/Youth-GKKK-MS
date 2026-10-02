@@ -7,7 +7,7 @@ import type { Profile } from "@/lib/types";
 import type { StewardRole } from "@/lib/validation";
 import { STEWARD_ROLES } from "@/lib/validation";
 import { isOverloaded } from "@/lib/fatigue";
-import { slotStatus } from "@/lib/stewards";
+import { slotStatus, SLOT_NEEDS } from "@/lib/stewards";
 import { AssignStewardForm } from "./AssignStewardForm";
 import { StewardRemoveButton } from "./StewardRemoveButton";
 import { PenatalayanPhone } from "./PenatalayanPhone";
@@ -205,7 +205,7 @@ export function PenatalayanBoard({
               <tr key={role} className="border-t border-rule-soft/60">
                 <th
                   scope="row"
-                  className="sticky left-0 bg-surface p-4 text-left font-mono text-xs font-bold uppercase tracking-[0.14em] text-accent"
+                  className="sticky left-0 bg-surface p-4 text-left font-mono text-xs font-bold uppercase tracking-[0.14em] text-ink"
                 >
                   {role}
                 </th>
@@ -215,6 +215,13 @@ export function PenatalayanBoard({
                   );
                   const slot = slotStatus(role, stewards.length);
                   const readOnly = col.isPast || (focusId !== null && focusId !== col.id);
+                  // Same rule as the phone roster: offer "Tambah" only where a
+                  // slot is short, plus Pemusik (no upper limit). A full cell
+                  // with a button reads as "something to do" when nothing is.
+                  const canAdd =
+                    slot.tone === "empty" ||
+                    slot.tone === "partial" ||
+                    SLOT_NEEDS[role].max === null;
                   return (
                     <td key={col.id} className="p-3 align-top">
                       <p
@@ -278,7 +285,7 @@ export function PenatalayanBoard({
                           })}
                         </ul>
                       )}
-                      {canManage && !readOnly && (
+                      {canManage && !readOnly && canAdd && (
                         <div className="mt-2">
                           <AssignStewardForm
                             eventId={col.id}
