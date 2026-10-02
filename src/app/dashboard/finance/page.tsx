@@ -85,13 +85,17 @@ export default async function FinancePage() {
               { label: "Total saldo", value: formatRupiah(income - expense), emphasis: true },
             ]}
           />
-          <div className="grid gap-2.5 sm:grid-cols-[1fr_auto] lg:grid-cols-1 xl:grid-cols-[1fr_auto]">
-            <CreateTransactionForm events={eventOptions} label="Catat transaksi" />
-            <a href="/dashboard/finance/export" className="btn-outline justify-center text-sm">
-              <Download className="h-4 w-4" aria-hidden="true" />
-              Ekspor CSV
-            </a>
-          </div>
+          {/* One gold action per screen: while the book is empty the
+              empty state below carries "Catat transaksi pertama" instead. */}
+          {sorted.length > 0 && (
+            <div className="grid gap-2.5 sm:grid-cols-[1fr_auto] lg:grid-cols-1 xl:grid-cols-[1fr_auto]">
+              <CreateTransactionForm events={eventOptions} label="Catat transaksi" />
+              <a href="/dashboard/finance/export" className="btn-outline justify-center text-sm">
+                <Download className="h-4 w-4" aria-hidden="true" />
+                Ekspor CSV
+              </a>
+            </div>
+          )}
         </section>
 
         <section aria-labelledby="tx-heading" className="min-w-0">
@@ -100,7 +104,7 @@ export default async function FinancePage() {
             {sorted.length === 0 ? (
               <EmptyState
                 title="Belum ada transaksi"
-                body="Catat pemasukan atau pengeluaran pertama, atau tempel baris dari spreadsheet lama lewat Impor di bawah."
+                body="Catat pemasukan atau pengeluaran pertama, atau tempel baris dari spreadsheet lama lewat tombol Tempel dari spreadsheet di bawah."
                 icon={Wallet}
                 action={
                   <CreateTransactionForm events={eventOptions} label="Catat transaksi pertama" />

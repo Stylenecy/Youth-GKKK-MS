@@ -28,16 +28,16 @@ Peranmu tertulis di **Dashboard** (baris di bawah judul) dan di **Pengaturan**.
 **Awal minggu (Tim Ibadah)**
 1. Buka **Dashboard**. Kartu ibadah terdekat menunjukkan **"Masih kurang: …"** (mis. *Singer 1 · Usher 2*).
 2. Tekan **Isi yang kurang** → **Papan Penatalayan**.
-3. Di kolom Sabtu itu, tekan **Tambah** pada baris peran → ketik nama → pilih.
+3. Di HP, pilih Sabtunya di deretan tanggal paling atas, lalu tekan tombol emas **Isi N slot yang kurang** (atau **Tambah <peran>** di baris peran) → ketik nama → pilih. Di laptop, papan menampilkan beberapa Sabtu berdampingan; tekan **Tambah** di sel peran dan Sabtu itu.
    - Nama di urutan atas = yang paling jarang melayani 30 hari terakhir.
-   - Tanda **merah / ⚠️** = sudah melayani lebih dari 2× dalam 30 hari. Boleh tetap dipilih, tapi utamakan orang lain.
+   - Tanda **⚠** di samping angka (mis. *3× ⚠*) = sudah melayani lebih dari 2× dalam 30 hari. Boleh tetap dipilih, tapi utamakan orang lain.
 4. Salah pilih? Tekan **Batalkan** di kotak kecil bawah layar yang muncul setelah menyimpan.
 
 **Jadwal ibadah baru:** **Ibadah → Ibadah Baru** → isi tanggal, tema, PIC.
 
 **Hari Sabtu:** buka ibadahnya (**Ibadah → pilih tanggal**) → bagian **Kehadiran** → centang yang hadir.
 
-**Bendahara:** **Keuangan → Transaksi Baru**. Pilih "Terkait ibadah" kalau perlu. Banyak baris dari Google Sheets? Pakai kotak **Impor** (kalau satu baris salah, tidak ada yang masuk — betulkan lalu coba lagi). **Ekspor CSV** kapan saja.
+**Bendahara:** **Keuangan → Catat transaksi**. Pilih "Terkait ibadah" kalau perlu. Banyak baris dari Google Sheets? Tekan **Tempel dari spreadsheet** di bagian bawah (kalau satu baris salah, tidak ada yang masuk — betulkan lalu coba lagi). **Ekspor CSV** kapan saja.
 
 ## 4. Kalau salah
 
