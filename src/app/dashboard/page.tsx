@@ -2,7 +2,6 @@ import Link from "next/link";
 import type { Metadata } from "next";
 import {
   Users,
-  Network,
   CalendarDays,
   Wallet,
   ArrowRight,
@@ -79,21 +78,18 @@ export default async function DashboardPage() {
       kicker: "Anggota",
       label: "Total terdaftar",
       value: String(stats.totalMembers),
-      icon: Users,
       href: "/dashboard/members",
     },
     {
       kicker: "Cross",
       label: "Kelompok aktif",
       value: String(stats.activeCrossGroups),
-      icon: Network,
       href: "/dashboard/cross",
     },
     {
       kicker: "Ibadah",
       label: "Bulan ini",
       value: String(stats.monthGatherings),
-      icon: CalendarDays,
       href: "/dashboard/gatherings",
     },
     // Saldo only for those who can open the cash book — for everyone else
@@ -104,7 +100,6 @@ export default async function DashboardPage() {
             kicker: "Kas",
             label: "Saldo kas",
             value: formatRupiahCompact(stats.totalBalance),
-            icon: Wallet,
             href: "/dashboard/finance",
           },
         ]
