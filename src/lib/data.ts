@@ -14,6 +14,32 @@ import type {
 // Else → fallback to seed.ts (demo mode)
 // ============================================================
 
+interface ReadResult<T> {
+  data: T | null;
+  error: { message: string; code?: string } | null;
+}
+
+/**
+ * Supabase reports a failed read in `error`; it does not throw. Reading only
+ * `data` turned "the database refused" (expired session, RLS, network) into
+ * "there is nothing here" — an empty roster or cash book that looks real.
+ * Every list read goes through this so a failure reaches the route's error
+ * boundary (`error.tsx`) instead.
+ */
+function rows<T>(res: ReadResult<T[]>, what: string): T[] {
+  if (res.error) throw new Error(`Gagal memuat ${what}: ${res.error.message}`);
+  return res.data ?? [];
+}
+
+/** Same for `.single()`: "no row" (PostgREST PGRST116) is an answer, not a failure. */
+function one<T>(res: ReadResult<T>, what: string): T | null {
+  if (res.error) {
+    if (res.error.code === "PGRST116") return null;
+    throw new Error(`Gagal memuat ${what}: ${res.error.message}`);
+  }
+  return res.data;
+}
+
 /**
  * Explicit profile columns — deliberately NOT `select("*")`.
  *
@@ -274,9 +300,18 @@ export async function getDashboardStats(): Promise<DashboardStats> {
       supabase.from("finance_transactions").select("amount,type").is("deleted_at", null),
     ]);
 
-    const rows: AmountRow[] = finance.data ?? [];
+    for (const [what, res] of [
+      ["anggota", members],
+      ["acara", events],
+      ["Cross", crossGroups],
+      ["kas", finance],
+    ] as const) {
+      if (res.error) throw new Error(`Gagal memuat ${what}: ${res.error.message}`);
+    }
+
+    const money: AmountRow[] = finance.data ?? [];
     const sum = (type: FinanceType) =>
-      rows.filter((f) => f.type === type).reduce((a, b) => a + b.amount, 0);
+      money.filter((f) => f.type === type).reduce((a, b) => a + b.amount, 0);
     const income = sum("income");
     const expense = sum("expense");
 
@@ -297,26 +332,29 @@ export async function getUpcomingGathering() {
     const { createClient } = await import("./supabase/server");
     const supabase = await createClient();
     const now = new Date().toISOString();
-    const { data: event } = await supabase
-      .from("events")
-      .select("*")
-      .gte("date", now)
-      .neq("status", "archived")
-      .order("date", { ascending: true })
-      .limit(1)
-      .single();
+    const event = one(
+      await supabase
+        .from("events")
+        .select("*")
+        .gte("date", now)
+        .neq("status", "archived")
+        .order("date", { ascending: true })
+        .limit(1)
+        .single(),
+      "ibadah berikutnya"
+    );
 
     if (!event) return null;
 
-    const { data: stewards } = await supabase
-      .from("steward_assignments")
-      .select("*")
-      .eq("event_id", event.id);
+    const stewards = rows(
+      await supabase.from("steward_assignments").select("*").eq("event_id", event.id),
+      "penatalayan"
+    );
 
     // No profile join here: the only caller (the dashboard) already loads the
     // full profile list and resolves names from it, so fetching them again
     // was a second round-trip for data that was thrown away.
-    const stewardAssignments = (stewards ?? []).map(s => mapStewardRow(s));
+    const stewardAssignments = stewards.map(s => mapStewardRow(s));
 
     return { ...mapEventRow(event), stewardAssignments };
   }
@@ -335,13 +373,16 @@ export async function getFatigueAlerts(): Promise<FatigueAlert[]> {
     // created_at is when the row was written — every imported row shares the
     // import timestamp, so filtering on it counted all 216 historical
     // assignments as "this month" and showed everyone serving 10-15x.
-    const { data: assignments } = await supabase
-      .from("steward_assignments")
-      .select("profile_id, events!inner(date)")
-      .gte("events.date", thirtyDaysAgo);
+    const assignments = rows(
+      await supabase
+        .from("steward_assignments")
+        .select("profile_id, events!inner(date)")
+        .gte("events.date", thirtyDaysAgo),
+      "beban penatalayan"
+    );
 
     const countMap: Record<string, number> = {};
-    ((assignments ?? []) as ProfileIdRow[]).forEach((a) => {
+    (assignments as ProfileIdRow[]).forEach((a) => {
       countMap[a.profile_id] = (countMap[a.profile_id] || 0) + 1;
     });
 
@@ -351,14 +392,14 @@ export async function getFatigueAlerts(): Promise<FatigueAlert[]> {
 
     if (alertIds.length === 0) return [];
 
-    const { data: profiles } = await supabase
-      .from("profiles")
-      .select(PROFILE_COLUMNS)
-      .in("id", alertIds);
+    const profiles = rows(
+      await supabase.from("profiles").select(PROFILE_COLUMNS).in("id", alertIds),
+      "anggota"
+    );
 
     // Map, never spread: the raw row is snake_case, so `{ ...row }` left
     // fullName/createdAt undefined on every alert card.
-    return ((profiles ?? []) as ProfileRow[]).map((row) => ({
+    return (profiles as ProfileRow[]).map((row) => ({
       member: { ...mapProfileRow(row), serviceCount30d: countMap[row.id] },
       serviceCount: countMap[row.id],
     }));
@@ -376,13 +417,16 @@ export async function getRecentActivity(limit = 5): Promise<RecentActivity[]> {
   if (isSupabaseConfigured()) {
     const { createClient } = await import("./supabase/server");
     const supabase = await createClient();
-    const { data } = await supabase
-      .from("audit_logs")
-      .select("id,action,timestamp")
-      .order("timestamp", { ascending: false })
-      .limit(limit);
+    const data = rows(
+      await supabase
+        .from("audit_logs")
+        .select("id,action,timestamp")
+        .order("timestamp", { ascending: false })
+        .limit(limit),
+      "riwayat aktivitas"
+    );
 
-    return ((data ?? []) as AuditRow[]).map((log) => ({
+    return (data as AuditRow[]).map((log) => ({
       id: log.id,
       description: log.action,
       createdAt: log.timestamp,
@@ -405,13 +449,16 @@ async function serviceCounts30d(
   supabase: SupabaseClient
 ): Promise<Record<string, number>> {
   const since = new Date(Date.now() - 30 * 86400000).toISOString();
-  const { data } = await supabase
-    .from("steward_assignments")
-    .select("profile_id, events!inner(date)")
-    .gte("events.date", since);
+  const data = rows(
+    await supabase
+      .from("steward_assignments")
+      .select("profile_id, events!inner(date)")
+      .gte("events.date", since),
+    "jumlah pelayanan"
+  );
 
   const counts: Record<string, number> = {};
-  ((data ?? []) as ProfileIdRow[]).forEach((row) => {
+  (data as ProfileIdRow[]).forEach((row) => {
     counts[row.profile_id] = (counts[row.profile_id] ?? 0) + 1;
   });
   return counts;
@@ -421,14 +468,14 @@ export async function getProfiles(): Promise<Profile[]> {
   if (isSupabaseConfigured()) {
     const { createClient } = await import("./supabase/server");
     const supabase = await createClient();
-    const [{ data }, counts] = await Promise.all([
+    const [res, counts] = await Promise.all([
       // is_active marks "on the roster", separate from `status` ("are they
       // attending"). A login that was never a member of Pemuda is is_active
       // false, so it never shows up in the directory or the member count.
       supabase.from("profiles").select(PROFILE_COLUMNS).eq("is_active", true).order("full_name"),
       serviceCounts30d(supabase),
     ]);
-    return (data ?? []).map((row) => ({
+    return rows(res, "daftar anggota").map((row) => ({
       ...mapProfileRow(row),
       serviceCount30d: counts[row.id] ?? 0,
     }));
@@ -442,10 +489,11 @@ export async function getProfileById(id: string): Promise<Profile | undefined> {
   if (isSupabaseConfigured()) {
     const { createClient } = await import("./supabase/server");
     const supabase = await createClient();
-    const [{ data }, counts] = await Promise.all([
+    const [res, counts] = await Promise.all([
       supabase.from("profiles").select(PROFILE_COLUMNS).eq("id", id).single(),
       serviceCounts30d(supabase),
     ]);
+    const data = one(res, "profil anggota");
     if (!data) return undefined;
     return { ...mapProfileRow(data), serviceCount30d: counts[data.id] ?? 0 };
   }
@@ -458,8 +506,11 @@ export async function getEvents(): Promise<Event[]> {
   if (isSupabaseConfigured()) {
     const { createClient } = await import("./supabase/server");
     const supabase = await createClient();
-    const { data } = await supabase.from("events").select("*").order("date", { ascending: false });
-    return (data ?? []).map(mapEventRow);
+    const data = rows(
+      await supabase.from("events").select("*").order("date", { ascending: false }),
+      "daftar ibadah"
+    );
+    return data.map(mapEventRow);
   }
 
   const { seedEvents } = await import("./seed");
@@ -470,7 +521,7 @@ export async function getEventById(id: string): Promise<Event | undefined> {
   if (isSupabaseConfigured()) {
     const { createClient } = await import("./supabase/server");
     const supabase = await createClient();
-    const { data } = await supabase.from("events").select("*").eq("id", id).single();
+    const data = one(await supabase.from("events").select("*").eq("id", id).single(), "ibadah");
     return data ? mapEventRow(data) : undefined;
   }
 
@@ -482,19 +533,19 @@ export async function getStewardsByEvent(eventId: string): Promise<StewardAssign
   if (isSupabaseConfigured()) {
     const { createClient } = await import("./supabase/server");
     const supabase = await createClient();
-    const { data: stewards } = await supabase
-      .from("steward_assignments")
-      .select("*")
-      .eq("event_id", eventId);
+    const stewards = rows(
+      await supabase.from("steward_assignments").select("*").eq("event_id", eventId),
+      "penatalayan"
+    );
 
-    const profileIds = [...new Set((stewards ?? []).map(s => s.profile_id))];
-    const { data: profiles } = await supabase
-      .from("profiles")
-      .select(PROFILE_COLUMNS)
-      .in("id", profileIds);
+    const profileIds = [...new Set(stewards.map(s => s.profile_id))];
+    const profiles = rows(
+      await supabase.from("profiles").select(PROFILE_COLUMNS).in("id", profileIds),
+      "petugas"
+    );
 
-    const byId = new Map((profiles ?? []).map(p => [p.id, mapProfileRow(p)]));
-    return (stewards ?? []).map(s => mapStewardRow(s, byId.get(s.profile_id)));
+    const byId = new Map(profiles.map(p => [p.id, mapProfileRow(p)]));
+    return stewards.map(s => mapStewardRow(s, byId.get(s.profile_id)));
   }
 
   const { seedStewards, seedProfiles } = await import("./seed");
@@ -516,11 +567,14 @@ export async function getAttendanceByEvent(eventId: string): Promise<AttendanceR
   if (isSupabaseConfigured()) {
     const { createClient } = await import("./supabase/server");
     const supabase = await createClient();
-    const { data } = await supabase
-      .from("attendance")
-      .select("id,event_id,profile_id,present,note,recorded_at")
-      .eq("event_id", eventId);
-    return (data ?? []).map(mapAttendanceRow);
+    const data = rows(
+      await supabase
+        .from("attendance")
+        .select("id,event_id,profile_id,present,note,recorded_at")
+        .eq("event_id", eventId),
+      "absensi"
+    );
+    return data.map(mapAttendanceRow);
   }
 
   return [];
@@ -540,11 +594,10 @@ export async function getPicEligibleProfiles(): Promise<Profile[]> {
     const { createClient } = await import("./supabase/server");
     const supabase = await createClient();
 
-    const { data: ids } = await supabase.rpc("list_pic_eligible");
-    const eligible = (ids ?? []) as string[];
+    const eligible = rows<string>(await supabase.rpc("list_pic_eligible"), "daftar calon PIC");
     if (eligible.length === 0) return [];
 
-    const [{ data }, counts] = await Promise.all([
+    const [res, counts] = await Promise.all([
       supabase
         .from("profiles")
         .select(PROFILE_COLUMNS)
@@ -553,7 +606,7 @@ export async function getPicEligibleProfiles(): Promise<Profile[]> {
         .order("full_name"),
       serviceCounts30d(supabase),
     ]);
-    return (data ?? []).map((row) => ({
+    return rows(res, "calon PIC").map((row) => ({
       ...mapProfileRow(row),
       serviceCount30d: counts[row.id] ?? 0,
     }));
@@ -577,19 +630,21 @@ export async function getProfileCrossNames(): Promise<Record<string, string[]>> 
     const { createClient } = await import("./supabase/server");
     const supabase = await createClient();
 
-    const [{ data: memberships }, { data: crosses }] = await Promise.all([
+    const [membershipsRes, crossesRes] = await Promise.all([
       supabase
         .from("cross_memberships")
         .select("profile_id,cross_id")
         .eq("is_active", true),
       supabase.from("crosses").select("id,name"),
     ]);
+    const memberships = rows(membershipsRes, "keanggotaan Cross");
+    const crosses = rows(crossesRes, "kelompok Cross");
 
     const names = new Map(
-      ((crosses ?? []) as NameRow[]).map((c) => [c.id, c.name])
+      (crosses as NameRow[]).map((c) => [c.id, c.name])
     );
     const out: Record<string, string[]> = {};
-    for (const m of (memberships ?? []) as MembershipPairRow[]) {
+    for (const m of memberships as MembershipPairRow[]) {
       const name = names.get(m.cross_id);
       if (!name) continue;
       (out[m.profile_id] ??= []).push(name);
@@ -613,8 +668,11 @@ export async function getCrosses(): Promise<Cross[]> {
   if (isSupabaseConfigured()) {
     const { createClient } = await import("./supabase/server");
     const supabase = await createClient();
-    const { data } = await supabase.from("crosses").select("*").eq("is_active", true);
-    return (data ?? []).map(row => mapCrossRow(row));
+    const data = rows(
+      await supabase.from("crosses").select("*").eq("is_active", true),
+      "kelompok Cross"
+    );
+    return data.map(row => mapCrossRow(row));
   }
 
   const { seedCrosses } = await import("./seed");
@@ -633,22 +691,24 @@ export async function getCrossMembers(crossId: string): Promise<Profile[]> {
     const { createClient } = await import("./supabase/server");
     const supabase = await createClient();
 
-    const { data: memberships } = await supabase
-      .from("cross_memberships")
-      .select("profile_id")
-      .eq("cross_id", crossId)
-      .eq("is_active", true);
+    const memberships = rows(
+      await supabase
+        .from("cross_memberships")
+        .select("profile_id")
+        .eq("cross_id", crossId)
+        .eq("is_active", true),
+      "anggota Cross"
+    );
 
-    const ids = [...new Set(((memberships ?? []) as ProfileIdRow[]).map((m) => m.profile_id))];
+    const ids = [...new Set((memberships as ProfileIdRow[]).map((m) => m.profile_id))];
     if (ids.length === 0) return [];
 
-    const { data: profiles } = await supabase
-      .from("profiles")
-      .select(PROFILE_COLUMNS)
-      .in("id", ids)
-      .order("full_name");
+    const profiles = rows(
+      await supabase.from("profiles").select(PROFILE_COLUMNS).in("id", ids).order("full_name"),
+      "profil anggota Cross"
+    );
 
-    return (profiles ?? []).map(mapProfileRow);
+    return profiles.map(mapProfileRow);
   }
 
   const { seedCrossMemberships, seedProfiles } = await import("./seed");
@@ -665,21 +725,24 @@ export async function getCrossLeaders(crossId: string): Promise<Profile[]> {
     const { createClient } = await import("./supabase/server");
     const supabase = await createClient();
 
-    const { data: memberships } = await supabase
-      .from("cross_memberships")
-      .select("profile_id")
-      .eq("cross_id", crossId)
-      .eq("role", "leader")
-      .eq("is_active", true);
+    const memberships = rows(
+      await supabase
+        .from("cross_memberships")
+        .select("profile_id")
+        .eq("cross_id", crossId)
+        .eq("role", "leader")
+        .eq("is_active", true),
+      "pemimpin Cross"
+    );
 
-    const ids = [...new Set(((memberships ?? []) as ProfileIdRow[]).map((m) => m.profile_id))];
+    const ids = [...new Set((memberships as ProfileIdRow[]).map((m) => m.profile_id))];
     if (ids.length === 0) return [];
 
-    const { data: profiles } = await supabase
-      .from("profiles")
-      .select(PROFILE_COLUMNS)
-      .in("id", ids);
-    return (profiles ?? []).map(mapProfileRow);
+    const profiles = rows(
+      await supabase.from("profiles").select(PROFILE_COLUMNS).in("id", ids),
+      "profil pemimpin Cross"
+    );
+    return profiles.map(mapProfileRow);
   }
 
   const { seedCrossMemberships, seedProfiles } = await import("./seed");
@@ -708,10 +771,13 @@ export async function getCurrentProfile(): Promise<Profile | null> {
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return null;
 
-  const [{ data: profile }, { data: appRole }] = await Promise.all([
+  // The role lookup stays tolerant on purpose: a failure falls back to
+  // "member" (fail closed — fewer buttons), which is the safe direction.
+  const [profileRes, { data: appRole }] = await Promise.all([
     supabase.from("profiles").select(PROFILE_COLUMNS).eq("id", user.id).single(),
     supabase.rpc("get_my_app_role"),
   ]);
+  const profile = one(profileRes, "profilmu");
   if (!profile) return null;
 
   return { ...mapProfileRow(profile), appRole: (appRole as Profile["appRole"]) ?? "member" };
@@ -752,6 +818,8 @@ export async function getMyAccountStatus(): Promise<AccountStatus> {
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return "pending";
 
+  // Tolerant on purpose: if this check itself fails, the visitor is shown
+  // the "menunggu persetujuan" screen — fail closed, never fail open.
   const { data: approved } = await supabase.rpc("am_i_approved");
   if (approved === true) return "approved";
 
@@ -821,12 +889,15 @@ export async function getAccountApprovals(): Promise<AccountApproval[]> {
 
   const { createClient } = await import("./supabase/server");
   const supabase = await createClient();
-  const { data } = await supabase
-    .from("account_approvals")
-    .select("user_id,email,display_name,status,requested_at,note")
-    .order("requested_at", { ascending: false });
+  const data = rows(
+    await supabase
+      .from("account_approvals")
+      .select("user_id,email,display_name,status,requested_at,note")
+      .order("requested_at", { ascending: false }),
+    "antrean persetujuan akun"
+  );
 
-  return ((data ?? []) as ApprovalRow[]).map((r) => ({
+  return (data as ApprovalRow[]).map((r) => ({
     userId: r.user_id,
     email: r.email,
     displayName: r.display_name,
@@ -845,14 +916,17 @@ export async function getMyLeaderCrossIds(): Promise<string[]> {
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return [];
 
-  const { data } = await supabase
-    .from("cross_memberships")
-    .select("cross_id")
-    .eq("profile_id", user.id)
-    .eq("role", "leader")
-    .eq("is_active", true);
+  const data = rows(
+    await supabase
+      .from("cross_memberships")
+      .select("cross_id")
+      .eq("profile_id", user.id)
+      .eq("role", "leader")
+      .eq("is_active", true),
+    "Cross yang kamu pimpin"
+  );
 
-  return [...new Set(((data ?? []) as CrossIdRow[]).map((r) => r.cross_id))];
+  return [...new Set((data as CrossIdRow[]).map((r) => r.cross_id))];
 }
 
 /** Leader nicknames for every Cross, keyed by cross id — one query for a list page. */
@@ -860,23 +934,26 @@ export async function getAllCrossLeaderNicknames(): Promise<Record<string, strin
   if (isSupabaseConfigured()) {
     const { createClient } = await import("./supabase/server");
     const supabase = await createClient();
-    const { data: memberships } = await supabase
-      .from("cross_memberships")
-      .select("cross_id,profile_id")
-      .eq("role", "leader")
-      .eq("is_active", true);
-
-    const ids = [...new Set(((memberships ?? []) as ProfileIdRow[]).map((m) => m.profile_id))];
-    if (ids.length === 0) return {};
-    const { data: profiles } = await supabase
-      .from("profiles")
-      .select("id,nickname")
-      .in("id", ids);
-    const nicknameById = new Map(
-      ((profiles ?? []) as NicknameRow[]).map((p) => [p.id, p.nickname])
+    const memberships = rows(
+      await supabase
+        .from("cross_memberships")
+        .select("cross_id,profile_id")
+        .eq("role", "leader")
+        .eq("is_active", true),
+      "pemimpin Cross"
     );
 
-    return ((memberships ?? []) as MembershipPairRow[]).reduce((acc: Record<string, string[]>, m) => {
+    const ids = [...new Set((memberships as ProfileIdRow[]).map((m) => m.profile_id))];
+    if (ids.length === 0) return {};
+    const profiles = rows(
+      await supabase.from("profiles").select("id,nickname").in("id", ids),
+      "nama pemimpin Cross"
+    );
+    const nicknameById = new Map(
+      (profiles as NicknameRow[]).map((p) => [p.id, p.nickname])
+    );
+
+    return (memberships as MembershipPairRow[]).reduce((acc: Record<string, string[]>, m) => {
       const nickname = nicknameById.get(m.profile_id);
       if (!nickname) return acc;
       (acc[m.cross_id] ??= []).push(nickname);
@@ -900,12 +977,12 @@ export async function getCrossMemberCounts(): Promise<Record<string, number>> {
   if (isSupabaseConfigured()) {
     const { createClient } = await import("./supabase/server");
     const supabase = await createClient();
-    const { data } = await supabase
-      .from("cross_memberships")
-      .select("cross_id")
-      .eq("is_active", true);
+    const data = rows(
+      await supabase.from("cross_memberships").select("cross_id").eq("is_active", true),
+      "jumlah anggota Cross"
+    );
 
-    return ((data ?? []) as CrossIdRow[]).reduce((acc: Record<string, number>, row) => {
+    return (data as CrossIdRow[]).reduce((acc: Record<string, number>, row) => {
       acc[row.cross_id] = (acc[row.cross_id] ?? 0) + 1;
       return acc;
     }, {});
@@ -925,12 +1002,15 @@ export async function getFinanceTransactions(): Promise<FinanceTransaction[]> {
     const { createClient } = await import("./supabase/server");
     const supabase = await createClient();
     // Soft-deleted rows stay in the table but must never reach a balance.
-    const { data } = await supabase
-      .from("finance_transactions")
-      .select("*")
-      .is("deleted_at", null)
-      .order("created_at", { ascending: false });
-    return (data ?? []).map(mapFinanceRow);
+    const data = rows(
+      await supabase
+        .from("finance_transactions")
+        .select("*")
+        .is("deleted_at", null)
+        .order("created_at", { ascending: false }),
+      "buku kas"
+    );
+    return data.map(mapFinanceRow);
   }
 
   const { seedFinance } = await import("./seed");
@@ -941,8 +1021,11 @@ export async function getMeetings(): Promise<Meeting[]> {
   if (isSupabaseConfigured()) {
     const { createClient } = await import("./supabase/server");
     const supabase = await createClient();
-    const { data } = await supabase.from("meeting_notes").select("*").order("date", { ascending: false });
-    return (data ?? []).map(mapMeetingRow);
+    const data = rows(
+      await supabase.from("meeting_notes").select("*").order("date", { ascending: false }),
+      "notulen rapat"
+    );
+    return data.map(mapMeetingRow);
   }
 
   const { seedMeetings } = await import("./seed");
@@ -953,7 +1036,7 @@ export async function getMeetingById(id: string): Promise<Meeting | undefined> {
   if (isSupabaseConfigured()) {
     const { createClient } = await import("./supabase/server");
     const supabase = await createClient();
-    const { data } = await supabase.from("meeting_notes").select("*").eq("id", id).single();
+    const data = one(await supabase.from("meeting_notes").select("*").eq("id", id).single(), "notulen rapat");
     return data ? mapMeetingRow(data) : undefined;
   }
 
