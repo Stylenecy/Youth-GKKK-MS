@@ -59,9 +59,16 @@ export function Masthead() {
  */
 export function Logomark({ className = "" }: { className?: string }) {
   return (
+    // A 96 px raster of the crest (~8 KB) — every Logomark renders at
+    // 48 px or less, so this is already 2x. The traced vector it replaces
+    // was ~1 MB.
+    // eslint-disable-next-line @next/next/no-img-element
     <img
-      src="/logo/derived/logo-super-transparent.svg"
-      alt="Youth GKKK Crest"
+      src="/brand/crest-96.webp"
+      alt=""
+      width={96}
+      height={129}
+      decoding="async"
       className={`h-7 w-7 shrink-0 object-contain ${className}`}
       aria-hidden="true"
     />
