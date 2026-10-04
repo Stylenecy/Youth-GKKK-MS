@@ -297,6 +297,10 @@
   border-bottom: 1px solid transparent;
 }
 
+/* Without the motion layer (reduced motion, or no JS) the scroll listener
+   never tints the nav, so it carries its tinted ground from the start —
+   otherwise page text slides underneath a transparent bar. */
+html:not(.lp-js) .lp-nav,
 .lp-nav.is-scrolled {
   background: color-mix(in srgb, var(--color-canvas) 82%, transparent);
   backdrop-filter: blur(14px);
@@ -701,9 +705,16 @@ html.lenis {
 [data-ritme].is-pinned .lp-ritme-panel {
   width: min(38vw, 560px);
   flex-shrink: 0;
+  padding-bottom: 0;
 }
 
 [data-ritme].is-pinned .lp-ritme-progress,
 [data-ritme].is-pinned .lp-ritme-hint {
   display: block;
+}
+
+/* The global focus ring (globals.css, unlayered) squares corners to 4 px;
+   pill buttons keep their shape when tabbed to. */
+.lp-btn:focus-visible {
+  border-radius: 999px;
 }

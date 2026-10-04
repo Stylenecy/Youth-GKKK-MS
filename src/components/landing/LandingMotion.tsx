@@ -103,27 +103,32 @@ export default function LandingMotion() {
            leaves the new lines in place. */
         const tweens = new Map<Element, gsap.core.Tween>();
         const splitDone = new WeakSet<Element>();
+        // Splits happen later, from observer callbacks — ctx.add() records
+        // them in the context so leaving the page reverts them (and drops
+        // autoSplit's ResizeObserver and fonts listener with them).
         const split = (el: HTMLElement) => {
           if (splitDone.has(el)) return;
           splitDone.add(el);
-          SplitText.create(el, {
-            type: "lines",
-            mask: "lines",
-            autoSplit: true,
-            onSplit(self) {
-              if (el.dataset.revealed) return;
-              const tw = gsap.from(self.lines, {
-                yPercent: 110,
-                duration: 1.05,
-                ease: EXPO,
-                stagger: 0.08,
-                paused: true,
-              });
-              tweens.set(el, tw);
-              return tw;
-            },
+          ctx.add(() => {
+            SplitText.create(el, {
+              type: "lines",
+              mask: "lines",
+              autoSplit: true,
+              onSplit(self) {
+                if (el.dataset.revealed) return;
+                const tw = gsap.from(self.lines, {
+                  yPercent: 110,
+                  duration: 1.05,
+                  ease: EXPO,
+                  stagger: 0.08,
+                  paused: true,
+                });
+                tweens.set(el, tw);
+                return tw;
+              },
+            });
+            gsap.set(el, { visibility: "visible" });
           });
-          gsap.set(el, { visibility: "visible" });
         };
         const ahead = new IntersectionObserver(
           (entries) => {
@@ -225,7 +230,12 @@ export default function LandingMotion() {
 
       const update = () => {
         frame = 0;
+        // Read every measurement first, then write — interleaving the two
+        // forces a fresh layout per read.
         const y = window.scrollY;
+        const vh = window.innerHeight;
+        const heroRect = hero && title && crest ? hero.getBoundingClientRect() : null;
+        const ritmeRect = pinned && ritme && track ? ritme.getBoundingClientRect() : null;
 
         if (nav) {
           nav.classList.toggle("is-scrolled", y > 24);
@@ -233,22 +243,16 @@ export default function LandingMotion() {
         }
         lastY = y;
 
-        if (hero && title && crest) {
-          const r = hero.getBoundingClientRect();
-          if (r.bottom > 0) {
-            const p = clamp01(-r.top / r.height);
-            gsap.set(title, { yPercent: -16 * p, opacity: 1 - 0.8 * p });
-            gsap.set(crest, { yPercent: 14 * p, scale: 1 - 0.06 * p });
-          }
+        if (heroRect && heroRect.bottom > 0) {
+          const p = clamp01(-heroRect.top / heroRect.height);
+          gsap.set(title, { yPercent: -16 * p, opacity: 1 - 0.8 * p });
+          gsap.set(crest, { yPercent: 14 * p, scale: 1 - 0.06 * p });
         }
 
-        if (pinned && ritme && track) {
-          const r = ritme.getBoundingClientRect();
-          if (r.top < window.innerHeight && r.bottom > 0) {
-            const p = clamp01(-r.top / Math.max(1, distance));
-            gsap.set(track, { x: -distance * p });
-            if (bar) gsap.set(bar, { scaleX: p, transformOrigin: "left center" });
-          }
+        if (ritmeRect && ritmeRect.top < vh && ritmeRect.bottom > 0) {
+          const p = clamp01(-ritmeRect.top / Math.max(1, distance));
+          gsap.set(track, { x: -distance * p });
+          if (bar) gsap.set(bar, { scaleX: p, transformOrigin: "left center" });
         }
       };
       const request = () => {
@@ -337,13 +341,17 @@ export default function LandingMotion() {
 
         const onClick = (e: MouseEvent) => {
           const a = (e.target as Element | null)?.closest<HTMLAnchorElement>('a[href^="#"]');
-          if (!a || e.defaultPrevented || e.button !== 0 || e.metaKey || e.ctrlKey) return;
+          // e.detail === 0: activated from the keyboard (skip link, Tab+Enter)
+          // — leave it native so focus moves with it (WCAG 2.4.1).
+          if (!a || e.defaultPrevented || e.detail === 0 || e.button !== 0 || e.metaKey || e.ctrlKey) return;
           const id = a.getAttribute("href")!.slice(1);
           const target = id ? document.getElementById(id) : null;
           if (!target) return;
           e.preventDefault();
           lenis.scrollTo(target, { offset: -8, duration: 1.4 });
           kick();
+          if (!target.hasAttribute("tabindex")) target.setAttribute("tabindex", "-1");
+          target.focus({ preventScroll: true });
           history.replaceState(null, "", `#${id}`);
         };
         document.addEventListener("click", onClick);
@@ -354,7 +362,10 @@ export default function LandingMotion() {
           lenis.destroy();
         });
       }
-    })();
+    })().catch(() => {
+      // Chunk failed to load: show everything rather than wait for the failsafe.
+      html.classList.remove("lp-js", "lp-ready");
+    });
 
     return () => {
       cancelled = true;

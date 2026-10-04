@@ -25,7 +25,11 @@ export default async function LandingPage() {
   const timeLabel = formatTime(target);
   // Rendered at build/revalidate time — that is exactly what "diperbarui" means.
   const updatedLabel =
-    bulletin.source === "demo" ? "Data contoh (mode demo)" : `Diperbarui ${formatTime(new Date())}`;
+    bulletin.source === "demo"
+      ? "Data contoh (mode demo)"
+      : bulletin.source === "unavailable"
+        ? "Belum bisa dimuat"
+        : `Diperbarui ${formatTime(new Date())}`;
 
   return (
     // Pinned dark: the dashboard theme toggle never touches the landing page.
@@ -46,8 +50,9 @@ export default async function LandingPage() {
           daysLabel={String(days).padStart(2, "0")}
           targetLabel={`${days === 0 ? "Hari ini" : "hari menuju"} ${targetLabel} · ${timeLabel}`}
           updatedLabel={updatedLabel}
+          unavailable={bulletin.source === "unavailable"}
         />
-        <Ritme />
+        <Ritme cross={bulletin.crossSchedule.length === 1 ? bulletin.crossSchedule[0] : null} />
         <Agenda events={bulletin.upcoming.slice(1)} />
         <CrossGroups count={bulletin.counts.crosses} schedule={bulletin.crossSchedule} />
         <Angka counts={bulletin.counts} demo={bulletin.source === "demo"} />

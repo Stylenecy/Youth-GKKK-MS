@@ -131,7 +131,7 @@ export default function Hero({
             {nextLabel} · {timeLabel}
           </p>
           <p className="lp-meta lp-in-fade text-right lg:col-span-4 lg:text-center" style={d(1.12)}>
-            <span className="lp-num block text-[2rem] text-accent sm:text-[2.5rem]">{daysLabel}</span>
+            <span className="lp-num block text-[2rem] text-ink sm:text-[2.5rem]">{daysLabel}</span>
           </p>
           <div className="hidden items-end justify-end gap-3 lg:col-span-4 lg:flex">
             <span className="lp-meta lp-in-fade" style={d(1.2)}>

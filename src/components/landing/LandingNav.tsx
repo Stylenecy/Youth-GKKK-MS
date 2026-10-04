@@ -34,7 +34,9 @@ export default function LandingNav() {
           {LINKS.map((l) => (
             <li key={l.href}>
               <a href={l.href} className="lp-link lp-meta text-ink-muted hover:text-ink">
-                <span className="text-accent">{l.n}</span>
+                <span className="text-accent" aria-hidden="true">
+                  {l.n}
+                </span>
                 {l.label}
               </a>
             </li>

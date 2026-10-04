@@ -53,7 +53,7 @@ export function Makna() {
           ))}
         </div>
         <p className="lp-meta mt-16 lg:mt-24 lg:pl-[25%]" data-reveal="fade">
-          Dari filosofi lambang Youth GKKK, disahkan pengurus Agustus 2026.
+          Dari filosofi lambang Youth GKKK.
         </p>
       </div>
     </section>
@@ -66,7 +66,7 @@ export function Makna() {
 
 function Shelf({ items }: { items: { k: string; v: string; gold?: boolean }[] }) {
   return (
-    <dl className="grid grid-cols-2 gap-x-6 gap-y-6 border-y border-rule py-6 sm:grid-cols-4" data-reveal="fade">
+    <dl className="grid grid-cols-2 gap-x-6 gap-y-6 border-y border-rule py-6 sm:grid-cols-3" data-reveal="fade">
       {items.map((it) => (
         <div key={it.k}>
           <dt className="lp-meta lp-bracket">{it.k}</dt>
@@ -85,12 +85,15 @@ export function Warta({
   daysLabel,
   targetLabel,
   updatedLabel,
+  unavailable = false,
 }: {
   event: BulletinEvent | null;
   latest: PublicBulletin["latest"];
   daysLabel: string;
   targetLabel: string;
   updatedLabel: string;
+  /** The bulletin could not be loaded — say so instead of "being prepared". */
+  unavailable?: boolean;
 }) {
   const slots = event ? slotsFilled(event.roles) : null;
   const published = event?.status === "published";
@@ -140,10 +143,6 @@ export function Warta({
                       { k: "Tanggal", v: formatWeekdayDayMonth(event.date) },
                       { k: "Waktu", v: formatTime(event.date), gold: true },
                       { k: "Tempat", v: "Ruang Hermon" },
-                      {
-                        k: "Pembicara",
-                        v: published && event.speaker ? event.speaker : "Belum diumumkan",
-                      },
                     ]}
                   />
                 </div>
@@ -166,14 +165,24 @@ export function Warta({
                   </div>
                 ) : null}
               </>
+            ) : unavailable ? (
+              <>
+                <h2 className="lp-display text-balance text-ink" data-reveal="lines">
+                  Warta belum bisa <em className="lp-italic">dimuat</em>.
+                </h2>
+                <p className="lp-lead mt-6" data-reveal="fade">
+                  Coba buka lagi sebentar. Irama mingguannya tetap: Sabtu pukul 17.00 di Ruang
+                  Hermon.
+                </p>
+              </>
             ) : (
               <>
                 <h2 className="lp-display text-balance text-ink" data-reveal="lines">
                   Tema Sabtu ini <em className="lp-italic">sedang disiapkan</em> pengurus.
                 </h2>
                 <p className="lp-lead mt-6" data-reveal="fade">
-                  Tema dan pembicara muncul di sini begitu pengurus memasukkannya ke jadwal.
-                  Irama mingguannya tetap: Sabtu pukul 17.00 di Ruang Hermon.
+                  Tema dan jadwalnya muncul di sini begitu pengurus memasukkannya. Irama
+                  mingguannya tetap: Sabtu pukul 17.00 di Ruang Hermon.
                 </p>
                 {latest ? (
                   <div className="mt-10" data-reveal="fade">
@@ -199,14 +208,23 @@ export function Warta({
 /* 02 Ritme — the page's one pinned sequence (desktop only).           */
 /* ------------------------------------------------------------------ */
 
-const RHYTHM = [
-  { day: "Rabu", time: "19.00", title: "Latihan awal", note: "Tim WL dan singer bersama pemusik menyiapkan lagu untuk Sabtu." },
-  { day: "Sabtu", time: "15.00", title: "Latihan akhir", note: "Gladi bersih bersama tim Multimedia di Ruang Hermon." },
-  { day: "Sabtu", time: "17.00", title: "Ibadah Pemuda", note: "Persekutuan seluruh Pemuda di Ruang Hermon. Pusat minggu kami.", highlight: true },
-  { day: "Fleksibel", time: "Cross", title: "Kelompok kecil", note: "Bertumbuh bersama dalam kelompok Cross, di hari yang disepakati tiap kelompok." },
-];
+const hhmm = (t: string | null) => (t ? t.replace(":", ".") : null);
 
-export function Ritme() {
+/** The week, step by step. The Cross step reads its time from the data when
+ *  every group shares one slot; otherwise it says the groups decide. */
+function rhythm(cross: CrossSlot | null) {
+  return [
+    { day: "Rabu", time: "19.00", title: "Latihan awal", note: "Tim WL dan singer bersama pemusik menyiapkan lagu untuk Sabtu." },
+    { day: "Sabtu", time: "15.00", title: "Latihan akhir", note: "Gladi bersih bersama tim Multimedia di Ruang Hermon." },
+    { day: "Sabtu", time: "17.00", title: "Ibadah Pemuda", note: "Persekutuan seluruh Pemuda di Ruang Hermon. Pusat minggu kami.", highlight: true },
+    cross?.day && cross.time
+      ? { day: cross.day, time: hhmm(cross.time)!, title: "Cross", note: "Kelompok kecil Pemuda bertemu untuk menggali firman dan saling mendoakan." }
+      : { day: "Fleksibel", time: "Cross", title: "Kelompok kecil", note: "Bertumbuh bersama dalam kelompok Cross, di hari yang disepakati tiap kelompok." },
+  ];
+}
+
+export function Ritme({ cross = null }: { cross?: CrossSlot | null }) {
+  const RHYTHM = rhythm(cross);
   return (
     <section id="ritme" className="relative scroll-mt-16" data-ritme>
       <div className="lp-wrap lp-ritme-stage pb-24 pt-24 sm:pb-32 sm:pt-32" data-ritme-stage>
@@ -214,7 +232,7 @@ export function Ritme() {
 
         <div className="mt-12 overflow-visible lg:mt-14">
           <div className="lp-ritme-track" data-ritme-track>
-            <div className="lp-ritme-panel pb-12 lg:pb-0 lg:pr-16">
+            <div className="lp-ritme-panel pb-12 lg:pr-16">
               <h2 className="lp-display text-ink" data-reveal="lines">
                 Seminggu, <em className="lp-italic">satu irama</em>.
               </h2>
@@ -316,8 +334,7 @@ export function Agenda({ events }: { events: BulletinEvent[] }) {
 }
 
 export function CrossGroups({ count, schedule }: { count: number; schedule: CrossSlot[] }) {
-  if (count === 0) return null;
-  const hhmm = (t: string | null) => (t ? t.replace(":", ".") : null);
+  // Always rendered: the nav and footer link to #cross.
   return (
     <section id="cross" className="relative scroll-mt-16 py-24 sm:py-32 lg:py-40">
       <div className="lp-wrap">
@@ -479,7 +496,7 @@ export function Closing({ nextLabel, timeLabel }: { nextLabel: string; timeLabel
             Ruang Hermon, GKKK Jogja
           </p>
           <div className="flex flex-wrap gap-3 sm:justify-end lg:col-span-8">
-            <a href="#warta" className="lp-btn border-on-deep-muted/40 text-on-deep hover:border-accent-on-deep hover:text-accent-on-deep" data-magnetic>
+            <a href="#warta" className="lp-btn border-on-deep-muted/55 text-on-deep hover:border-accent-on-deep hover:text-accent-on-deep" data-magnetic>
               Kembali ke warta
             </a>
             <Link href="/login" className="lp-btn lp-btn-primary" data-magnetic>
