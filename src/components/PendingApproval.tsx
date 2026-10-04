@@ -23,17 +23,13 @@ export function PendingApproval({
   const rejected = status === "rejected";
   return (
     <div className="flex min-h-screen flex-col items-center justify-center bg-canvas px-6 py-16 text-ink">
-      <div
-        aria-hidden="true"
-        className="pointer-events-none absolute inset-x-0 top-0 h-96 bg-[radial-gradient(ellipse_80%_60%_at_50%_-10%,rgba(253,190,2,0.06),rgba(131,2,28,0.03)_50%,transparent_80%)]"
-      />
 
       <main id="main" className="relative w-full max-w-md text-center">
         <div className="mx-auto mb-8 flex justify-center">
           <Logomark />
         </div>
 
-        <div className="rounded-2xl border border-line bg-surface/80 p-7 backdrop-blur-xl shadow-sm sm:p-8">
+        <div className="rounded-2xl border border-line bg-surface/80 p-7 shadow-sm sm:p-8">
           <div className="mx-auto mb-5 flex h-12 w-12 items-center justify-center rounded-2xl border border-line-accent/40 bg-accent-wash text-accent">
             {rejected ? (
               <ShieldX className="h-5 w-5" aria-hidden="true" />

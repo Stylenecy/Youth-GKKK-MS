@@ -30,7 +30,7 @@ export function ClaimCrossCard({ cross }: { cross: Cross }) {
   }
 
   return (
-    <li className="relative overflow-hidden rounded-2xl border border-line/40 bg-surface/75 p-5 backdrop-blur-xl transition-all duration-300 hover:border-line-accent">
+    <li className="relative overflow-hidden rounded-2xl border border-line/40 bg-surface/75 p-5 transition-all duration-300 hover:border-line-accent">
       <div className="flex items-center justify-between">
         <span className="font-serif text-lg font-bold text-ink">
           {cross.name}

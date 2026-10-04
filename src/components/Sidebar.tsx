@@ -16,23 +16,16 @@ export function Sidebar({ role }: { role: RoleOrDemo }) {
   const adminItems = items.filter((i) => i.section === "admin");
 
   return (
-    <aside className="sticky top-0 hidden h-screen w-64 shrink-0 flex-col border-r border-rule-soft bg-surface/90 backdrop-blur-xl lg:flex z-30">
+    <aside className="sticky top-0 z-30 hidden h-screen w-64 shrink-0 flex-col border-r border-rule bg-canvas-sunk lg:flex">
       {/* Top Header Identity */}
-      <div className="border-b border-rule-soft px-5 py-4">
-        <Link
-          href="/dashboard"
-          className="group flex min-h-[44px] items-center gap-3 text-ink transition-transform duration-200"
-        >
-          <div className="flex h-9 w-9 items-center justify-center rounded-full border border-line-accent/40 bg-surface-2 p-1.5 shadow-[0_0_14px_rgba(253,190,2,0.15)] transition-all duration-300 group-hover:border-accent group-hover:shadow-[0_0_20px_rgba(253,190,2,0.35)]">
-            <Logomark className="h-full w-full" />
-          </div>
-          <span className="leading-tight">
-            <span className="block font-serif text-base font-bold tracking-tight text-ink group-hover:text-accent transition-colors">
-              Youth Dashboard
+      <div className="border-b border-rule px-5 py-4">
+        <Link href="/dashboard" className="group flex min-h-[44px] items-center gap-3 text-ink">
+          <Logomark className="h-9 w-9" />
+          <span className="leading-none">
+            <span className="block font-serif text-[1.0625rem] tracking-tight text-ink transition-colors group-hover:text-accent">
+              Youth GKKK
             </span>
-            <span className="block font-mono text-[0.5625rem] uppercase tracking-[0.2em] text-ink-faint">
-              Komisi Pengurus
-            </span>
+            <span className="lp-meta mt-1.5 block text-[0.625rem]">Ruang pengurus</span>
           </span>
         </Link>
       </div>
@@ -41,8 +34,8 @@ export function Sidebar({ role }: { role: RoleOrDemo }) {
       <nav aria-label="Navigasi utama" className="flex-1 overflow-y-auto px-3.5 py-4 space-y-6">
         {/* Section 1: Pelayanan & Komunitas */}
         <div>
-          <p className="px-3 pb-2 font-mono text-[0.625rem] font-bold uppercase tracking-[0.2em] text-ink-faint">
-            ( Pelayanan )
+          <p className="lp-meta px-3 pb-2 text-[0.625rem]">
+            <span className="lp-bracket">Pelayanan</span>
           </p>
           <ul className="space-y-1">
             {mainItems.map((item) => {
@@ -55,14 +48,14 @@ export function Sidebar({ role }: { role: RoleOrDemo }) {
                     aria-current={active ? "page" : undefined}
                     className={`nav-item ${
                       active ? "is-active" : ""
-                    } group flex min-h-[44px] items-center gap-3 rounded-xl px-3.5 text-[0.9375rem] transition-all duration-200 ${
+                    } group flex min-h-[44px] items-center gap-3 rounded-lg px-3.5 text-[0.9375rem] transition-colors duration-200 ${
                       active
-                        ? "bg-accent-wash/90 font-semibold text-accent shadow-[inset_0_1px_0_rgba(253,190,2,0.15)]"
-                        : "text-ink-muted hover:bg-surface-2 hover:text-ink"
+                        ? "bg-surface font-semibold text-accent"
+                        : "text-ink-muted hover:bg-surface hover:text-ink"
                     }`}
                   >
                     <Icon
-                      className={`h-[18px] w-[18px] shrink-0 transition-transform group-hover:scale-110 ${
+                      className={`h-[18px] w-[18px] shrink-0 ${
                         active ? "text-accent" : "text-ink-faint group-hover:text-ink"
                       }`}
                       strokeWidth={active ? 2.3 : 1.8}
@@ -78,8 +71,8 @@ export function Sidebar({ role }: { role: RoleOrDemo }) {
 
         {/* Section 2: Administrasi & Tata Kelola */}
         <div>
-          <p className="px-3 pb-2 font-mono text-[0.625rem] font-bold uppercase tracking-[0.2em] text-ink-faint">
-            ( Tata Kelola )
+          <p className="lp-meta px-3 pb-2 text-[0.625rem]">
+            <span className="lp-bracket">Tata kelola</span>
           </p>
           <ul className="space-y-1">
             {adminItems.map((item) => {
@@ -92,14 +85,14 @@ export function Sidebar({ role }: { role: RoleOrDemo }) {
                     aria-current={active ? "page" : undefined}
                     className={`nav-item ${
                       active ? "is-active" : ""
-                    } group flex min-h-[44px] items-center gap-3 rounded-xl px-3.5 text-[0.9375rem] transition-all duration-200 ${
+                    } group flex min-h-[44px] items-center gap-3 rounded-lg px-3.5 text-[0.9375rem] transition-colors duration-200 ${
                       active
-                        ? "bg-accent-wash/90 font-semibold text-accent shadow-[inset_0_1px_0_rgba(253,190,2,0.15)]"
-                        : "text-ink-muted hover:bg-surface-2 hover:text-ink"
+                        ? "bg-surface font-semibold text-accent"
+                        : "text-ink-muted hover:bg-surface hover:text-ink"
                     }`}
                   >
                     <Icon
-                      className={`h-[18px] w-[18px] shrink-0 transition-transform group-hover:scale-110 ${
+                      className={`h-[18px] w-[18px] shrink-0 ${
                         active ? "text-accent" : "text-ink-faint group-hover:text-ink"
                       }`}
                       strokeWidth={active ? 2.3 : 1.8}
@@ -115,16 +108,13 @@ export function Sidebar({ role }: { role: RoleOrDemo }) {
       </nav>
 
       {/* Footer Section */}
-      <div className="border-t border-rule-soft p-3.5 space-y-2">
+      <div className="space-y-2 border-t border-rule p-3.5">
         <ThemeToggle />
         <Link
           href="/"
-          className="flex min-h-[44px] items-center justify-between gap-2 rounded-xl px-3 font-mono text-xs text-ink-faint transition-all duration-200 hover:bg-surface-2 hover:text-accent"
+          className="lp-meta flex min-h-[44px] items-center gap-2 rounded-lg px-3 text-ink-muted transition-colors hover:bg-surface hover:text-accent"
         >
-          <span className="flex items-center gap-2">
-            <span aria-hidden="true">&larr;</span> Halaman depan
-          </span>
-          <span className="h-1.5 w-1.5 rounded-full bg-accent animate-pulse" />
+          <span aria-hidden="true">&larr;</span> Halaman depan
         </Link>
       </div>
     </aside>

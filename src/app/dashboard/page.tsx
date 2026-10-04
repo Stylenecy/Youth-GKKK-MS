@@ -152,30 +152,24 @@ export default async function DashboardPage() {
           statCards.length === 4 ? "lg:grid-cols-4" : "lg:grid-cols-3"
         }`}
       >
-        {statCards.map((s) => {
-          const Icon = s.icon;
-          return (
-            <Link
-              key={s.kicker}
-              href={s.href}
-              className="group flex flex-col justify-between rounded-2xl border border-line/40 bg-surface/75 p-5 shadow-sm backdrop-blur-xl transition-colors duration-200 hover:border-line-accent"
-            >
-              <div className="flex items-center justify-between">
-                <span className="font-mono text-[0.6875rem] font-bold uppercase tracking-[0.18em] text-accent">
-                  {s.kicker}
-                </span>
-                <Icon className="h-4 w-4 text-ink-faint group-hover:text-accent" strokeWidth={1.9} aria-hidden="true" />
-              </div>
-              <p className="num mt-4 font-serif text-2xl font-bold tracking-tight text-ink sm:text-3xl">
-                {s.value}
-              </p>
-              <p className="mt-1 flex items-center justify-between text-xs font-medium text-ink-muted">
-                {s.label}
-                <ChevronRight className="h-3.5 w-3.5 text-ink-faint group-hover:text-accent" aria-hidden="true" />
-              </p>
-            </Link>
-          );
-        })}
+        {/* Numbers as the stage (house language): HUD corners, light mono
+            figures, mono labels. Each tile is a real link to its page. */}
+        {statCards.map((s) => (
+          <Link
+            key={s.kicker}
+            href={s.href}
+            className="lp-hud group flex flex-col justify-between px-4 pb-4 pt-5 transition-colors duration-200 hover:bg-surface sm:px-5"
+          >
+            <span className="flex items-center justify-between">
+              <span className="lp-meta text-accent">{s.kicker}</span>
+              <ChevronRight className="h-3.5 w-3.5 text-ink-faint group-hover:text-accent" aria-hidden="true" />
+            </span>
+            <span className="lp-num mt-5 block text-[clamp(2.25rem,1.6rem+2vw,3.5rem)] text-ink">
+              {s.value}
+            </span>
+            <span className="lp-meta mt-3 block">{s.label}</span>
+          </Link>
+        ))}
       </div>
 
       <div className="mt-8 grid gap-7 lg:grid-cols-3">
@@ -201,19 +195,19 @@ export default async function DashboardPage() {
 
               <h2
                 id="next-heading"
-                className="mt-4 font-serif text-2xl font-bold tracking-tight text-ink sm:text-3xl"
+                className="lp-title mt-5 text-[clamp(1.75rem,1.3rem+1.5vw,2.5rem)] text-ink"
               >
                 {upcoming.weeklyTheme}
               </h2>
-              <p className="mt-1.5 text-sm text-ink-muted">
+              <p className="lp-meta mt-3 text-ink-muted">
                 {formatFullDate(upcoming.date)} · Ruang Hermon
               </p>
 
               {/* Readiness: slots per role, not a head count */}
               <div className="mt-6 rounded-xl border border-rule-soft bg-canvas-sunk/70 p-4">
                 <div className="flex flex-wrap items-baseline justify-between gap-2">
-                  <span className="font-mono text-[0.6875rem] font-bold uppercase tracking-[0.16em] text-accent">
-                    Kesiapan penatalayan
+                  <span className="lp-meta font-semibold text-accent">
+                    <span className="lp-bracket">Kesiapan penatalayan</span>
                   </span>
                   <span className="num font-mono text-xs font-bold text-ink">
                     {ready.filled} / {ready.needed} slot

@@ -40,7 +40,7 @@ export default async function MembersPage({
         action={
           <Link
             href="/dashboard/cross/mine"
-            className="btn-primary text-xs sm:text-sm shadow-[0_0_16px_rgba(253,190,2,0.25)]"
+            className="btn-primary text-xs sm:text-sm"
           >
             <Users className="h-4 w-4" aria-hidden="true" />
             Tambah via Kelompokku
@@ -127,7 +127,7 @@ export default async function MembersPage({
                 <li key={profile.id}>
                   <Link
                     href={`/dashboard/members/${profile.id}`}
-                    className="group relative flex h-full items-center gap-4 rounded-2xl border border-line/40 bg-surface/75 p-4.5 backdrop-blur-xl transition-all duration-300 hover:-translate-y-1 hover:border-accent hover:bg-surface hover:shadow-[0_12px_32px_rgba(253,190,2,0.12)]"
+                    className="group relative flex h-full items-center gap-4 rounded-2xl border border-line/40 bg-surface/75 p-4.5 transition-all duration-300 hover:-translate-y-1 hover:border-accent hover:bg-surface"
                   >
                     <Monogram name={profile.nickname} size="lg" />
                     <div className="min-w-0 flex-1">

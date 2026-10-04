@@ -57,7 +57,7 @@ export default async function MemberDetailPage({
       </div>
 
       {/* Identity Card */}
-      <div className="mt-6 flex flex-wrap items-center justify-between gap-4 rounded-2xl border border-line/40 bg-surface/75 p-6 backdrop-blur-xl shadow-sm">
+      <div className="mt-6 flex flex-wrap items-center justify-between gap-4 rounded-2xl border border-line/40 bg-surface/75 p-6 shadow-sm">
         <div className="flex items-center gap-4">
           <Monogram name={profile.nickname} size="lg" />
           <div>
@@ -75,7 +75,7 @@ export default async function MemberDetailPage({
 
       {/* Fatigue Warning Banner */}
       {isFatigued && (
-        <div className="mt-6 flex items-start gap-3 rounded-2xl border border-warning/40 bg-warning-wash/70 p-4.5 text-sm text-warning backdrop-blur-xl">
+        <div className="mt-6 flex items-start gap-3 rounded-2xl border border-warning/40 bg-warning-wash/70 p-4.5 text-sm text-warning">
           <AlertTriangle className="h-5 w-5 shrink-0 mt-0.5" aria-hidden="true" />
           <div>
             <p className="font-bold">Perlu Diistirahatkan ({profile.serviceCount30d}&times; Pelayanan)</p>
@@ -87,7 +87,7 @@ export default async function MemberDetailPage({
       )}
 
       {/* Data Points Grid */}
-      <div className="mt-6 rounded-2xl border border-line/40 bg-surface/75 p-6 backdrop-blur-xl shadow-sm">
+      <div className="mt-6 rounded-2xl border border-line/40 bg-surface/75 p-6 shadow-sm">
         <div className="flex items-center gap-2 border-b border-rule-soft pb-3">
           <span className="h-1.5 w-1.5 rounded-full bg-accent" />
           <h3 className="font-mono text-xs font-bold uppercase tracking-[0.2em] text-accent">

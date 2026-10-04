@@ -24,7 +24,7 @@ export default async function CrossPage() {
         action={
           <Link
             href="/dashboard/cross/mine"
-            className="btn-primary text-xs sm:text-sm shadow-[0_0_16px_rgba(253,190,2,0.25)]"
+            className="btn-primary text-xs sm:text-sm"
           >
             <Users className="h-4 w-4" aria-hidden="true" />
             Kelola Kelompokku
@@ -52,7 +52,7 @@ export default async function CrossPage() {
                 <div key={cross.id} className="group">
                   <Link
                     href={`/dashboard/cross/${cross.id}`}
-                    className="relative flex h-full flex-col justify-between overflow-hidden rounded-2xl border border-line/40 bg-surface/75 p-6 backdrop-blur-xl transition-all duration-300 hover:-translate-y-1 hover:border-accent hover:bg-surface hover:shadow-[0_16px_40px_rgba(253,190,2,0.18)] min-h-[260px]"
+                    className="relative flex h-full flex-col justify-between overflow-hidden rounded-2xl border border-line/40 bg-surface/75 p-6 transition-all duration-300 hover:-translate-y-1 hover:border-accent hover:bg-surface min-h-[260px]"
                   >
                     {/* Top Accent Rim */}
                     <div

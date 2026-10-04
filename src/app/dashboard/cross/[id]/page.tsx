@@ -46,7 +46,7 @@ export default async function CrossDetailPage({
           action={
             <Link
               href="/dashboard/cross/mine"
-              className="btn-primary text-xs sm:text-sm shadow-[0_0_16px_rgba(253,190,2,0.25)]"
+              className="btn-primary text-xs sm:text-sm"
             >
               <Users className="h-4 w-4" aria-hidden="true" />
               Kelola di Kelompokku
@@ -56,7 +56,7 @@ export default async function CrossDetailPage({
       </div>
 
       {/* Metadata Shelf */}
-      <div className="mt-8 rounded-2xl border border-line/40 bg-surface/75 p-6 backdrop-blur-xl shadow-sm">
+      <div className="mt-8 rounded-2xl border border-line/40 bg-surface/75 p-6 shadow-sm">
         <dl className="grid gap-x-8 gap-y-4 sm:grid-cols-3">
           <DataPoint label="Pemimpin Kelompok (CL)" value={leaderLabel} />
           <DataPoint
@@ -72,7 +72,7 @@ export default async function CrossDetailPage({
 
       {/* Warning if group capacity > 9 */}
       {members.length > 9 && (
-        <div className="mt-6 flex items-start gap-3 rounded-2xl border border-warning/40 bg-warning-wash/60 p-4.5 text-sm text-warning backdrop-blur-xl">
+        <div className="mt-6 flex items-start gap-3 rounded-2xl border border-warning/40 bg-warning-wash/60 p-4.5 text-sm text-warning">
           <AlertTriangle className="h-5 w-5 shrink-0 mt-0.5" aria-hidden="true" />
           <div>
             <p className="font-bold">Kapasitas Kelompok Lebih dari 9 Orang</p>
@@ -119,7 +119,7 @@ export default async function CrossDetailPage({
                 <li key={member.id}>
                   <Link
                     href={`/dashboard/members/${member.id}`}
-                    className="group flex h-full items-center gap-3.5 rounded-2xl border border-line/40 bg-surface/75 p-4 backdrop-blur-xl transition-all duration-300 hover:-translate-y-0.5 hover:border-accent hover:bg-surface hover:shadow-md"
+                    className="group flex h-full items-center gap-3.5 rounded-2xl border border-line/40 bg-surface/75 p-4 transition-all duration-300 hover:-translate-y-0.5 hover:border-accent hover:bg-surface hover:shadow-md"
                   >
                     <Monogram name={member.nickname} size="md" />
                     <div className="min-w-0 flex-1">

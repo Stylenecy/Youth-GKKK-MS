@@ -39,7 +39,7 @@ export default async function MeetingsPage() {
               <li key={meeting.id}>
                 <Link
                   href={`/dashboard/meetings/${meeting.id}`}
-                  className="group relative flex h-full flex-col justify-between rounded-2xl border border-line/40 bg-surface/75 p-5 sm:p-6 backdrop-blur-xl transition-all duration-300 hover:-translate-y-1 hover:border-accent hover:bg-surface hover:shadow-[0_12px_32px_rgba(253,190,2,0.12)]"
+                  className="group relative flex h-full flex-col justify-between rounded-2xl border border-line/40 bg-surface/75 p-5 sm:p-6 transition-all duration-300 hover:-translate-y-1 hover:border-accent hover:bg-surface"
                 >
                   <div>
                     <div className="flex items-center justify-between text-xs font-mono text-ink-faint">

@@ -53,7 +53,7 @@ export default async function MeetingDetailPage({
         {/* Main Section: Agenda & Decisions */}
         <section
           aria-labelledby="agenda-heading"
-          className="rounded-2xl border border-line/40 bg-surface/75 p-6 backdrop-blur-xl shadow-sm"
+          className="rounded-2xl border border-line/40 bg-surface/75 p-6 shadow-sm"
         >
           <div className="flex items-center gap-2 border-b border-rule-soft pb-3 mb-4">
             <span className="h-1.5 w-1.5 rounded-full bg-accent" />
@@ -90,7 +90,7 @@ export default async function MeetingDetailPage({
 
         {/* Aside: Participants list */}
         <aside className="space-y-6">
-          <div className="rounded-2xl border border-line/40 bg-surface/75 p-6 backdrop-blur-xl shadow-sm">
+          <div className="rounded-2xl border border-line/40 bg-surface/75 p-6 shadow-sm">
             <div className="flex items-center gap-2 border-b border-rule-soft pb-3 mb-4">
               <span className="h-1.5 w-1.5 rounded-full bg-accent" />
               <h2 className="font-mono text-xs font-bold uppercase tracking-[0.2em] text-accent">

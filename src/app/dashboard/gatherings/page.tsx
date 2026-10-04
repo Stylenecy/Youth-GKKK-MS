@@ -126,7 +126,7 @@ function GatheringSection({
       {events.length === 0 ? (
         <p className="mt-4 text-sm text-ink-muted leading-relaxed">{empty}</p>
       ) : (
-        <ul className="mt-4 divide-y divide-rule-soft/60 rounded-2xl border border-line/40 bg-surface/60 backdrop-blur-xl overflow-hidden shadow-sm">
+        <ul className="mt-4 divide-y divide-rule-soft/60 rounded-2xl border border-line/40 bg-surface/60 overflow-hidden shadow-sm">
           {events.map((event) => {
             const s = eventStateLabel(event);
             return (
@@ -137,7 +137,7 @@ function GatheringSection({
                 >
                   {/* Calendar Box Badge */}
                   <div
-                    className={`flex h-14 w-14 shrink-0 flex-col items-center justify-center rounded-xl border border-line-accent/40 bg-gradient-to-b from-surface-2 to-canvas-sunk p-1 shadow-sm transition-all duration-300 group-hover:border-accent group-hover:shadow-[0_0_14px_rgba(253,190,2,0.2)] ${
+                    className={`flex h-14 w-14 shrink-0 flex-col items-center justify-center rounded-xl border border-line-accent/40 bg-gradient-to-b from-surface-2 to-canvas-sunk p-1 shadow-sm transition-all duration-300 group-hover:border-accent ${
                       muted ? "opacity-60" : ""
                     }`}
                   >

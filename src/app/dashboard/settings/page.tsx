@@ -26,7 +26,7 @@ export default async function SettingsPage() {
         {/* Who is signed in — role shown here so nobody has to guess. */}
         {session && (
           <section
-            className="rounded-2xl border border-line/40 bg-surface/75 p-6 backdrop-blur-xl shadow-sm sm:p-7"
+            className="rounded-2xl border border-line/40 bg-surface/75 p-6 shadow-sm sm:p-7"
             aria-labelledby="account-heading"
           >
             <SectionTitle id="account-heading" title="AKUN SAYA" />
@@ -53,7 +53,7 @@ export default async function SettingsPage() {
         )}
         {/* Connection Status Card */}
         <section
-          className="rounded-2xl border border-line/40 bg-surface/75 p-6 backdrop-blur-xl shadow-sm sm:p-7"
+          className="rounded-2xl border border-line/40 bg-surface/75 p-6 shadow-sm sm:p-7"
           aria-labelledby="status-heading"
         >
           <SectionTitle id="status-heading" title="STATUS LINGKUNGAN & KONEKSI" />
@@ -92,7 +92,7 @@ export default async function SettingsPage() {
         {/* Integration Instructions Card (if in demo mode) */}
         {!live && (
           <section
-            className="rounded-2xl border border-line-accent/40 bg-gradient-to-b from-surface/90 to-accent-wash/30 p-6 backdrop-blur-xl shadow-sm sm:p-7"
+            className="rounded-2xl border border-line-accent/40 bg-gradient-to-b from-surface/90 to-accent-wash/30 p-6 shadow-sm sm:p-7"
             aria-labelledby="next-steps-heading"
           >
             <SectionTitle id="next-steps-heading" title="PANDUAN AKTIVASI SUPABASE LIVE" />

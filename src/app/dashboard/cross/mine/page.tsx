@@ -56,7 +56,7 @@ export default async function MyCrossPage() {
       />
 
       {isAdmin && (
-        <div className="mt-6 flex items-center gap-3 rounded-2xl border border-accent/40 bg-accent-wash/80 p-4 text-sm font-medium text-accent backdrop-blur-xl shadow-sm">
+        <div className="mt-6 flex items-center gap-3 rounded-2xl border border-accent/40 bg-accent-wash/80 p-4 text-sm font-medium text-accent shadow-sm">
           <ShieldCheck className="h-5 w-5 shrink-0" aria-hidden="true" />
           <span>
             <strong>Akses Administrator:</strong> Kamu memiliki izin untuk mengelola dan menambah anggota ke seluruh kelompok Cross.
@@ -87,7 +87,7 @@ export default async function MyCrossPage() {
               return (
                 <section
                   key={cross.id}
-                  className="relative overflow-hidden rounded-2xl border border-line/40 bg-surface/80 p-6 backdrop-blur-xl shadow-sm sm:p-7"
+                  className="relative overflow-hidden rounded-2xl border border-line/40 bg-surface/80 p-6 shadow-sm sm:p-7"
                 >
                   {/* Top Accent Line */}
                   <div

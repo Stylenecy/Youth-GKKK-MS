@@ -27,7 +27,7 @@ export async function AccountApprovals() {
 
   return (
     <section
-      className="rounded-2xl border border-line/40 bg-surface/75 p-6 backdrop-blur-xl shadow-sm sm:p-7"
+      className="rounded-2xl border border-line/40 bg-surface/75 p-6 shadow-sm sm:p-7"
       aria-labelledby="approvals-heading"
     >
       <div className="flex flex-wrap items-center justify-between gap-3 border-b border-rule-soft pb-3">
