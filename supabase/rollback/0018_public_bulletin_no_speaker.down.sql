@@ -1,8 +1,7 @@
--- PERINGATAN: menjalankan berkas ini membuka lagi NAMA kelompok Cross (= nama
--- pemimpinnya) dan deskripsinya ke tamu. Hanya untuk keadaan darurat.
--- Rollback 0017 — kembalikan public_bulletin() ke versi 0016 (dengan nama
--- dan deskripsi kelompok Cross). Hanya fungsi; tidak ada data yang disentuh.
--- Untuk mencabut jalur warta publik sepenuhnya: 0016_public_bulletin.down.sql.
+-- PERINGATAN: menjalankan berkas ini membuka lagi nama pembicara acara
+-- berstatus published ke tamu.
+-- Rollback 0018 — kembalikan public_bulletin() ke versi 0017 (dengan nama
+-- pembicara untuk acara published). Hanya fungsi; tidak ada data yang disentuh.
 
 CREATE OR REPLACE FUNCTION public.public_bulletin()
 RETURNS jsonb
@@ -54,18 +53,17 @@ AS $$
       )
       FROM latest l
     ),
-    'crosses', COALESCE((
+    'cross_schedule', COALESCE((
       SELECT jsonb_agg(
-        jsonb_build_object(
-          'name', c.name,
-          'description', c.description,
-          'day', c.meeting_day,
-          'time', c.meeting_time
-        )
-        ORDER BY c.name
+        jsonb_build_object('day', s.day, 'time', s.time, 'groups', s.n)
+        ORDER BY s.n DESC, s.day, s.time
       )
-      FROM public.crosses c
-      WHERE c.is_active
+      FROM (
+        SELECT c.meeting_day AS day, c.meeting_time AS time, count(*) AS n
+        FROM public.crosses c
+        WHERE c.is_active
+        GROUP BY c.meeting_day, c.meeting_time
+      ) s
     ), '[]'::jsonb),
     'counts', jsonb_build_object(
       'events', (SELECT count(*) FROM live),
@@ -85,4 +83,4 @@ REVOKE ALL ON FUNCTION public.public_bulletin() FROM PUBLIC;
 GRANT EXECUTE ON FUNCTION public.public_bulletin() TO anon, authenticated;
 
 COMMENT ON FUNCTION public.public_bulletin() IS
-  'Warta publik halaman depan: jadwal + hitungan, tanpa data pribadi (4 Okt 2026). Dikecualikan dari migrasi tutup-anon.';
+  'Warta publik halaman depan: jadwal + hitungan, tanpa nama orang (0017, 4 Okt 2026). Dikecualikan dari migrasi tutup-anon.';

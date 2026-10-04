@@ -1,8 +1,12 @@
--- PERINGATAN: menjalankan berkas ini membuka lagi NAMA kelompok Cross (= nama
--- pemimpinnya) dan deskripsinya ke tamu. Hanya untuk keadaan darurat.
--- Rollback 0017 — kembalikan public_bulletin() ke versi 0016 (dengan nama
--- dan deskripsi kelompok Cross). Hanya fungsi; tidak ada data yang disentuh.
--- Untuk mencabut jalur warta publik sepenuhnya: 0016_public_bulletin.down.sql.
+-- 0018 — Warta publik tanpa nama pembicara.
+--
+-- KENAPA: aturan halaman publik YGMS = tanpa nama orang kecuali Dex memutuskan
+-- lain (0017). Kolom speaker_name adalah nama orang, jadi tidak lagi dikirim ke
+-- tamu. Teks yang ditulis pengurus untuk acara berstatus published (tema,
+-- deskripsi) tetap tampil apa adanya. Nama pembicara tetap terlihat di dashboard.
+--
+-- Rollback: supabase/rollback/0018_public_bulletin_no_speaker.down.sql
+-- (kembali ke versi 0017). Aman dijalankan lebih dari sekali.
 
 CREATE OR REPLACE FUNCTION public.public_bulletin()
 RETURNS jsonb
@@ -12,8 +16,7 @@ SECURITY DEFINER
 SET search_path = public, pg_temp
 AS $$
   WITH live AS (
-    SELECT e.id, e.date, e.weekly_theme, e.event_type, e.speaker_name,
-           e.description, e.status
+    SELECT e.id, e.date, e.weekly_theme, e.event_type, e.description, e.status
     FROM public.events e
     WHERE e.status <> 'archived' AND e.archived_at IS NULL
   ),
@@ -32,7 +35,6 @@ AS $$
           'theme', u.weekly_theme,
           'type', u.event_type,
           'status', u.status,
-          'speaker', CASE WHEN u.status = 'published' THEN u.speaker_name END,
           'description', CASE WHEN u.status = 'published' THEN u.description END,
           'roles', COALESCE((
             SELECT jsonb_object_agg(r.role, r.n)
@@ -54,18 +56,17 @@ AS $$
       )
       FROM latest l
     ),
-    'crosses', COALESCE((
+    'cross_schedule', COALESCE((
       SELECT jsonb_agg(
-        jsonb_build_object(
-          'name', c.name,
-          'description', c.description,
-          'day', c.meeting_day,
-          'time', c.meeting_time
-        )
-        ORDER BY c.name
+        jsonb_build_object('day', s.day, 'time', s.time, 'groups', s.n)
+        ORDER BY s.n DESC, s.day, s.time
       )
-      FROM public.crosses c
-      WHERE c.is_active
+      FROM (
+        SELECT c.meeting_day AS day, c.meeting_time AS time, count(*) AS n
+        FROM public.crosses c
+        WHERE c.is_active
+        GROUP BY c.meeting_day, c.meeting_time
+      ) s
     ), '[]'::jsonb),
     'counts', jsonb_build_object(
       'events', (SELECT count(*) FROM live),
@@ -85,4 +86,4 @@ REVOKE ALL ON FUNCTION public.public_bulletin() FROM PUBLIC;
 GRANT EXECUTE ON FUNCTION public.public_bulletin() TO anon, authenticated;
 
 COMMENT ON FUNCTION public.public_bulletin() IS
-  'Warta publik halaman depan: jadwal + hitungan, tanpa data pribadi (4 Okt 2026). Dikecualikan dari migrasi tutup-anon.';
+  'Warta publik halaman depan: jadwal + hitungan, tanpa nama orang (0018, 4 Okt 2026). Dikecualikan dari migrasi tutup-anon.';

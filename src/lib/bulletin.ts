@@ -9,8 +9,9 @@ import type { EventStatus, EventType } from "./types";
  *
  * Guests cannot read `events`, `crosses` or `steward_assignments` (RLS
  * is_approved()), so the front page reads them through ONE read-only RPC,
- * `public_bulletin()` (migration 0016). It returns bulletin fields only —
- * dates, themes, counts — never a member's name, id or number.
+ * `public_bulletin()` (migrations 0016–0018). It returns bulletin fields only —
+ * dates, themes, counts — never a person's name: not members, not Cross
+ * leaders (group names carry them), not speakers; no ids or numbers.
  *
  * The client here is deliberately cookie-less: the answer is the same for
  * every visitor, so the page can be cached and revalidated instead of being
@@ -23,7 +24,6 @@ export interface BulletinEvent {
   type: EventType;
   status: EventStatus;
   /** Only present for published events — drafts may carry internal notes. */
-  speaker: string | null;
   description: string | null;
   /** Assigned stewards per role. Counts only, no names. */
   roles: Record<string, number>;
@@ -44,8 +44,11 @@ export interface PublicBulletin {
   latest: { date: string; theme: string; type: EventType } | null;
   crossSchedule: CrossSlot[];
   counts: { events: number; assignments: number; members: number; crosses: number };
-  /** Where the numbers came from — the page labels demo data as such. */
-  source: "live" | "demo";
+  /**
+   * Where the numbers came from. The page labels demo data as such, and says
+   * plainly when the bulletin could not be loaded instead of showing zeros.
+   */
+  source: "live" | "demo" | "unavailable";
 }
 
 /** What the page renders when the RPC fails: honest emptiness, no numbers. */
@@ -54,7 +57,7 @@ export const EMPTY_BULLETIN: PublicBulletin = {
   latest: null,
   crossSchedule: [],
   counts: { events: 0, assignments: 0, members: 0, crosses: 0 },
-  source: "live",
+  source: "unavailable",
 };
 
 /** Narrow the RPC's jsonb into the typed shape; anything malformed is dropped. */
@@ -82,7 +85,6 @@ export function parseBulletin(raw: unknown): PublicBulletin | null {
           theme,
           type: (str(o.type) ?? "worship") as EventType,
           status: (str(o.status) ?? "draft") as EventStatus,
-          speaker: str(o.speaker),
           description: str(o.description),
           roles,
         }];
@@ -167,9 +169,17 @@ export async function getPublicBulletin(): Promise<PublicBulletin> {
         { auth: { persistSession: false, autoRefreshToken: false } }
       );
       const { data, error } = await supabase.rpc("public_bulletin");
-      if (error) return EMPTY_BULLETIN;
-      return parseBulletin(data) ?? EMPTY_BULLETIN;
-    } catch {
+      if (error) throw new Error(`public_bulletin: ${error.message}`);
+      const parsed = parseBulletin(data);
+      if (!parsed) throw new Error("public_bulletin: unexpected payload");
+      return parsed;
+    } catch (err) {
+      console.error("[bulletin]", err);
+      // At runtime, throwing makes ISR keep serving the last good page and
+      // retry on the next revalidation — better than caching an empty
+      // bulletin for ten minutes. A build has no previous page to keep, so
+      // it renders the honest "unavailable" state instead of failing.
+      if (process.env.NEXT_PHASE !== "phase-production-build") throw err;
       return EMPTY_BULLETIN;
     }
   }
@@ -193,7 +203,6 @@ export async function getPublicBulletin(): Promise<PublicBulletin> {
         theme: e.weeklyTheme,
         type: e.eventType,
         status: e.status,
-        speaker: published ? e.speakerName : null,
         description: published ? e.description : null,
         roles,
       };
