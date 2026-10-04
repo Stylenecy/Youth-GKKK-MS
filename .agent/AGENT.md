@@ -68,6 +68,19 @@ Pegangan rumah: `Dex-Brain/50-KNOWLEDGE/teknis/AI-Orchestration/DEX-MOTION-LANGU
   three.js / canvas di landing. `prefers-reduced-motion` = semua langsung tampil.
 - **Data publik** landing hanya lewat RPC `public_bulletin()` (migrasi 0016): tanpa nama anggota.
 
+### Dashboard v3 (Rilis 5, 4 Okt 2026) — alat kerja, bahasa yang sama, lebih tenang
+
+- **Komponen dulu:** kepala halaman `PageHeader` (kalimat panjang → `description`, bukan `meta` mono);
+  kartu = `Panel` (non-interaktif, garis lembut) atau `CARD_LINK` (bisa diklik, garis penuh ≥ 3:1);
+  judul bagian = `SectionTitle`. Jangan membuat kartu tangan baru (`rounded-2xl`, `bg-surface/75`, dst.).
+- **Emas hemat:** hanya nav aktif, satu tombol utama per halaman, meter, chip hitung mundur, Sabtu
+  berikutnya di papan. Label, kicker, judul bagian, monogram = tinta `lp-meta`. Tanpa rona per kolom/bagian.
+- **Tanpa** `backdrop-blur`, bayangan glow, gradasi dekoratif, `shadow-sm` pada kartu yang tidak
+  mengambang, efek angkat saat hover. Modal/toast boleh `shadow-2xl` (memang mengambang).
+- **Gerak ≤ 240 ms:** satu rise di kepala halaman; hover = ganti warna 200 ms; tabel dan form diam.
+- **Huruf:** judul Fraunces `font-normal` (bukan bold); tanggal, jam, angka = Geist Mono; jam lewat
+  `formatClock` ("19.00").
+
 **Typography trio (tidak berubah):**
 - **Fraunces** (serif display) — headings, section labels
 - **Geist** (sans) — body text, navigation
