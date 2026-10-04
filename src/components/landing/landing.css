@@ -300,7 +300,12 @@
 /* Without the motion layer (reduced motion, or no JS) the scroll listener
    never tints the nav, so it carries its tinted ground from the start —
    otherwise page text slides underneath a transparent bar. */
-html:not(.lp-js) .lp-nav,
+html:not(.lp-js) .lp-nav {
+  /* Opaque: with no blur behind it, a tinted bar let page text show through. */
+  background: var(--color-canvas);
+  border-bottom-color: var(--color-rule-soft);
+}
+
 .lp-nav.is-scrolled {
   background: color-mix(in srgb, var(--color-canvas) 82%, transparent);
   backdrop-filter: blur(14px);
@@ -386,6 +391,7 @@ html:not(.lp-js) .lp-nav,
   .lp-ritme-track {
     grid-template-columns: repeat(2, minmax(0, 1fr));
     column-gap: 48px;
+    row-gap: 4rem;
   }
 
   .lp-ritme-track > :first-child {
