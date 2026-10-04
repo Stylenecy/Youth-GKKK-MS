@@ -56,7 +56,7 @@ export default function Hero({
         {/* Crest + headline */}
         <div className="relative grid flex-1 grid-cols-1 items-end gap-8 pt-8 lg:grid-cols-12 lg:gap-6 lg:pt-6">
           <div
-            className="relative mx-auto w-[42vw] max-w-[220px] lg:absolute lg:right-[4%] lg:top-1/2 lg:w-[min(28vw,400px)] lg:max-w-none lg:-translate-y-[54%]"
+            className="relative mx-auto w-[42vw] max-w-[220px] lg:absolute lg:right-[4%] lg:top-1/2 lg:w-[min(26vw,380px,40svh)] lg:max-w-none lg:-translate-y-[54%]"
             aria-hidden="true"
             data-hero-crest
           >
@@ -75,7 +75,7 @@ export default function Hero({
             <img
               src="/brand/crest-384.webp"
               srcSet="/brand/crest-384.webp 384w, /brand/crest-768.webp 768w"
-              sizes="(min-width: 1024px) min(28vw, 400px), 42vw"
+              sizes="(min-width: 1024px) min(26vw, 380px), 42vw"
               width={384}
               height={515}
               alt=""
@@ -85,7 +85,7 @@ export default function Hero({
             />
           </div>
 
-          <div className="relative lg:col-span-9">
+          <div className="relative lg:col-span-8">
             <h1 className="lp-mega lp-in-chars text-ink" data-hero-title>
               <SplitChars
                 label="Youth GKKK Jogja. Satu api, satu wadah."
