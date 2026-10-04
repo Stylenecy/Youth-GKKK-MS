@@ -42,7 +42,10 @@ export default function LandingNav() {
         </ul>
 
         <Link href="/login" className="lp-btn lp-btn-ghost min-h-[44px] px-5 text-sm" data-magnetic>
-          Masuk<span className="hidden sm:inline">&nbsp;pengurus</span>
+          {/* One flex item, so the button's gap does not split the label. */}
+          <span>
+            Masuk<span className="hidden sm:inline"> pengurus</span>
+          </span>
           <span aria-hidden="true" className="lp-arrow">
             &rarr;
           </span>
