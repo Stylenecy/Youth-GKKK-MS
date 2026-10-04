@@ -100,6 +100,7 @@ export function ThemeToggle({ compact = false }: { compact?: boolean }) {
     sessionTheme = next;
     try {
       localStorage.setItem(DASHBOARD_THEME_KEY, next);
+      storageWriteFailed = false;
     } catch {
       // Storage blocked: still flip for this session.
       storageWriteFailed = true;
