@@ -30,15 +30,11 @@ export interface BoardColumn {
   stewards: BoardSteward[];
 }
 
-/** Ciri warna per minggu — kelas literal (Tailwind tak melihat string
- *  dinamis). Emas untuk minggu berjalan, sisanya berputar sage → rose →
- *  warning supaya kolom mudah dibedakan sekilas. */
-const WEEK_STYLES = [
-  { dot: "bg-accent", num: "text-accent", bar: "border-accent" },
-  { dot: "bg-sage", num: "text-sage", bar: "border-sage" },
-  { dot: "bg-rose", num: "text-rose", bar: "border-rose" },
-  { dot: "bg-warning", num: "text-warning", bar: "border-warning" },
-];
+/** Satu aksen saja (AGENT.md: tanpa rona per bagian): emas hanya untuk
+ *  Sabtu berikutnya, kolom lain netral. Kelas literal supaya Tailwind
+ *  melihatnya. */
+const WEEK_NEXT = { dot: "bg-accent", num: "text-accent", bar: "border-accent" };
+const WEEK_OTHER = { dot: "bg-ink-faint", num: "text-ink", bar: "border-line" };
 
 /** Tampilan awal: 4 kolom (2 lewat + 2 mendatang) — cukup untuk
  *  perbandingan, tidak menenggelamkan. */
@@ -86,7 +82,7 @@ export function PenatalayanBoard({
     return [...past.slice(-DEFAULT_PAST), ...upcoming.slice(0, DEFAULT_UPCOMING)];
   }, [columns, past, upcoming, expanded, focusId]);
 
-  const fullIndexOf = (id: string) => columns.findIndex((c) => c.id === id);
+  const nextId = upcoming[0]?.id;
   const viewKey = focusId ? `fokus-${focusId}` : expanded ? "semua" : "ringkas";
 
   return (
@@ -138,19 +134,19 @@ export function PenatalayanBoard({
         role="region"
         aria-label="Papan penatalayan: peran per Sabtu"
         tabIndex={0}
-        className="board-enter overflow-x-auto rounded-xl border border-line/50 bg-surface"
+        className="overflow-x-auto rounded-xl border border-line/50 bg-surface"
       >
         <table className="w-full min-w-[560px] border-collapse text-sm">
           <thead>
             <tr>
               <th
                 scope="col"
-                className="sticky left-0 bg-surface p-4 text-left font-mono text-xs font-bold uppercase tracking-[0.16em] text-ink-muted"
+                className="lp-meta sticky left-0 bg-surface p-4 text-left font-semibold text-ink-muted"
               >
                 Peran
               </th>
               {visible.map((col) => {
-                const w = WEEK_STYLES[fullIndexOf(col.id) % WEEK_STYLES.length];
+                const w = col.id === nextId ? WEEK_NEXT : WEEK_OTHER;
                 const focused = focusId === col.id;
                 return (
                   <th
@@ -166,17 +162,9 @@ export function PenatalayanBoard({
                       className="group mt-1 block rounded-xl transition-colors hover:bg-surface-2/60 p-1 -m-1"
                     >
                       <span className="flex items-baseline gap-2">
-                        <span className={`num font-serif text-2xl font-bold ${w.num}`}>
-                          {col.dayNum}
-                        </span>
-                        <span className="font-mono text-xs font-bold uppercase text-accent">
-                          {col.monthShort}
-                        </span>
-                        {col.isPast && (
-                          <span className="font-mono text-[0.625rem] uppercase tracking-wider text-ink-muted">
-                            · lewat
-                          </span>
-                        )}
+                        <span className={`lp-num text-2xl ${w.num}`}>{col.dayNum}</span>
+                        <span className="lp-meta">{col.monthShort}</span>
+                        {col.isPast && <span className="lp-meta">· lewat</span>}
                       </span>
                       <span className="mt-1 block truncate text-xs font-semibold text-ink">
                         {col.theme}

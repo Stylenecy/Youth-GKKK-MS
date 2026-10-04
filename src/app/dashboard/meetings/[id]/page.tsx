@@ -1,7 +1,7 @@
 import { notFound } from "next/navigation";
 import type { Metadata } from "next";
 import { getMeetingById, getProfiles } from "@/lib/data";
-import { PageHeader, BackLink, Monogram } from "@/components/page-parts";
+import { PageHeader, BackLink, Monogram, Panel, SectionTitle } from "@/components/page-parts";
 import { formatFullDate, formatTime } from "@/lib/datetime";
 
 
@@ -51,18 +51,9 @@ export default async function MeetingDetailPage({
 
       <div className="mt-8 grid gap-8 lg:grid-cols-[1.6fr_1fr]">
         {/* Main Section: Agenda & Decisions */}
-        <section
-          aria-labelledby="agenda-heading"
-          className="rounded-2xl border border-line/40 bg-surface/75 p-6 backdrop-blur-xl shadow-sm"
-        >
-          <div className="flex items-center gap-2 border-b border-rule-soft pb-3 mb-4">
-            <span className="h-1.5 w-1.5 rounded-full bg-accent" />
-            <h2
-              id="agenda-heading"
-              className="font-mono text-xs font-bold uppercase tracking-[0.2em] text-accent"
-            >
-              ( POKOK BAHASAN & AGENDA )
-            </h2>
+        <Panel aria-labelledby="agenda-heading" className="self-start">
+          <div className="mb-4">
+            <SectionTitle id="agenda-heading" title="Pokok bahasan & agenda" />
           </div>
 
           {agenda.length === 0 ? (
@@ -76,7 +67,7 @@ export default async function MeetingDetailPage({
                   key={item}
                   className="flex items-start gap-4 py-4 first:pt-2 last:pb-2"
                 >
-                  <span className="num font-mono text-xs font-bold text-accent rounded-full border border-line-accent/40 bg-accent-wash px-2.5 py-1 shrink-0">
+                  <span className="lp-num w-8 shrink-0 pt-1 text-lg text-ink-faint" aria-hidden="true">
                     {String(i + 1).padStart(2, "0")}
                   </span>
                   <p className="text-sm sm:text-base leading-relaxed text-ink pt-0.5">
@@ -86,16 +77,17 @@ export default async function MeetingDetailPage({
               ))}
             </ol>
           )}
-        </section>
+        </Panel>
 
         {/* Aside: Participants list */}
-        <aside className="space-y-6">
-          <div className="rounded-2xl border border-line/40 bg-surface/75 p-6 backdrop-blur-xl shadow-sm">
-            <div className="flex items-center gap-2 border-b border-rule-soft pb-3 mb-4">
-              <span className="h-1.5 w-1.5 rounded-full bg-accent" />
-              <h2 className="font-mono text-xs font-bold uppercase tracking-[0.2em] text-accent">
-                ( PESERTA HADIR — {participants.length} ORANG )
-              </h2>
+        <aside className="space-y-6 self-start">
+          <Panel aria-labelledby="participants-heading">
+            <div className="mb-4">
+              <SectionTitle
+                id="participants-heading"
+                title="Peserta hadir"
+                meta={`${participants.length} orang`}
+              />
             </div>
 
             {participants.length === 0 ? (
@@ -107,22 +99,20 @@ export default async function MeetingDetailPage({
                 {participants.map((p) => (
                   <li
                     key={p.id}
-                    className="flex items-center gap-3 rounded-xl border border-line/40 bg-canvas-sunk/60 p-2.5"
+                    className="flex items-center gap-3 rounded-xl border border-line/60 bg-canvas-sunk p-2.5"
                   >
                     <Monogram name={p.nickname} size="sm" />
                     <div>
-                      <p className="font-serif text-sm font-semibold text-ink">
+                      <p className="font-serif text-base font-normal text-ink">
                         {p.nickname}
                       </p>
-                      <p className="font-mono text-[0.625rem] text-ink-faint">
-                        {p.fullName}
-                      </p>
+                      <p className="text-xs text-ink-muted">{p.fullName}</p>
                     </div>
                   </li>
                 ))}
               </ul>
             )}
-          </div>
+          </Panel>
         </aside>
       </div>
     </div>

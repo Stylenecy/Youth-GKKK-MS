@@ -42,7 +42,16 @@ export function navFor(role: RoleOrDemo): NavItem[] {
   return NAV_ITEMS.filter((i) => !i.visible || i.visible(role));
 }
 
-export function isActive(pathname: string, href: string): boolean {
+function matches(pathname: string, href: string): boolean {
   if (href === "/dashboard") return pathname === "/dashboard";
   return pathname === href || pathname.startsWith(`${href}/`);
+}
+
+/**
+ * The most specific item wins: /dashboard/cross/mine lights "Kelompokku"
+ * only, not "Cross" as well (one aria-current per menu).
+ */
+export function isActive(pathname: string, href: string): boolean {
+  if (!matches(pathname, href)) return false;
+  return !NAV_ITEMS.some((i) => i.href.length > href.length && matches(pathname, i.href));
 }

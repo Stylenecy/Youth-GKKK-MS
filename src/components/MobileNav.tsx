@@ -53,15 +53,13 @@ export function MobileNav({ role }: { role: RoleOrDemo }) {
   return (
     <>
       {/* Sticky top identity bar */}
-      <div className="sticky top-0 z-30 flex items-center justify-between border-b border-rule-soft bg-canvas/90 px-4 py-2.5 backdrop-blur-xl lg:hidden">
+      <div className="sticky top-0 z-30 flex items-center justify-between border-b border-rule bg-canvas px-4 py-2.5 lg:hidden">
         <Link
           href="/dashboard"
           className="group flex min-h-[44px] items-center gap-2.5 text-ink"
         >
-          <div className="flex h-7 w-7 items-center justify-center rounded-full border border-line-accent/30 bg-surface p-1 shadow-sm">
-            <Logomark className="h-full w-full" />
-          </div>
-          <span className="font-serif text-base font-bold tracking-tight text-ink group-hover:text-accent transition-colors">
+          <Logomark className="h-7 w-7" />
+          <span className="font-serif text-base tracking-tight text-ink transition-colors group-hover:text-accent">
             Youth GKKK
           </span>
         </Link>
@@ -69,7 +67,7 @@ export function MobileNav({ role }: { role: RoleOrDemo }) {
           <ThemeToggle compact />
           <Link
             href="/"
-            className="flex min-h-[44px] items-center gap-1.5 px-2 font-mono text-[0.625rem] uppercase tracking-[0.16em] text-ink-faint hover:text-accent transition-colors"
+            className="lp-meta flex min-h-[44px] items-center gap-1.5 px-2 text-[0.625rem] text-ink-muted transition-colors hover:text-accent"
           >
             <span aria-hidden="true">&larr;</span> Depan
           </Link>
@@ -79,7 +77,7 @@ export function MobileNav({ role }: { role: RoleOrDemo }) {
       {/* Fixed bottom tab bar */}
       <nav
         aria-label="Navigasi modul"
-        className="fixed inset-x-0 bottom-0 z-40 border-t border-line-accent/30 bg-surface/95 pb-[env(safe-area-inset-bottom)] backdrop-blur-2xl lg:hidden shadow-[0_-8px_32px_rgba(0,0,0,0.6)]"
+        className="fixed inset-x-0 bottom-0 z-40 border-t border-rule bg-canvas-sunk pb-[env(safe-area-inset-bottom)] lg:hidden"
       >
         <ul className="mx-auto flex max-w-md items-center justify-around px-1">
           {primary.map((item) => {
@@ -99,12 +97,12 @@ export function MobileNav({ role }: { role: RoleOrDemo }) {
                   {active && (
                     <span
                       aria-hidden="true"
-                      className="absolute top-0 h-0.5 w-8 rounded-full bg-accent shadow-[0_0_8px_rgba(253,190,2,0.8)]"
+                      className="absolute top-0 h-0.5 w-8 rounded-full bg-accent"
                     />
                   )}
                   <Icon
-                    className={`h-5 w-5 transition-transform ${
-                      active ? "scale-110 text-accent" : "text-ink-faint"
+                    className={`h-5 w-5 ${
+                      active ? "text-accent" : "text-ink-faint"
                     }`}
                     strokeWidth={active ? 2.4 : 1.8}
                     aria-hidden="true"
@@ -129,12 +127,12 @@ export function MobileNav({ role }: { role: RoleOrDemo }) {
               {secondaryActive && (
                 <span
                   aria-hidden="true"
-                  className="absolute top-0 h-0.5 w-8 rounded-full bg-accent shadow-[0_0_8px_rgba(253,190,2,0.8)]"
+                  className="absolute top-0 h-0.5 w-8 rounded-full bg-accent"
                 />
               )}
               <MoreHorizontal
-                className={`h-5 w-5 transition-transform ${
-                  secondaryActive ? "scale-110 text-accent" : "text-ink-faint"
+                className={`h-5 w-5 ${
+                  secondaryActive ? "text-accent" : "text-ink-faint"
                 }`}
                 strokeWidth={secondaryActive ? 2.4 : 1.8}
                 aria-hidden="true"
@@ -153,22 +151,17 @@ export function MobileNav({ role }: { role: RoleOrDemo }) {
             aria-label="Tutup menu"
             tabIndex={-1}
             onClick={() => setOpen(false)}
-            className="fixed inset-0 h-full w-full cursor-default bg-canvas/80 backdrop-blur-md"
+            className="fixed inset-0 h-full w-full cursor-default bg-canvas/85"
           />
           <div
             id={sheetId}
             role="dialog"
             aria-modal="true"
             aria-label="Menu tata kelola lainnya"
-            className="absolute inset-x-0 bottom-0 rounded-t-3xl border-t border-line-accent/40 bg-surface/98 p-4 pb-[max(1.5rem,env(safe-area-inset-bottom))] shadow-[0_-16px_48px_rgba(0,0,0,0.8)] backdrop-blur-2xl"
+            className="absolute inset-x-0 bottom-0 rounded-t-2xl border-t border-line bg-surface p-4 pb-[max(1.5rem,env(safe-area-inset-bottom))]"
           >
             <div className="flex items-center justify-between border-b border-rule-soft pb-3.5 px-2">
-              <div className="flex items-center gap-2">
-                <span className="h-1.5 w-1.5 rounded-full bg-accent" />
-                <h2 className="font-serif text-lg font-bold text-ink">
-                  Tata Kelola & Lainnya
-                </h2>
-              </div>
+              <h2 className="font-serif text-xl text-ink">Tata kelola &amp; lainnya</h2>
               <button
                 ref={closeRef}
                 type="button"

@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { isSupabaseConfigured } from "@/lib/supabase/env";
 import { getMySessionInfo } from "@/lib/data";
 import { ROLE_LABEL } from "@/lib/roles";
-import { PageHeader, DataPoint, SectionTitle } from "@/components/page-parts";
+import { PageHeader, DataPoint, SectionTitle, Panel } from "@/components/page-parts";
 import { AccountApprovals } from "@/components/AccountApprovals";
 import { SignOutButton } from "@/components/SignOutButton";
 
@@ -17,7 +17,7 @@ export default async function SettingsPage() {
       <PageHeader
         kicker="INFRASTRUKTUR"
         title="Pengaturan & Status Sistem"
-        meta="Persetujuan akses akun, status koneksi basis data, dan konfigurasi autentikasi."
+        description="Persetujuan akses akun, status koneksi basis data, dan konfigurasi autentikasi."
       />
 
       <div className="mt-8 space-y-6">
@@ -25,11 +25,8 @@ export default async function SettingsPage() {
         <AccountApprovals />
         {/* Who is signed in — role shown here so nobody has to guess. */}
         {session && (
-          <section
-            className="rounded-2xl border border-line/40 bg-surface/75 p-6 backdrop-blur-xl shadow-sm sm:p-7"
-            aria-labelledby="account-heading"
-          >
-            <SectionTitle id="account-heading" title="AKUN SAYA" />
+          <Panel aria-labelledby="account-heading">
+            <SectionTitle id="account-heading" title="Akun saya" />
 
             <dl className="mt-6 grid gap-x-8 gap-y-3 sm:grid-cols-2 border-t border-rule-soft pt-4">
               <DataPoint
@@ -49,14 +46,11 @@ export default async function SettingsPage() {
             <div className="mt-6 max-w-xs">
               <SignOutButton label="Keluar" />
             </div>
-          </section>
+          </Panel>
         )}
         {/* Connection Status Card */}
-        <section
-          className="rounded-2xl border border-line/40 bg-surface/75 p-6 backdrop-blur-xl shadow-sm sm:p-7"
-          aria-labelledby="status-heading"
-        >
-          <SectionTitle id="status-heading" title="STATUS LINGKUNGAN & KONEKSI" />
+        <Panel aria-labelledby="status-heading">
+          <SectionTitle id="status-heading" title="Status lingkungan & koneksi" />
 
           <div className="mt-5 flex flex-wrap items-center gap-3">
             <span
@@ -64,7 +58,7 @@ export default async function SettingsPage() {
                 live ? "tag-sage" : "tag-warning"
               }`}
             >
-              {live ? "● Terkoneksi ke Supabase" : "● Mode Demo Terisolasi"}
+              {live ? "Terkoneksi ke Supabase" : "Mode demo terisolasi"}
             </span>
             <p className="text-xs sm:text-sm text-ink-muted">
               {live
@@ -87,15 +81,12 @@ export default async function SettingsPage() {
               value="Asia/Jakarta (WIB · UTC+7)"
             />
           </dl>
-        </section>
+        </Panel>
 
         {/* Integration Instructions Card (if in demo mode) */}
         {!live && (
-          <section
-            className="rounded-2xl border border-line-accent/40 bg-gradient-to-b from-surface/90 to-accent-wash/30 p-6 backdrop-blur-xl shadow-sm sm:p-7"
-            aria-labelledby="next-steps-heading"
-          >
-            <SectionTitle id="next-steps-heading" title="PANDUAN AKTIVASI SUPABASE LIVE" />
+          <Panel tone="accent" aria-labelledby="next-steps-heading">
+            <SectionTitle id="next-steps-heading" title="Panduan aktivasi Supabase live" />
 
             <ol className="mt-5 space-y-4">
               {[
@@ -104,8 +95,8 @@ export default async function SettingsPage() {
                 "Deploy ulang aplikasi. Pengurus yang masuk via Google akan muncul di daftar 'Akses Akun' di atas sebagai menunggu persetujuan — mereka tidak melihat data apa pun sampai admin menyetujuinya.",
               ].map((step, i) => (
                 <li key={step} className="flex items-start gap-3.5">
-                  <span className="num mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-full border border-line-accent/50 bg-accent-wash font-mono text-xs font-bold text-accent">
-                    {i + 1}
+                  <span className="lp-num w-6 shrink-0 pt-0.5 text-lg text-ink-faint" aria-hidden="true">
+                    {String(i + 1).padStart(2, "0")}
                   </span>
                   <p className="text-xs sm:text-sm leading-relaxed text-ink pt-0.5">
                     {step}
@@ -115,9 +106,9 @@ export default async function SettingsPage() {
             </ol>
 
             <div className="mt-6 rounded-xl border border-rule-soft bg-canvas-sunk/60 p-4 text-xs leading-relaxed text-ink-muted">
-              <strong className="text-ink">Catatan Keamanan:</strong> Pastikan hanya menggunakan <code className="font-mono text-accent">anon public key</code> pada frontend Next.js. Jangan pernah mengekspos <code className="font-mono text-danger">service_role secret</code> ke client bundle.
+              <strong className="text-ink">Catatan Keamanan:</strong> Pastikan hanya menggunakan <code className="font-mono text-ink">anon public key</code> pada frontend Next.js. Jangan pernah mengekspos <code className="font-mono text-danger">service_role secret</code> ke client bundle.
             </div>
-          </section>
+          </Panel>
         )}
       </div>
     </div>

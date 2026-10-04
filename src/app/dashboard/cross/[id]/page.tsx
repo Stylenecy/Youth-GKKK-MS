@@ -2,7 +2,16 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import type { Metadata } from "next";
 import { getCrosses, getCrossMembers, getCrossLeaders } from "@/lib/data";
-import { PageHeader, BackLink, DataPoint, Monogram } from "@/components/page-parts";
+import {
+  PageHeader,
+  BackLink,
+  DataPoint,
+  Monogram,
+  Panel,
+  SectionTitle,
+  CARD_LINK,
+} from "@/components/page-parts";
+import { formatClock } from "@/lib/datetime";
 import { Users, AlertTriangle } from "lucide-react";
 
 export async function generateMetadata({
@@ -42,11 +51,11 @@ export default async function CrossDetailPage({
         <PageHeader
           kicker="KELOMPOK SEL"
           title={cross.name}
-          meta={cross.description}
+          description={cross.description || undefined}
           action={
             <Link
               href="/dashboard/cross/mine"
-              className="btn-primary text-xs sm:text-sm shadow-[0_0_16px_rgba(253,190,2,0.25)]"
+              className="btn-primary text-xs sm:text-sm"
             >
               <Users className="h-4 w-4" aria-hidden="true" />
               Kelola di Kelompokku
@@ -56,23 +65,23 @@ export default async function CrossDetailPage({
       </div>
 
       {/* Metadata Shelf */}
-      <div className="mt-8 rounded-2xl border border-line/40 bg-surface/75 p-6 backdrop-blur-xl shadow-sm">
+      <Panel className="mt-8" aria-label="Ringkasan kelompok">
         <dl className="grid gap-x-8 gap-y-4 sm:grid-cols-3">
           <DataPoint label="Pemimpin Kelompok (CL)" value={leaderLabel} />
           <DataPoint
             label="Jumlah Anggota Terdaftar"
-            value={<span className="num text-accent font-bold">{members.length} Orang</span>}
+            value={<span className="num font-mono">{members.length} orang</span>}
           />
           <DataPoint
             label="Jadwal & Waktu Pertemuan"
-            value={`${cross.meetingDay} pukul ${cross.meetingTime}`}
+            value={`${cross.meetingDay} pukul ${formatClock(cross.meetingTime)}`}
           />
         </dl>
-      </div>
+      </Panel>
 
       {/* Warning if group capacity > 9 */}
       {members.length > 9 && (
-        <div className="mt-6 flex items-start gap-3 rounded-2xl border border-warning/40 bg-warning-wash/60 p-4.5 text-sm text-warning backdrop-blur-xl">
+        <div className="mt-6 flex items-start gap-3 rounded-xl border border-warning/40 bg-warning-wash/60 p-4.5 text-sm text-warning">
           <AlertTriangle className="h-5 w-5 shrink-0 mt-0.5" aria-hidden="true" />
           <div>
             <p className="font-bold">Kapasitas Kelompok Lebih dari 9 Orang</p>
@@ -85,17 +94,12 @@ export default async function CrossDetailPage({
 
       {/* Member Roster Section */}
       <section className="mt-10 border-t border-rule-soft pt-8">
-        <div className="flex items-center justify-between mb-4">
-          <div className="flex items-center gap-2">
-            <span className="h-1.5 w-1.5 rounded-full bg-accent" />
-            <h2 className="font-mono text-xs font-bold uppercase tracking-[0.2em] text-accent">
-              ( ANGGOTA KELOMPOK — {members.length} ORANG )
-            </h2>
-          </div>
+        <div className="mb-4">
+          <SectionTitle title="Anggota kelompok" meta={`${members.length} orang`} />
         </div>
 
         {members.length === 0 ? (
-          <div className="rounded-2xl border border-dashed border-rule bg-canvas-sunk/40 px-6 py-10 text-center">
+          <div className="rounded-xl border border-dashed border-rule bg-canvas-sunk/40 px-6 py-10 text-center">
             <p className="text-sm leading-relaxed text-ink-muted max-w-md mx-auto">
               Belum ada anggota yang tercatat di kelompok ini.{" "}
               {leaders.length > 0 ? (
@@ -119,11 +123,11 @@ export default async function CrossDetailPage({
                 <li key={member.id}>
                   <Link
                     href={`/dashboard/members/${member.id}`}
-                    className="group flex h-full items-center gap-3.5 rounded-2xl border border-line/40 bg-surface/75 p-4 backdrop-blur-xl transition-all duration-300 hover:-translate-y-0.5 hover:border-accent hover:bg-surface hover:shadow-md"
+                    className={`group flex h-full items-center gap-3.5 p-4 ${CARD_LINK}`}
                   >
                     <Monogram name={member.nickname} size="md" />
                     <div className="min-w-0 flex-1">
-                      <p className="truncate font-serif text-base font-bold text-ink group-hover:text-accent transition-colors">
+                      <p className="truncate font-serif text-base font-normal text-ink transition-colors group-hover:text-accent">
                         {member.nickname}
                       </p>
                       <p className="truncate text-xs text-ink-muted mt-0.5">

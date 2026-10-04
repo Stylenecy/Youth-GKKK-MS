@@ -4,7 +4,7 @@ import { ChevronRight, Calendar } from "lucide-react";
 import { getEvents, getProfiles, getPicEligibleProfiles, getMyRole } from "@/lib/data";
 import { isCommittee } from "@/lib/roles";
 import { CreateEventForm } from "@/components/CreateEventForm";
-import { PageHeader, EmptyState } from "@/components/page-parts";
+import { PageHeader, EmptyState, SectionTitle } from "@/components/page-parts";
 import { eventStateLabel } from "@/lib/events";
 import {
   formatWeekdayDayMonth,
@@ -107,51 +107,39 @@ function GatheringSection({
 }) {
   return (
     <section aria-labelledby={`sec-${id}`}>
-      <div className="flex items-center justify-between border-b border-rule-soft pb-3">
-        <div className="flex items-center gap-2">
-          <span className={`h-1.5 w-1.5 rounded-full ${muted ? "bg-ink-faint" : "bg-accent"}`} />
-          <h2
-            id={`sec-${id}`}
-            className="font-mono text-xs font-bold uppercase tracking-[0.2em] text-accent"
-          >
-            ( {kicker} )
-          </h2>
-          <span className="text-sm font-semibold text-ink-muted">· {title}</span>
-        </div>
-        <span className="font-mono text-xs text-ink-faint">
-          {events.length} Sesi
-        </span>
-      </div>
+      <SectionTitle
+        id={`sec-${id}`}
+        title={`${kicker} · ${title}`}
+        meta={`${events.length} sesi`}
+      />
 
       {events.length === 0 ? (
         <p className="mt-4 text-sm text-ink-muted leading-relaxed">{empty}</p>
       ) : (
-        <ul className="mt-4 divide-y divide-rule-soft/60 rounded-2xl border border-line/40 bg-surface/60 backdrop-blur-xl overflow-hidden shadow-sm">
+        <ul className="mt-4 divide-y divide-rule-soft overflow-hidden rounded-xl border border-line/60 bg-surface">
           {events.map((event) => {
             const s = eventStateLabel(event);
             return (
               <li key={event.id}>
                 <Link
                   href={`/dashboard/gatherings/${event.id}`}
-                  className="group flex items-center gap-4 p-4.5 transition-all duration-200 hover:bg-surface hover:pl-5 sm:gap-6 sm:p-5"
+                  className="group flex items-center gap-4 p-4.5 transition-colors duration-200 hover:bg-surface-2 sm:gap-6 sm:p-5"
                 >
-                  {/* Calendar Box Badge */}
+                  {/* Date block: mono figures, as dates are written across v3. */}
                   <div
-                    className={`flex h-14 w-14 shrink-0 flex-col items-center justify-center rounded-xl border border-line-accent/40 bg-gradient-to-b from-surface-2 to-canvas-sunk p-1 shadow-sm transition-all duration-300 group-hover:border-accent group-hover:shadow-[0_0_14px_rgba(253,190,2,0.2)] ${
+                    className={`flex h-14 w-14 shrink-0 flex-col items-center justify-center rounded-xl border border-line/60 bg-canvas-sunk p-1 ${
                       muted ? "opacity-60" : ""
                     }`}
                   >
-                    <span className="num font-serif text-2xl font-bold leading-none text-ink group-hover:text-accent transition-colors">
+                    <span className="lp-num text-2xl text-ink">
                       {formatDayNumber(event.date)}
                     </span>
-                    <span className="mt-0.5 font-mono text-[0.625rem] uppercase font-bold tracking-[0.14em] text-accent">
-                      {formatMonthShort(event.date)}
-                    </span>
+                    <span className="lp-meta mt-1">{formatMonthShort(event.date)}</span>
                   </div>
 
                   {/* Title & Details */}
                   <div className="min-w-0 flex-1">
-                    <h3 className="truncate font-serif text-lg font-bold text-ink group-hover:text-accent transition-colors">
+                    <h3 className="truncate font-serif text-lg font-normal text-ink transition-colors group-hover:text-accent">
                       {event.weeklyTheme}
                     </h3>
                     <p className="mt-1 truncate text-xs text-ink-muted sm:text-sm">
@@ -171,7 +159,7 @@ function GatheringSection({
                   </div>
 
                   <ChevronRight
-                    className="h-4 w-4 shrink-0 text-ink-faint transition-all duration-200 group-hover:translate-x-1 group-hover:text-accent"
+                    className="h-4 w-4 shrink-0 text-ink-faint transition-colors duration-200 group-hover:text-accent"
                     aria-hidden="true"
                   />
                 </Link>

@@ -98,7 +98,7 @@ export function Modal({
         tabIndex={-1}
         aria-hidden="true"
         onClick={onClose}
-        className="fixed inset-0 h-full w-full cursor-default bg-canvas/80 backdrop-blur-md transition-opacity"
+        className="fixed inset-0 h-full w-full cursor-default bg-canvas-sunk/85"
       />
 
       {/* Modal Dialog Card — max-h + scroll dalam: konten panjang
@@ -108,24 +108,18 @@ export function Modal({
         role="dialog"
         aria-modal="true"
         aria-labelledby={titleId}
-        className="relative z-10 my-0 max-h-[92dvh] w-full max-w-lg overflow-y-auto rounded-t-3xl border border-line-accent/40 bg-surface/95 p-6 pb-[max(1.5rem,env(safe-area-inset-bottom))] shadow-[0_24px_64px_rgba(0,0,0,0.8),0_0_32px_rgba(253,190,2,0.1)] backdrop-blur-2xl transition-all sm:my-8 sm:rounded-2xl sm:p-7"
+        className="relative z-10 my-0 max-h-[92dvh] w-full max-w-lg overflow-y-auto rounded-t-2xl border border-line bg-surface p-6 pb-[max(1.5rem,env(safe-area-inset-bottom))] shadow-2xl sm:my-8 sm:rounded-xl sm:p-7"
       >
-        {/* Subtle Top Accent Beam */}
-        <div
-          aria-hidden="true"
-          className="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-accent to-transparent opacity-60"
-        />
-
         <div className="mb-6 flex items-start justify-between gap-4 border-b border-rule-soft pb-4">
           <div>
             {kicker && (
-              <span className="font-mono text-[0.625rem] font-bold uppercase tracking-[0.2em] text-accent">
-                ( {kicker} )
+              <span className="lp-meta">
+                <span className="lp-bracket">{kicker}</span>
               </span>
             )}
             <h2
               id={titleId}
-              className="mt-1 font-serif text-xl font-bold tracking-tight text-ink sm:text-2xl"
+              className="mt-1 font-serif text-xl font-normal tracking-tight text-ink sm:text-2xl"
             >
               {title}
             </h2>
@@ -179,7 +173,7 @@ export function Field({
     <div className="flex flex-col gap-1.5">
       <label
         htmlFor={name}
-        className="font-mono text-[0.6875rem] font-medium uppercase tracking-[0.14em] text-ink-muted"
+        className="lp-meta text-ink-muted"
       >
         {label}
       </label>

@@ -8,7 +8,7 @@ import {
   getCurrentProfile,
   isSupabaseConfigured,
 } from "@/lib/data";
-import { PageHeader, EmptyState, Monogram } from "@/components/page-parts";
+import { PageHeader, EmptyState, Monogram, SectionTitle } from "@/components/page-parts";
 import { ClaimCrossCard } from "@/components/ClaimCrossCard";
 import { QuickAddMemberForm } from "@/components/QuickAddMemberForm";
 import { ShieldCheck, Users, KeyRound } from "lucide-react";
@@ -48,16 +48,17 @@ export default async function MyCrossPage() {
       <PageHeader
         kicker="KEPEMIMPINAN"
         title="Kelompokku"
-        meta={
+        meta={`${manageable.length} dari ${crosses.length} kelompok bisa kamu kelola`}
+        description={
           manageable.length > 0
-            ? `Kamu memiliki hak akses untuk mengelola ${manageable.length} dari ${crosses.length} kelompok Cross`
-            : "Belum ada kelompok yang kamu klaim sebagai pemimpin"
+            ? undefined
+            : "Belum ada kelompok yang kamu klaim sebagai pemimpin."
         }
       />
 
       {isAdmin && (
-        <div className="mt-6 flex items-center gap-3 rounded-2xl border border-accent/40 bg-accent-wash/80 p-4 text-sm font-medium text-accent backdrop-blur-xl shadow-sm">
-          <ShieldCheck className="h-5 w-5 shrink-0" aria-hidden="true" />
+        <div className="mt-6 flex items-center gap-3 rounded-xl border border-line/60 bg-canvas-sunk p-4 text-sm text-ink">
+          <ShieldCheck className="h-5 w-5 shrink-0 text-ink-faint" aria-hidden="true" />
           <span>
             <strong>Akses Administrator:</strong> Kamu memiliki izin untuk mengelola dan menambah anggota ke seluruh kelompok Cross.
           </span>
@@ -87,38 +88,30 @@ export default async function MyCrossPage() {
               return (
                 <section
                   key={cross.id}
-                  className="relative overflow-hidden rounded-2xl border border-line/40 bg-surface/80 p-6 backdrop-blur-xl shadow-sm sm:p-7"
+                  className="rounded-xl border border-line/60 bg-surface p-5 sm:p-6"
                 >
-                  {/* Top Accent Line */}
-                  <div
-                    aria-hidden="true"
-                    className="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-accent to-transparent opacity-40"
-                  />
-
                   <div className="flex flex-wrap items-baseline justify-between gap-3 border-b border-rule-soft pb-4">
                     <div>
-                      <h2 className="font-serif text-2xl font-bold text-ink">
+                      <h2 className="font-serif text-2xl font-normal text-ink">
                         {cross.name}
                       </h2>
                       {isAdmin && !iLeadThis && (
-                        <p className="mt-1 font-mono text-xs text-ink-faint">
-                          ( Dikelola via Hak Akses Admin )
-                        </p>
+                        <p className="lp-meta mt-1">Dikelola lewat akses admin</p>
                       )}
                     </div>
 
                     <Link
                       href={`/dashboard/cross/${cross.id}`}
-                      className="font-mono text-xs text-accent hover:underline flex items-center gap-1"
+                      className="lp-meta inline-flex min-h-[44px] items-center gap-1 text-ink-muted hover:text-accent"
                     >
-                      Lihat Rincian Kelompok &rarr;
+                      Rincian kelompok &rarr;
                     </Link>
                   </div>
 
                   {/* Inline Quick Add Form */}
                   <div className="mt-5">
-                    <p className="font-mono text-xs font-bold uppercase tracking-[0.16em] text-accent mb-2">
-                      ( Tambah Anggota Cepat )
+                    <p className="lp-meta mb-2 font-semibold text-ink-muted">
+                      <span className="lp-bracket">Tambah anggota cepat</span>
                     </p>
                     <QuickAddMemberForm
                       crossId={cross.id}
@@ -129,9 +122,10 @@ export default async function MyCrossPage() {
                   {/* Member Grid Roster */}
                   <div className="mt-7 border-t border-rule-soft pt-5">
                     <div className="flex items-center justify-between mb-3">
-                      <p className="font-mono text-xs font-bold uppercase tracking-[0.18em] text-ink-faint">
-                        ( Anggota Terdaftar — {members.length} Orang )
+                      <p className="lp-meta font-semibold text-ink-muted">
+                        <span className="lp-bracket">Anggota terdaftar</span>
                       </p>
+                      <span className="lp-meta">{members.length} orang</span>
                     </div>
 
                     {members.length === 0 ? (
@@ -143,7 +137,7 @@ export default async function MyCrossPage() {
                         {members.map((m) => (
                           <li
                             key={m.id}
-                            className="flex items-center gap-3 rounded-xl border border-line/40 bg-canvas-sunk/60 px-3.5 py-2.5 transition-colors hover:border-line-accent"
+                            className="flex items-center gap-3 rounded-xl border border-line/60 bg-canvas-sunk px-3.5 py-2.5"
                           >
                             <Monogram name={m.nickname} size="sm" />
                             <span className="truncate text-sm font-medium text-ink">
@@ -169,12 +163,9 @@ export default async function MyCrossPage() {
       {/* Claim Available Crosses */}
       {notPersonallyLed.length > 0 && (
         <div className="mt-12 border-t border-rule-soft pt-8">
-          <div className="flex items-center gap-2">
-            <span className="h-1.5 w-1.5 rounded-full bg-accent" />
-            <h2 className="font-mono text-xs font-bold uppercase tracking-[0.2em] text-accent">
-              {isAdmin ? "KLAIM KEPEMIMPINAN RESMI" : "PILIH KELOMPOK YANG KAMU PIMPIN"}
-            </h2>
-          </div>
+          <SectionTitle
+            title={isAdmin ? "Klaim kepemimpinan resmi" : "Pilih kelompok yang kamu pimpin"}
+          />
           <p className="mt-2 text-xs sm:text-sm leading-relaxed text-ink-muted max-w-2xl">
             {isAdmin
               ? "Kamu sudah dapat mengelola seluruh kelompok melalui akses admin. Masukkan kode akses di sini jika kamu merupakan pemimpin resmi salah satunya agar namamu terdaftar sebagai CL."

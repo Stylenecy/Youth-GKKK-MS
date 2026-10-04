@@ -20,12 +20,12 @@ export default async function AuditPage() {
       <PageHeader
         kicker="KEAMANAN & RIWAYAT"
         title="Jejak Audit & Aktivitas"
-        meta="Setiap perubahan jadwal, transaksi keuangan, dan struktur anggota tercatat secara permanen tanpa risiko kehilangan data."
+        description="Setiap perubahan jadwal, transaksi, dan anggota tercatat di sini."
       />
 
       {!live && (
-        <div className="mt-6 flex items-start gap-3 rounded-2xl border border-warning/40 bg-warning-wash/70 p-4 text-xs sm:text-sm text-warning backdrop-blur-xl">
-          <AlertCircle className="h-4 w-4 shrink-0 mt-0.5" />
+        <div className="mt-6 flex items-start gap-3 rounded-xl border border-warning/40 bg-warning-wash/70 p-4 text-xs sm:text-sm text-warning">
+          <AlertCircle className="h-4 w-4 shrink-0 mt-0.5" aria-hidden="true" />
           <span>
             <strong>Mode Demo:</strong> Supabase belum terhubung ke basis data langsung. Riwayat aktivitas di bawah ini merupakan data contoh.
           </span>
@@ -52,20 +52,20 @@ export default async function AuditPage() {
         <div className="mt-8">
           <SectionTitle title="Riwayat perubahan" meta={`${activities.length} catatan`} />
 
-          <ol className="mt-6 relative divide-y divide-rule-soft/60 rounded-2xl border border-line/40 bg-surface/75 backdrop-blur-xl overflow-hidden shadow-sm">
+          <ol className="mt-4 divide-y divide-rule-soft overflow-hidden rounded-xl border border-line/60 bg-surface">
             {activities.map((a) => (
               <li
                 key={a.id}
-                className="group flex items-start gap-4 p-5 transition-colors hover:bg-surface-2/60 sm:px-6"
+                className="flex items-start gap-4 p-5 sm:px-6"
               >
-                <div className="mt-1 flex h-7 w-7 shrink-0 items-center justify-center rounded-xl border border-line-accent/40 bg-accent-wash text-accent">
-                  <Activity className="h-3.5 w-3.5" />
+                <div className="mt-1 flex h-7 w-7 shrink-0 items-center justify-center rounded-lg border border-line/60 bg-canvas-sunk text-ink-faint">
+                  <Activity className="h-3.5 w-3.5" aria-hidden="true" />
                 </div>
                 <div className="min-w-0 flex-1">
-                  <p className="text-sm sm:text-base font-semibold leading-snug text-ink group-hover:text-accent transition-colors">
+                  <p className="text-sm font-medium leading-snug text-ink sm:text-base">
                     {a.description}
                   </p>
-                  <p className="mt-1.5 font-mono text-xs font-medium text-ink-muted">
+                  <p className="lp-meta mt-1.5">
                     {formatDateTime(a.createdAt)}
                   </p>
                 </div>

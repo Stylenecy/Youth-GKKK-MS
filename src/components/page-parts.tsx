@@ -1,34 +1,45 @@
 import Link from "next/link";
 import type { ComponentPropsWithoutRef, ElementType, ReactNode } from "react";
 
-/** Standard dashboard page header: kicker, title, count/meta, optional action. */
+/**
+ * Standard dashboard page header, in the house language the landing uses:
+ * bracketed mono kicker, a hairline, the title in the display serif, and
+ * metadata in mono. Every dashboard page renders this, so changing it here
+ * is what makes the whole workspace read as one with the public site.
+ *
+ * Gold is not spent here: like the landing's "( warta )", the kicker stays
+ * in the quiet lp-meta ink. `meta` is for short facts (dates, counts);
+ * a full sentence goes in `description`, set in the body face.
+ */
 export function PageHeader({
   kicker,
   title,
   meta,
+  description,
   action,
 }: {
   kicker: string;
   title: string;
   meta?: string;
+  description?: string;
   action?: ReactNode;
 }) {
   return (
-    <header className="relative flex flex-col gap-4 border-b border-rule-soft pb-6 sm:flex-row sm:items-end sm:justify-between">
-      <div className="min-w-0 flex-1">
-        <p className="kicker">
-          <span className="kicker-num">( {kicker} )</span>
-        </p>
-        <h1 className="section-heading mt-2.5 text-2xl font-bold tracking-tight text-ink sm:text-3xl">
-          {title}
-        </h1>
-        {meta && (
-          <p className="mt-1.5 text-sm text-ink-muted leading-relaxed">
-            {meta}
-          </p>
-        )}
+    <header className="dash-enter relative">
+      <p className="lp-meta">
+        <span className="lp-bracket">{kicker}</span>
+      </p>
+      <span className="lp-rule mt-3" aria-hidden="true" />
+      <div className="mt-5 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+        <div className="min-w-0 flex-1">
+          <h1 className="lp-title text-ink">{title}</h1>
+          {meta && <p className="lp-meta mt-3 text-ink-muted">{meta}</p>}
+          {description && (
+            <p className="mt-3 max-w-2xl text-sm leading-relaxed text-ink-muted">{description}</p>
+          )}
+        </div>
+        {action && <div className="flex shrink-0 flex-wrap items-center gap-2.5">{action}</div>}
       </div>
-      {action && <div className="flex shrink-0 items-center gap-2.5">{action}</div>}
     </header>
   );
 }
@@ -38,7 +49,7 @@ export function BackLink({ href, children }: { href: string; children: ReactNode
   return (
     <Link
       href={href}
-      className="group inline-flex min-h-[44px] items-center gap-2 font-mono text-xs text-ink-faint transition-colors hover:text-accent"
+      className="group lp-meta inline-flex min-h-[44px] items-center gap-2 text-ink-muted transition-colors hover:text-accent"
     >
       <span aria-hidden="true" className="transition-transform group-hover:-translate-x-1">
         &larr;
@@ -61,17 +72,13 @@ export function EmptyState({
   action?: ReactNode;
 }) {
   return (
-    <div className="relative overflow-hidden rounded-2xl border border-dashed border-rule bg-canvas-sunk/60 px-6 py-12 text-center backdrop-blur-sm sm:px-12 sm:py-16">
-      <div
-        aria-hidden="true"
-        className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_top,rgba(253,190,2,0.03),transparent_70%)]"
-      />
+    <div className="lp-hud px-6 py-12 text-center sm:px-12 sm:py-16">
       {Icon && (
-        <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full border border-rule-soft bg-surface text-ink-faint shadow-inner">
+        <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full border border-line bg-surface text-ink-faint">
           <Icon className="h-5 w-5" aria-hidden="true" />
         </div>
       )}
-      <p className="font-serif text-lg font-semibold text-ink sm:text-xl">{title}</p>
+      <p className="font-serif text-xl text-ink sm:text-2xl">{title}</p>
       <p className="mx-auto mt-2 max-w-md text-sm leading-relaxed text-ink-muted">
         {body}
       </p>
@@ -80,7 +87,8 @@ export function EmptyState({
   );
 }
 
-/** Label/value pair used across detail pages. */
+/** Label/value pair used across detail pages. Plain mono label — brackets
+ *  are kept for section markers, so they still mean "a new section". */
 export function DataPoint({
   label,
   value,
@@ -89,10 +97,8 @@ export function DataPoint({
   value: ReactNode;
 }) {
   return (
-    <div className="border-t border-rule-soft pt-3.5">
-      <dt className="font-mono text-[0.625rem] uppercase tracking-[0.16em] text-ink-faint">
-        ( {label} )
-      </dt>
+    <div className="border-t border-rule pt-3.5">
+      <dt className="lp-meta">{label}</dt>
       <dd className="mt-1.5 text-[0.9375rem] font-medium text-ink leading-relaxed">
         {value}
       </dd>
@@ -100,7 +106,7 @@ export function DataPoint({
   );
 }
 
-/** Monogram stand-in for an avatar with warm Nocturne styling. */
+/** Monogram stand-in for an avatar. */
 export function Monogram({
   name,
   size = "md",
@@ -117,18 +123,31 @@ export function Monogram({
   return (
     <span
       aria-hidden="true"
-      className={`${dim} flex shrink-0 items-center justify-center rounded-full border border-line/50 bg-gradient-to-b from-surface-2 to-canvas-sunk font-serif font-bold text-accent shadow-sm`}
+      className={`${dim} flex shrink-0 items-center justify-center rounded-full border border-line bg-surface font-serif text-ink-muted`}
     >
       {name.charAt(0).toUpperCase()}
     </span>
   );
 }
 
+/**
+ * A whole card that is a link (list of members, meetings…). Same radius,
+ * border and surface as Panel; hover only recolours — no lift, no shadow,
+ * no glow (dashboard motion stays under 240 ms and quiet). Full-strength
+ * border: the edge is what says "this is one clickable thing", so it keeps
+ * the ≥ 3:1 component contrast (.dex/KONTRAS-DASH-V3-R2-1905.txt); plain
+ * Panels group content under a heading and stay softer.
+ */
+export const CARD_LINK =
+  "rounded-xl border border-line bg-surface transition-colors duration-200 hover:border-line-accent";
+
+// Flat surfaces, no backdrop blur: nothing moves behind a dashboard card,
+// so the blur only cost GPU time on phones.
 const PANEL_TONE = {
-  default: "border-line/40 bg-surface/75 backdrop-blur-xl",
-  accent: "border-line-accent/40 bg-surface/85 backdrop-blur-xl",
-  warning: "border-warning/50 bg-warning-wash/40 backdrop-blur-xl",
-  sunk: "border-rule-soft bg-canvas-sunk/60",
+  default: "border-line/60 bg-surface",
+  accent: "border-line-accent/60 bg-surface",
+  warning: "border-warning/50 bg-warning-wash/40",
+  sunk: "border-rule bg-canvas-sunk",
 } as const;
 
 /**
@@ -148,7 +167,7 @@ export function Panel({
 } & Omit<ComponentPropsWithoutRef<"section">, "className" | "children">) {
   return (
     <section
-      className={`rounded-2xl border p-5 shadow-sm sm:p-6 ${PANEL_TONE[tone]} ${className}`}
+      className={`rounded-xl border p-5 sm:p-6 ${PANEL_TONE[tone]} ${className}`}
       {...rest}
     >
       {children}
@@ -157,43 +176,40 @@ export function Panel({
 }
 
 /**
- * Section heading inside a Panel or between blocks: accent dot, mono
- * kicker, optional count/meta on the right and an optional action.
- * Pass `id` and point the Panel's aria-labelledby at it.
+ * Section heading inside a Panel or between blocks: mono bracketed label,
+ * optional count/meta on the right and an optional action. Pass `id` and
+ * point the Panel's aria-labelledby at it. Neutral by default (gold is for
+ * the active nav, the one primary action and the meter); `warning` stays
+ * for blocks that need attention.
  */
 export function SectionTitle({
   id,
   title,
   meta,
   action,
-  tone = "accent",
+  tone = "neutral",
 }: {
   id?: string;
   title: string;
   meta?: ReactNode;
   action?: ReactNode;
-  tone?: "accent" | "warning";
+  tone?: "neutral" | "warning";
 }) {
-  const color = tone === "warning" ? "text-warning" : "text-accent";
-  const dot = tone === "warning" ? "bg-warning" : "bg-accent";
+  const color = tone === "warning" ? "text-warning" : "text-ink-muted";
   return (
-    <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-2 border-b border-rule-soft pb-3">
-      <div className="flex min-w-0 items-center gap-2">
-        <span className={`h-1.5 w-1.5 shrink-0 rounded-full ${dot}`} aria-hidden="true" />
-        <h2 id={id} className={`font-mono text-xs font-bold uppercase tracking-[0.2em] ${color}`}>
-          ( {title} )
-        </h2>
-      </div>
+    <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-2 border-b border-rule pb-3">
+      <h2 id={id} className={`lp-meta font-semibold ${color}`}>
+        <span className="lp-bracket">{title}</span>
+      </h2>
       {(meta || action) && (
         <div className="flex items-center gap-3">
-          {meta && <span className="font-mono text-xs text-ink-faint">{meta}</span>}
+          {meta && <span className="lp-meta">{meta}</span>}
           {action}
         </div>
       )}
     </div>
   );
 }
-
 /* ------------------------------------------------------------------
  * "Buku kerja" primitives (Rilis 2, opsi A — tenang, rapat, tabular).
  * Pure presentational: no hooks, so server pages and the client board
@@ -334,7 +350,7 @@ export function DataTable<T>({
               <th
                 key={c.key}
                 scope="col"
-                className={`px-4 py-2.5 font-mono text-[0.6875rem] font-semibold uppercase tracking-[0.12em] text-ink-muted ${
+                className={`lp-meta px-4 py-2.5 font-semibold text-ink-muted ${
                   c.align === "right" ? "text-right" : "text-left"
                 }`}
               >
