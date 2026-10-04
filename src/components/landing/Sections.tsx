@@ -280,7 +280,12 @@ export function Ritme({ cross = null }: { cross?: CrossSlot | null }) {
 
 export function Agenda({ events }: { events: BulletinEvent[] }) {
   return (
-    <section id="agenda" className="relative scroll-mt-16 py-24 sm:py-32 lg:py-40">
+    // An empty agenda is one sentence; full section padding around it left
+    // a ~300 px hole between two bands.
+    <section
+      id="agenda"
+      className={`relative scroll-mt-16 ${events.length > 0 ? "py-24 sm:py-32 lg:py-40" : "py-20 sm:py-24"}`}
+    >
       <div className="lp-wrap">
         <SectionHead n="03" label="Agenda" right={`${events.length} terjadwal`} />
         <div className="mt-12 grid gap-10 lg:mt-16 lg:grid-cols-12 lg:gap-6">
