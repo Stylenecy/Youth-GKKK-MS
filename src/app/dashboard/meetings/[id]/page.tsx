@@ -59,7 +59,7 @@ export default async function MeetingDetailPage({
             <span className="h-1.5 w-1.5 rounded-full bg-accent" />
             <h2
               id="agenda-heading"
-              className="font-mono text-xs font-bold uppercase tracking-[0.2em] text-accent"
+              className="lp-meta font-semibold text-accent"
             >
               ( POKOK BAHASAN & AGENDA )
             </h2>
@@ -93,7 +93,7 @@ export default async function MeetingDetailPage({
           <div className="rounded-2xl border border-line/40 bg-surface/75 p-6 shadow-sm">
             <div className="flex items-center gap-2 border-b border-rule-soft pb-3 mb-4">
               <span className="h-1.5 w-1.5 rounded-full bg-accent" />
-              <h2 className="font-mono text-xs font-bold uppercase tracking-[0.2em] text-accent">
+              <h2 className="lp-meta font-semibold text-accent">
                 ( PESERTA HADIR — {participants.length} ORANG )
               </h2>
             </div>

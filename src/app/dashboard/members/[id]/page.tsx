@@ -90,7 +90,7 @@ export default async function MemberDetailPage({
       <div className="mt-6 rounded-2xl border border-line/40 bg-surface/75 p-6 shadow-sm">
         <div className="flex items-center gap-2 border-b border-rule-soft pb-3">
           <span className="h-1.5 w-1.5 rounded-full bg-accent" />
-          <h3 className="font-mono text-xs font-bold uppercase tracking-[0.2em] text-accent">
+          <h3 className="lp-meta font-semibold text-accent">
             ( Informasi Pribadi & Pelayanan )
           </h3>
         </div>
@@ -118,7 +118,7 @@ export default async function MemberDetailPage({
       <div className="mt-6 rounded-2xl border border-rule-soft bg-canvas-sunk/70 p-6">
         <div className="flex items-center gap-2 mb-3">
           <span className="h-1.5 w-1.5 rounded-full bg-sage" />
-          <h3 className="font-mono text-xs font-bold uppercase tracking-[0.18em] text-sage">
+          <h3 className="lp-meta font-semibold text-sage">
             ( Saluran Komunikasi )
           </h3>
         </div>

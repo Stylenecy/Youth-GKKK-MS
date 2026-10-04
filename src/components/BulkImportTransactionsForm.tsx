@@ -51,7 +51,7 @@ export function BulkImportTransactionsForm() {
     <div className="rounded-2xl border border-line/40 bg-surface/75 p-6 shadow-sm">
       <div className="flex items-center gap-2 mb-2">
         <FileSpreadsheet className="h-4 w-4 text-accent" />
-        <p className="font-mono text-xs font-bold uppercase tracking-wider text-accent">
+        <p className="lp-meta font-semibold text-accent">
           Format Salin Spreadsheet (Excel / Google Sheets)
         </p>
       </div>

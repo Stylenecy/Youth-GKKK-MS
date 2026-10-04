@@ -35,7 +35,7 @@ export async function AccountApprovals() {
           <UserCheck className="h-4 w-4 text-accent" aria-hidden="true" />
           <h2
             id="approvals-heading"
-            className="font-mono text-xs font-bold uppercase tracking-[0.2em] text-accent"
+            className="lp-meta font-semibold text-accent"
           >
             Akses Akun
           </h2>

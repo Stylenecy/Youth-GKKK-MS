@@ -179,7 +179,7 @@ export default async function DashboardPage() {
             <Panel tone="accent" aria-labelledby="next-heading">
               <div className="flex flex-wrap items-center justify-between gap-3">
                 <div className="flex flex-wrap items-center gap-2.5">
-                  <span className="inline-flex items-center gap-2 rounded-full border border-line-accent bg-accent-wash/80 px-3.5 py-1 font-mono text-xs font-bold uppercase tracking-wider text-accent">
+                  <span className="inline-flex items-center gap-2 rounded-full border border-line-accent bg-accent-wash/80 px-3.5 py-1 lp-meta font-semibold text-accent">
                     <span className="h-2 w-2 rounded-full bg-accent" aria-hidden="true" />
                     {countdownLabel(upcoming.date)}
                   </span>
@@ -247,7 +247,7 @@ export default async function DashboardPage() {
                         <p className="truncate text-sm font-semibold text-ink">
                           {nameOf(s.profileId)}
                         </p>
-                        <p className="font-mono text-[0.6875rem] uppercase tracking-[0.12em] text-accent">
+                        <p className="lp-meta text-accent">
                           {s.role}
                         </p>
                       </div>
@@ -368,7 +368,7 @@ export default async function DashboardPage() {
                 action={
                   <Link
                     href="/dashboard/audit"
-                    className="font-mono text-[0.6875rem] uppercase tracking-wider text-ink-muted hover:text-accent"
+                    className="lp-meta text-ink-muted hover:text-accent"
                   >
                     Semua &rarr;
                   </Link>

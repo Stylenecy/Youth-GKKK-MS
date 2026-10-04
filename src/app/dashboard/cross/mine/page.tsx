@@ -117,7 +117,7 @@ export default async function MyCrossPage() {
 
                   {/* Inline Quick Add Form */}
                   <div className="mt-5">
-                    <p className="font-mono text-xs font-bold uppercase tracking-[0.16em] text-accent mb-2">
+                    <p className="lp-meta font-semibold text-accent mb-2">
                       ( Tambah Anggota Cepat )
                     </p>
                     <QuickAddMemberForm
@@ -129,7 +129,7 @@ export default async function MyCrossPage() {
                   {/* Member Grid Roster */}
                   <div className="mt-7 border-t border-rule-soft pt-5">
                     <div className="flex items-center justify-between mb-3">
-                      <p className="font-mono text-xs font-bold uppercase tracking-[0.18em] text-ink-faint">
+                      <p className="lp-meta font-semibold text-ink-faint">
                         ( Anggota Terdaftar — {members.length} Orang )
                       </p>
                     </div>
@@ -171,7 +171,7 @@ export default async function MyCrossPage() {
         <div className="mt-12 border-t border-rule-soft pt-8">
           <div className="flex items-center gap-2">
             <span className="h-1.5 w-1.5 rounded-full bg-accent" />
-            <h2 className="font-mono text-xs font-bold uppercase tracking-[0.2em] text-accent">
+            <h2 className="lp-meta font-semibold text-accent">
               {isAdmin ? "KLAIM KEPEMIMPINAN RESMI" : "PILIH KELOMPOK YANG KAMU PIMPIN"}
             </h2>
           </div>

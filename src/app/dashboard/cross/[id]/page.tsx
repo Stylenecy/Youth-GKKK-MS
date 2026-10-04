@@ -88,7 +88,7 @@ export default async function CrossDetailPage({
         <div className="flex items-center justify-between mb-4">
           <div className="flex items-center gap-2">
             <span className="h-1.5 w-1.5 rounded-full bg-accent" />
-            <h2 className="font-mono text-xs font-bold uppercase tracking-[0.2em] text-accent">
+            <h2 className="lp-meta font-semibold text-accent">
               ( ANGGOTA KELOMPOK — {members.length} ORANG )
             </h2>
           </div>

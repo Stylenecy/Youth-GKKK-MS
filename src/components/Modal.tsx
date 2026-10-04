@@ -119,7 +119,7 @@ export function Modal({
         <div className="mb-6 flex items-start justify-between gap-4 border-b border-rule-soft pb-4">
           <div>
             {kicker && (
-              <span className="font-mono text-[0.625rem] font-bold uppercase tracking-[0.2em] text-accent">
+              <span className="lp-meta font-semibold text-accent">
                 ( {kicker} )
               </span>
             )}
@@ -179,7 +179,7 @@ export function Field({
     <div className="flex flex-col gap-1.5">
       <label
         htmlFor={name}
-        className="font-mono text-[0.6875rem] font-medium uppercase tracking-[0.14em] text-ink-muted"
+        className="lp-meta text-ink-muted"
       >
         {label}
       </label>

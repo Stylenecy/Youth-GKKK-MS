@@ -57,7 +57,7 @@ export function ClaimCrossCard({ cross }: { cross: Cross }) {
         <form onSubmit={handleSubmit} className="mt-4 flex flex-col gap-2 border-t border-rule-soft pt-3">
           <label
             htmlFor={`code-${cross.id}`}
-            className="font-mono text-[0.625rem] font-bold uppercase tracking-[0.14em] text-accent"
+            className="lp-meta font-semibold text-accent"
           >
             Kode Akses Pemimpin (dari Pengurus)
           </label>
