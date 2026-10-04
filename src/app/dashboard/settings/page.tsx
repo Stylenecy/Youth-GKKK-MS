@@ -85,7 +85,7 @@ export default async function SettingsPage() {
 
         {/* Integration Instructions Card (if in demo mode) */}
         {!live && (
-          <Panel tone="accent" aria-labelledby="next-steps-heading">
+          <Panel aria-labelledby="next-steps-heading">
             <SectionTitle id="next-steps-heading" title="Panduan aktivasi Supabase live" />
 
             <ol className="mt-5 space-y-4">

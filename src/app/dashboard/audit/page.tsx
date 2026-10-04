@@ -27,7 +27,7 @@ export default async function AuditPage() {
         <div className="mt-6 flex items-start gap-3 rounded-xl border border-warning/40 bg-warning-wash/70 p-4 text-xs sm:text-sm text-warning">
           <AlertCircle className="h-4 w-4 shrink-0 mt-0.5" aria-hidden="true" />
           <span>
-            <strong>Mode Demo:</strong> Supabase belum terhubung ke basis data langsung. Riwayat aktivitas di bawah ini merupakan data contoh.
+            <strong>Mode demo:</strong> riwayat di bawah ini data contoh.
           </span>
         </div>
       )}

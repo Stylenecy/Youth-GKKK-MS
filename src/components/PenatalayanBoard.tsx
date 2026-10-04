@@ -83,6 +83,8 @@ export function PenatalayanBoard({
   }, [columns, past, upcoming, expanded, focusId]);
 
   const nextId = upcoming[0]?.id;
+  // A fresh table per view (all / compact / focus) so its horizontal
+  // scroll starts at the left again — no entrance animation any more.
   const viewKey = focusId ? `fokus-${focusId}` : expanded ? "semua" : "ringkas";
 
   return (
@@ -168,9 +170,6 @@ export function PenatalayanBoard({
                       </span>
                       <span className="mt-1 block truncate text-xs font-semibold text-ink">
                         {col.theme}
-                      </span>
-                      <span className="block text-[0.6875rem] text-ink-muted">
-                        {col.weekdayLabel}
                       </span>
                     </Link>
                     {!col.isPast && !focusId && (

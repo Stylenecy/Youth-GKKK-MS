@@ -379,9 +379,7 @@ export default async function DashboardPage() {
                       <p className="text-sm leading-relaxed text-ink">
                         {activity.description}
                       </p>
-                      <p className="mt-1 font-mono text-[0.6875rem] text-ink-muted">
-                        {formatDateTime(activity.createdAt)}
-                      </p>
+                      <p className="lp-meta mt-1">{formatDateTime(activity.createdAt)}</p>
                     </li>
                   ))}
                 </ol>

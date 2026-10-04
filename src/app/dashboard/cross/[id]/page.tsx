@@ -74,7 +74,11 @@ export default async function CrossDetailPage({
           />
           <DataPoint
             label="Jadwal & Waktu Pertemuan"
-            value={`${cross.meetingDay} pukul ${formatClock(cross.meetingTime)}`}
+            value={
+              <span className="num font-mono">
+                {cross.meetingDay} {formatClock(cross.meetingTime)}
+              </span>
+            }
           />
         </dl>
       </Panel>

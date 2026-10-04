@@ -51,7 +51,7 @@ export function BackLink({ href, children }: { href: string; children: ReactNode
       href={href}
       className="group lp-meta inline-flex min-h-[44px] items-center gap-2 text-ink-muted transition-colors hover:text-accent"
     >
-      <span aria-hidden="true" className="transition-transform group-hover:-translate-x-1">
+      <span aria-hidden="true">
         &larr;
       </span>
       <span>{children}</span>

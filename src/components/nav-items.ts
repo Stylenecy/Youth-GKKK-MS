@@ -49,7 +49,9 @@ function matches(pathname: string, href: string): boolean {
 
 /**
  * The most specific item wins: /dashboard/cross/mine lights "Kelompokku"
- * only, not "Cross" as well (one aria-current per menu).
+ * only, not "Cross" as well (one aria-current per menu). Compared against
+ * every item, not the role-filtered menu: fine while no role-hidden item is
+ * nested under another one — if that ever changes, pass the menu in.
  */
 export function isActive(pathname: string, href: string): boolean {
   if (!matches(pathname, href)) return false;

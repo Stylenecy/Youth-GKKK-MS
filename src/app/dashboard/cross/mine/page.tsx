@@ -22,8 +22,8 @@ export default async function MyCrossPage() {
         <PageHeader kicker="CROSS" title="Kelompokku" />
         <div className="mt-8">
           <EmptyState
-            title="Belum Tersambung ke Basis Data"
-            body="Halaman ini membutuhkan autentikasi Supabase untuk memverifikasi profil pemimpin yang sedang aktif. Saat ini aplikasi masih dalam mode demo."
+            title="Mode demo"
+            body="Kelompokku butuh akun yang masuk untuk tahu kelompok mana yang kamu pimpin. Di mode demo halaman ini kosong."
             icon={KeyRound}
           />
         </div>
