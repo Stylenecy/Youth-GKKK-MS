@@ -14,8 +14,13 @@ import type {
 // Else → fallback to seed.ts (demo mode)
 // ============================================================
 
-interface ReadResult<T> {
-  data: T | null;
+/**
+ * The shape every PostgREST response shares. `data` stays `unknown` here:
+ * the client is untyped (no generated DB types), and inferring T from its
+ * success | failure union collapses to `never`.
+ */
+interface ReadResult {
+  data: unknown;
   error: { message: string; code?: string } | null;
 }
 
@@ -26,18 +31,22 @@ interface ReadResult<T> {
  * Every list read goes through this so a failure reaches the route's error
  * boundary (`error.tsx`) instead.
  */
-function rows<T>(res: ReadResult<T[]>, what: string): T[] {
+// Default `any` keeps exactly the typing the untyped client gave before
+// (rows are mapped by the explicit mappers below, never cast).
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function rows<T = any>(res: ReadResult, what: string): T[] {
   if (res.error) throw new Error(`Gagal memuat ${what}: ${res.error.message}`);
-  return res.data ?? [];
+  return (res.data as T[] | null) ?? [];
 }
 
 /** Same for `.single()`: "no row" (PostgREST PGRST116) is an answer, not a failure. */
-function one<T>(res: ReadResult<T>, what: string): T | null {
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function one<T = any>(res: ReadResult, what: string): T | null {
   if (res.error) {
     if (res.error.code === "PGRST116") return null;
     throw new Error(`Gagal memuat ${what}: ${res.error.message}`);
   }
-  return res.data;
+  return res.data as T | null;
 }
 
 /**
