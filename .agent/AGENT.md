@@ -13,8 +13,8 @@ keuangan, rapat, dan arsip.
 - **Supabase** (Postgres + Auth) via `@supabase/ssr` — **LIVE di produksi**
   (project `rbouxffjcqjwywyhbtqw`). 93 profil, 5 Cross, 29 ibadah, 216
   penatalayan sudah ter-import (18 Ags 2026). Login Google jalan.
-- **Three.js** — dipakai di landing (`src/components/landing/EmberCrest.tsx`),
-  selalu lewat dynamic import, jangan pernah `import * as THREE`.
+- **GSAP 3 + Lenis** — hanya di landing (`src/components/landing/LandingMotion.tsx`),
+  dimuat dinamis setelah halaman tampil. Three.js dicabut 4 Okt 2026 (v3: terlalu berat).
 - Deploy target: **Vercel** — https://youth-gkkk-ms.vercel.app
 
 ## Design System — "Nocturne" (JANGAN DIRUSAK)
@@ -48,6 +48,25 @@ dihitung, bukan ditebak (lihat pola di komentar `globals.css`).
 lembut), gradient tipis (`.bloom`, `.meter-fill`), partikel WebGL. **Tetap
 tidak boleh:** neon jenuh berlebihan, shadow tebal ala Material, apa pun yang
 bikin teks di bawah 4,5:1.
+
+### Bahasa gerak v3 (4 Okt 2026) — landing + login
+
+Dex 4 Okt: web harus *full motion*, berkelas (rujukan Bohdan + Elsye), **tidak berat**.
+Pegangan rumah: `Dex-Brain/50-KNOWLEDGE/teknis/AI-Orchestration/DEX-MOTION-LANGUAGE.md`.
+
+- **Satu dasar** untuk semua band (`canvas`); satu blok `deep` (maroon) hanya untuk penutup.
+  Jangan lagi memberi tiap section rona sendiri (hijau/perunggu/ungu dihapus v3).
+- **Huruf:** display = `--font-display` (Fraunces, rute Elsye); satu frasa per layar
+  `.lp-italic` (Fraunces italic, SOFT 100); semua label/tanggal/angka = Geist Mono
+  (`.lp-meta`, `.lp-num`). Kaushan dibuang.
+- **Elemen tanda tangan:** sudut HUD (`.lp-hud`), label kurung (`.lp-bracket`), nomor section
+  emas, garis grid 12 kolom (`--color-grid`), angka besar sebagai panggung.
+- **Gerak** (`src/components/landing/landing.css` + `LandingMotion.tsx`): hanya transform /
+  opacity / clip-path; easing `--ease-expo`. Hero = CSS murni (huruf naik per karakter, lambang
+  "settle"), jalan sebelum JS. Di bawah lipatan = GSAP via atribut `data-reveal`. Maksimal satu
+  pin (Ritme, desktop). Loop ambient terbatas (≤ 4 putaran) dan berhenti di luar layar. Tanpa
+  three.js / canvas di landing. `prefers-reduced-motion` = semua langsung tampil.
+- **Data publik** landing hanya lewat RPC `public_bulletin()` (migrasi 0016): tanpa nama anggota.
 
 **Typography trio (tidak berubah):**
 - **Fraunces** (serif display) — headings, section labels

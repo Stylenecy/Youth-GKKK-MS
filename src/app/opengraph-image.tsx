@@ -1,16 +1,21 @@
+import { readFile } from "node:fs/promises";
+import { join } from "node:path";
 import { ImageResponse } from "next/og";
-import { SITE_TAGLINE } from "@/lib/site";
 
-export const alt = "Youth — Komisi Pemuda GKKK Yogyakarta";
+export const alt = "Youth GKKK Jogja — Satu api, satu wadah.";
 export const size = { width: 1200, height: 630 };
 export const contentType = "image/png";
 
 /**
- * Share card. Uses the same paper/ink palette as the site so a link pasted
- * into a WhatsApp group already looks like the ministry's own material.
- * No external fonts are fetched — the build must not depend on the network.
+ * Share card, in the same Nocturne skin as the site: near-black ground,
+ * the crest as the only light, gold on the one accent word. Values mirror
+ * the tokens in globals.css (canvas, ink, ink-faint, accent, rule). No
+ * external fonts are fetched — the build must not depend on the network.
  */
-export default function Image() {
+export default async function Image() {
+  const crest = await readFile(join(process.cwd(), "src/app/icon.png"));
+  const crestSrc = `data:image/png;base64,${crest.toString("base64")}`;
+
   return new ImageResponse(
     (
       <div
@@ -18,73 +23,54 @@ export default function Image() {
           width: "100%",
           height: "100%",
           display: "flex",
-          flexDirection: "column",
-          justifyContent: "space-between",
-          background: "#faf7f2",
-          padding: "72px 80px",
+          background: "#0f0a08",
+          padding: "64px 72px",
           fontFamily: "Georgia, serif",
+          color: "#f7efe2",
+          position: "relative",
         }}
       >
-        <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
+        <div style={{ display: "flex", flexDirection: "column", justifyContent: "space-between", flex: 1 }}>
           <div
             style={{
-              width: 14,
-              height: 14,
-              borderRadius: 999,
-              background: "#a94d08",
-            }}
-          />
-          <div
-            style={{
-              fontSize: 24,
-              letterSpacing: 6,
-              textTransform: "uppercase",
-              color: "#756a60",
+              display: "flex",
               fontFamily: "monospace",
+              fontSize: 22,
+              letterSpacing: 3,
+              textTransform: "uppercase",
+              color: "#908273",
             }}
           >
-            {SITE_TAGLINE}
+            <span style={{ color: "#fdbe02" }}>00</span>
+            <span style={{ marginLeft: 18 }}>Komisi Pemuda GKKK Jogja</span>
+          </div>
+
+          <div style={{ display: "flex", flexDirection: "column", fontSize: 118, lineHeight: 0.95, letterSpacing: -4 }}>
+            <div style={{ display: "flex" }}>
+              Satu&nbsp;<span style={{ color: "#fdbe02", fontStyle: "italic" }}>api</span>,
+            </div>
+            <div style={{ display: "flex" }}>satu wadah.</div>
+          </div>
+
+          <div
+            style={{
+              display: "flex",
+              borderTop: "1px solid #3a2a24",
+              paddingTop: 24,
+              fontFamily: "monospace",
+              fontSize: 22,
+              letterSpacing: 2,
+              textTransform: "uppercase",
+              color: "#908273",
+            }}
+          >
+            Ibadah Pemuda · Sabtu 17.00 WIB · Ruang Hermon
           </div>
         </div>
 
-        <div style={{ display: "flex", flexDirection: "column" }}>
-          <div
-            style={{
-              fontSize: 112,
-              lineHeight: 1.05,
-              letterSpacing: -3,
-              color: "#241f1b",
-              fontWeight: 600,
-            }}
-          >
-            Youth
-          </div>
-          <div
-            style={{
-              marginTop: 24,
-              fontSize: 34,
-              lineHeight: 1.4,
-              color: "#6f655c",
-              maxWidth: 820,
-            }}
-          >
-            Jadwal ibadah Sabtu, penatalayan, dan kelompok Cross — di satu tempat.
-          </div>
-        </div>
-
-        <div
-          style={{
-            display: "flex",
-            alignItems: "center",
-            borderTop: "2px solid #ded4c6",
-            paddingTop: 28,
-            fontSize: 24,
-            color: "#756a60",
-            fontFamily: "monospace",
-            letterSpacing: 2,
-          }}
-        >
-          SABTU · 17.00 WIB
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "center", width: 330 }}>
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src={crestSrc} width={300} height={300} alt="" />
         </div>
       </div>
     ),

@@ -1,21 +1,44 @@
 import type { Metadata, Viewport } from "next";
-import { Fraunces, Kaushan_Script } from "next/font/google";
+import { Fraunces } from "next/font/google";
+import localFont from "next/font/local";
 import { GeistSans } from "geist/font/sans";
 import { SITE_URL, SITE_NAME } from "@/lib/site";
 import "./globals.css";
 
+// Fraunces carries the brand: upright for display, italic for the one accent
+// phrase per screen. Geist Mono is the HUD voice — labels, dates, numbers —
+// across the whole site, not only the dashboard.
+//
+// Only the body face (Geist Sans) is preloaded. On a slow phone connection
+// four preloaded fonts (~400 KB) queued ahead of the stylesheet and pushed
+// first paint to 2.5 s; display, italic and mono faces swap in instead
+// (next/font sizes their fallbacks to keep the layout still).
 const fraunces = Fraunces({
   subsets: ["latin"],
   display: "swap",
   variable: "--font-fraunces",
   axes: ["opsz"],
+  preload: false,
 });
 
-const kaushan = Kaushan_Script({
-  weight: "400",
+// Same file as `geist/font/mono`, declared here so it can skip preloading.
+const geistMono = localFont({
+  src: "../../node_modules/geist/dist/fonts/geist-mono/GeistMono-Variable.woff2",
+  variable: "--font-geist-mono",
+  weight: "100 900",
+  display: "swap",
+  preload: false,
+  adjustFontFallback: false,
+  fallback: ["ui-monospace", "SFMono-Regular", "Roboto Mono", "Menlo", "Consolas", "monospace"],
+});
+
+const frauncesItalic = Fraunces({
   subsets: ["latin"],
   display: "swap",
-  variable: "--font-handwriting",
+  style: "italic",
+  variable: "--font-fraunces-italic",
+  axes: ["opsz"],
+  preload: false,
 });
 
 export const metadata: Metadata = {
@@ -39,14 +62,9 @@ export const metadata: Metadata = {
     siteName: SITE_NAME,
     url: SITE_URL,
   },
-  icons: {
-    icon: [
-      { url: "/icon.svg", type: "image/svg+xml" },
-      { url: "/logo/derived/logo-super-transparent.svg", type: "image/svg+xml" },
-    ],
-    shortcut: "/icon.svg",
-    apple: "/logo/derived/logo-super-transparent.svg",
-  },
+  // Icons come from the file convention (src/app/icon.png, apple-icon.png):
+  // small rasters of the crest. The old vector crest was ~1 MB of traced
+  // paths and was downloaded up to five times per visit.
   twitter: { card: "summary_large_image" },
   robots: {
     index: true,
@@ -81,7 +99,7 @@ export default function RootLayout({
       lang="id"
       data-scroll-behavior="smooth"
       suppressHydrationWarning
-      className={`${fraunces.variable} ${kaushan.variable} ${GeistSans.variable}`}
+      className={`${fraunces.variable} ${frauncesItalic.variable} ${GeistSans.variable} ${geistMono.variable}`}
     >
       <body className="min-h-screen">
         <a href="#main" className="skip-link">

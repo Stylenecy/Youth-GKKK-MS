@@ -105,18 +105,26 @@
 
   --font-serif: var(--font-fraunces), "Iowan Old Style", Georgia, serif;
   --font-sans: var(--font-geist-sans), "Inter", system-ui, sans-serif;
-  --font-handwriting: var(--font-handwriting), "Kaushan Script", "Caveat", "Baksoda", cursive;
-  --font-mono: ui-monospace, "SF Mono", "Roboto Mono", "DejaVu Sans Mono",
-    Menlo, Consolas, monospace;
+  --font-mono: var(--font-geist-mono), ui-monospace, "SF Mono", "Roboto Mono",
+    "DejaVu Sans Mono", Menlo, Consolas, monospace;
+  /* The display face is one token so the whole site can switch between the
+     Elsye route (Fraunces, the brand serif — current) and the Bohdan route
+     (a tight grotesk) in one line. DEX-MOTION-LANGUAGE §3. */
+  --font-display: var(--font-fraunces), "Iowan Old Style", Georgia, serif;
+
+  /* The 12-column grid drawn behind heroes and section heads. Ink at 5% —
+     a texture, never a boundary (component edges use --color-line). */
+  --color-grid: rgba(247, 239, 226, 0.05);
+
+  /* House motion curves (DEX-MOTION-LANGUAGE §4). */
+  --ease-expo: cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-move: cubic-bezier(0.65, 0, 0.35, 1);
+  --ease-pop: cubic-bezier(0.34, 1.56, 0.64, 1);
 
   --radius-sm: 4px;
   --radius-md: 8px;
   --radius-lg: 14px;
   --radius-xl: 22px;
-}
-
-.font-handwriting {
-  font-family: var(--font-handwriting), "Kaushan Script", "Caveat", "Baksoda", cursive;
 }
 
 /* ============================================================
@@ -849,6 +857,53 @@ a.card:hover .lucide {
   --color-success: #4f6b44;
   --color-glow: rgba(180, 83, 9, 0.05);
   --color-glow-strong: rgba(180, 83, 9, 0.09);
+}
+
+/* ============================================================
+   Pinned dark — the Nocturne values again, for subtrees that must stay dark
+   whatever <html> says (landing, login, 404 carry data-theme="dark").
+   Without this block the attribute did nothing: a committee member in light
+   mode who clicked "Halaman depan" got the landing in paper colours,
+   because client navigation keeps <html data-theme="light">. Values mirror
+   @theme above; keep the two in step.
+   ============================================================ */
+[data-theme="dark"] {
+  color-scheme: dark;
+  --color-canvas: #0f0a08;
+  --color-canvas-sunk: #080505;
+  --color-surface: #211b17;
+  --color-surface-2: #211b17;
+  --color-ink: #f7efe2;
+  --color-ink-muted: #a2937f;
+  --color-ink-faint: #908273;
+  --color-deep: #2a060f;
+  --color-deep-soft: #3a0b17;
+  --color-on-deep: #fff1e8;
+  --color-on-deep-muted: #d2a8a8;
+  --color-accent: #fdbe02;
+  --color-accent-strong: #ffd34d;
+  --color-accent-on-deep: #fdbe02;
+  --color-accent-wash: #2e2205;
+  --color-rose: #c77384;
+  --color-maroon: #83021c;
+  --color-sage: #7ba06c;
+  --color-sage-wash: #16220f;
+  --color-warning: #c79345;
+  --color-warning-wash: #2a1e08;
+  --color-danger: #d77878;
+  --color-danger-wash: #2b1010;
+  --color-rule: #3a2a24;
+  --color-rule-soft: #241a17;
+  --color-line: #776859;
+  --color-line-accent: #946e14;
+  --color-accent-hover: #ffd34d;
+  --color-accent-light: #2e2205;
+  --color-border: #3a2a24;
+  --color-border-light: #241a17;
+  --color-divider: #241a17;
+  --color-success: #7ba06c;
+  --color-glow: rgba(253, 190, 2, 0.06);
+  --color-glow-strong: rgba(253, 190, 2, 0.14);
 }
 
 /* Dashboard type scope: Geist Mono for figures, dates and tags (brand
