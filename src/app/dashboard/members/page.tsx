@@ -8,7 +8,7 @@ import {
   MEMBER_STATUS_FILTERS,
   MEMBER_STATUS_TAG,
 } from "@/lib/members";
-import { PageHeader, EmptyState, Monogram, SectionTitle } from "@/components/page-parts";
+import { PageHeader, EmptyState, Monogram, SectionTitle, CARD_LINK } from "@/components/page-parts";
 import { isOverloaded } from "@/lib/fatigue";
 import { Users, ChevronRight, Search } from "lucide-react";
 
@@ -36,7 +36,16 @@ export default async function MembersPage({
       <PageHeader
         kicker="DIREKTORI JEMAAT"
         title="Daftar Anggota"
-        meta={`${profiles.length} anggota · ${counts.active} aktif · ${counts.away} berhalangan · ${counts.alumni} alumni · ${counts.inactive} tidak aktif`}
+        // Non-breaking space keeps each count with its label when the line wraps.
+        meta={[
+          `${profiles.length} anggota`,
+          `${counts.active} aktif`,
+          `${counts.away} berhalangan`,
+          `${counts.alumni} alumni`,
+          `${counts.inactive} tidak aktif`,
+        ]
+          .map((part) => part.replace(/ /g, " "))
+          .join(" · ")}
         action={
           <Link
             href="/dashboard/cross/mine"
@@ -114,9 +123,16 @@ export default async function MembersPage({
         </div>
       ) : (
         <div className="mt-8">
-          <div className="mb-6"><SectionTitle title="SEMUA ANGGOTA YOUTH" meta={filtered
-                ? `${visible.length} dari ${profiles.length} Anggota`
-                : `${profiles.length} Anggota`} /></div>
+          <div className="mb-4">
+            <SectionTitle
+              title="Semua anggota Youth"
+              meta={
+                filtered
+                  ? `${visible.length} dari ${profiles.length} anggota`
+                  : `${profiles.length} anggota`
+              }
+            />
+          </div>
 
           <ul className="grid gap-3.5 sm:grid-cols-2 lg:grid-cols-3">
             {visible.map((profile) => {
@@ -127,22 +143,22 @@ export default async function MembersPage({
                 <li key={profile.id}>
                   <Link
                     href={`/dashboard/members/${profile.id}`}
-                    className="group relative flex h-full items-center gap-4 rounded-2xl border border-line/40 bg-surface/75 p-4.5 transition-all duration-300 hover:-translate-y-1 hover:border-accent hover:bg-surface"
+                    className={`group flex h-full items-center gap-4 p-4.5 ${CARD_LINK}`}
                   >
                     <Monogram name={profile.nickname} size="lg" />
                     <div className="min-w-0 flex-1">
                       <div className="flex items-center justify-between gap-1">
-                        <span className="truncate font-serif text-lg font-bold text-ink group-hover:text-accent transition-colors">
+                        <span className="truncate font-serif text-lg font-normal text-ink transition-colors group-hover:text-accent">
                           {profile.nickname}
                         </span>
-                        <ChevronRight className="h-3.5 w-3.5 text-ink-faint opacity-0 transition-all group-hover:opacity-100 group-hover:translate-x-0.5" />
+                        <ChevronRight className="h-3.5 w-3.5 text-ink-faint opacity-0 transition-opacity duration-200 group-hover:opacity-100" aria-hidden="true" />
                       </div>
                       <span className="block truncate text-xs text-ink-muted mt-0.5">
                         {profile.fullName}
                       </span>
                       {crosses.length > 0 && (
                         <span
-                          className="mt-1 block truncate font-mono text-[0.6875rem] uppercase tracking-[0.12em] text-accent"
+                          className="lp-meta mt-1 block truncate"
                           title={crosses.join(", ")}
                         >
                           {crosses.join(" · ")}
@@ -160,7 +176,7 @@ export default async function MembersPage({
                             className={`num font-mono text-[0.625rem] font-bold px-2 py-0.5 rounded-full border ${
                               isFatigued
                                 ? "border-warning/40 bg-warning-wash text-warning"
-                                : "border-line-accent/30 bg-accent-wash/60 text-accent"
+                                : "border-line text-ink-muted"
                             }`}
                           >
                             {profile.serviceCount30d}&times; / 30 hari

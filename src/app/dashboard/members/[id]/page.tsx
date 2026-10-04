@@ -9,7 +9,14 @@ import {
 import { canViewContacts } from "@/lib/phone";
 import { isOverloaded, FATIGUE_THRESHOLD, FATIGUE_WINDOW_DAYS } from "@/lib/fatigue";
 import { MEMBER_STATUS_TAG } from "@/lib/members";
-import { PageHeader, BackLink, DataPoint, Monogram } from "@/components/page-parts";
+import {
+  PageHeader,
+  BackLink,
+  DataPoint,
+  Monogram,
+  Panel,
+  SectionTitle,
+} from "@/components/page-parts";
 import WhatsAppButton from "@/components/WhatsAppButton";
 import { formatDayMonth } from "@/lib/datetime";
 import { AlertTriangle } from "lucide-react";
@@ -57,16 +64,14 @@ export default async function MemberDetailPage({
       </div>
 
       {/* Identity Card */}
-      <div className="mt-6 flex flex-wrap items-center justify-between gap-4 rounded-2xl border border-line/40 bg-surface/75 p-6 shadow-sm">
+      <div className="mt-6 flex flex-wrap items-center justify-between gap-4 rounded-xl border border-line/60 bg-surface p-5 sm:p-6">
         <div className="flex items-center gap-4">
           <Monogram name={profile.nickname} size="lg" />
           <div>
-            <h2 className="font-serif text-2xl font-bold text-ink">
+            <h2 className="font-serif text-2xl font-normal text-ink">
               {profile.fullName}
             </h2>
-            <p className="font-mono text-xs text-accent">
-              Nama Panggilan: {profile.nickname}
-            </p>
+            <p className="lp-meta mt-1">Panggilan · {profile.nickname}</p>
           </div>
         </div>
 
@@ -75,7 +80,7 @@ export default async function MemberDetailPage({
 
       {/* Fatigue Warning Banner */}
       {isFatigued && (
-        <div className="mt-6 flex items-start gap-3 rounded-2xl border border-warning/40 bg-warning-wash/70 p-4.5 text-sm text-warning">
+        <div className="mt-6 flex items-start gap-3 rounded-xl border border-warning/40 bg-warning-wash/70 p-4.5 text-sm text-warning">
           <AlertTriangle className="h-5 w-5 shrink-0 mt-0.5" aria-hidden="true" />
           <div>
             <p className="font-bold">Perlu Diistirahatkan ({profile.serviceCount30d}&times; Pelayanan)</p>
@@ -87,13 +92,8 @@ export default async function MemberDetailPage({
       )}
 
       {/* Data Points Grid */}
-      <div className="mt-6 rounded-2xl border border-line/40 bg-surface/75 p-6 shadow-sm">
-        <div className="flex items-center gap-2 border-b border-rule-soft pb-3">
-          <span className="h-1.5 w-1.5 rounded-full bg-accent" />
-          <h3 className="lp-meta font-semibold text-accent">
-            ( Informasi Pribadi & Pelayanan )
-          </h3>
-        </div>
+      <Panel className="mt-6" aria-labelledby="info-heading">
+        <SectionTitle id="info-heading" title="Informasi pribadi & pelayanan" />
 
         <dl className="mt-4 grid gap-x-8 gap-y-4 sm:grid-cols-2 lg:grid-cols-3">
           <DataPoint label="Kampus / Universitas" value={profile.university || "—"} />
@@ -106,21 +106,18 @@ export default async function MemberDetailPage({
           <DataPoint
             label="Intensitas Pelayanan (30 Hari)"
             value={
-              <span className="num font-mono font-bold text-accent">
-                {profile.serviceCount30d}&times; Sesi
+              <span className="num font-mono">
+                {profile.serviceCount30d}&times; sesi
               </span>
             }
           />
         </dl>
-      </div>
+      </Panel>
 
       {/* WhatsApp Contact Action */}
-      <div className="mt-6 rounded-2xl border border-rule-soft bg-canvas-sunk/70 p-6">
-        <div className="flex items-center gap-2 mb-3">
-          <span className="h-1.5 w-1.5 rounded-full bg-sage" />
-          <h3 className="lp-meta font-semibold text-sage">
-            ( Saluran Komunikasi )
-          </h3>
+      <Panel tone="sunk" className="mt-6" aria-labelledby="contact-heading">
+        <div className="mb-3">
+          <SectionTitle id="contact-heading" title="Saluran komunikasi" />
         </div>
 
         {whatsapp ? (
@@ -135,7 +132,7 @@ export default async function MemberDetailPage({
             Nomor kontak privat dilindungi oleh sistem keamanan berbasis peran (Role-based access). Hubungi pengurus inti jika membutuhkan nomor WhatsApp anggota ini.
           </p>
         )}
-      </div>
+      </Panel>
     </div>
   );
 }

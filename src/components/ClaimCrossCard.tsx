@@ -7,7 +7,8 @@ import { claimCrossLeadership } from "@/app/actions/cross";
 import type { Cross } from "@/lib/types";
 
 /**
- * First-login self-claim card with Nocturne luxury aesthetics.
+ * First-login self-claim card: a group the signed-in leader can claim with
+ * the committee's code. Same card as the rest of the dashboard.
  */
 export function ClaimCrossCard({ cross }: { cross: Cross }) {
   const [codeOpen, setCodeOpen] = useState(false);
@@ -30,14 +31,12 @@ export function ClaimCrossCard({ cross }: { cross: Cross }) {
   }
 
   return (
-    <li className="relative overflow-hidden rounded-2xl border border-line/40 bg-surface/75 p-5 transition-all duration-300 hover:border-line-accent">
+    <li className="rounded-xl border border-line/60 bg-surface p-5">
       <div className="flex items-center justify-between">
-        <span className="font-serif text-lg font-bold text-ink">
+        <span className="font-serif text-lg font-normal text-ink">
           {cross.name}
         </span>
-        <span className="font-mono text-xs text-accent">
-          {cross.meetingDay}
-        </span>
+        <span className="lp-meta">{cross.meetingDay}</span>
       </div>
 
       <p className="mt-2 text-xs leading-relaxed text-ink-muted">
@@ -57,7 +56,7 @@ export function ClaimCrossCard({ cross }: { cross: Cross }) {
         <form onSubmit={handleSubmit} className="mt-4 flex flex-col gap-2 border-t border-rule-soft pt-3">
           <label
             htmlFor={`code-${cross.id}`}
-            className="lp-meta font-semibold text-accent"
+            className="lp-meta font-semibold text-ink-muted"
           >
             Kode Akses Pemimpin (dari Pengurus)
           </label>
@@ -79,7 +78,7 @@ export function ClaimCrossCard({ cross }: { cross: Cross }) {
             <button
               type="submit"
               disabled={pending || !code.trim()}
-              className="btn-primary min-h-[44px] shrink-0 text-xs sm:text-sm shadow-sm disabled:opacity-60"
+              className="btn-primary min-h-[44px] shrink-0 text-xs sm:text-sm disabled:opacity-60"
             >
               {pending ? "Memverifikasi…" : "Klaim"}
             </button>

@@ -2,7 +2,8 @@ import Link from "next/link";
 import type { Metadata } from "next";
 import { getCrosses, getCrossMemberCounts, getAllCrossLeaderNicknames } from "@/lib/data";
 import { PageHeader, EmptyState, SectionTitle } from "@/components/page-parts";
-import { Network, Users, Clock } from "lucide-react";
+import { Network, Users, ChevronRight } from "lucide-react";
+import { formatClock } from "@/lib/datetime";
 
 export const metadata: Metadata = { title: "Kelompok Cross" };
 
@@ -42,70 +43,56 @@ export default async function CrossPage() {
         </div>
       ) : (
         <div className="mt-8">
-          <div className="mb-6"><SectionTitle title="DAFTAR SEL PEMURIDAN" meta={<>{crosses.length} Kelompok</>} /></div>
+          <div className="mb-4">
+            <SectionTitle title="Daftar sel pemuridan" meta={<>{crosses.length} kelompok</>} />
+          </div>
 
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          {/* A ruled list, not a wall of equal cards: five groups read
+              faster as rows (name, leaders, size, schedule) and nothing
+              lifts or glows on hover. */}
+          <ul className="divide-y divide-rule-soft overflow-hidden rounded-xl border border-line/60 bg-surface">
             {crosses.map((cross, idx) => {
               const leaders = leaderNicknames[cross.id] ?? [];
               const memberCount = counts[cross.id] ?? 0;
               return (
-                <div key={cross.id} className="group">
+                <li key={cross.id}>
                   <Link
                     href={`/dashboard/cross/${cross.id}`}
-                    className="relative flex h-full flex-col justify-between overflow-hidden rounded-2xl border border-line/40 bg-surface/75 p-6 transition-all duration-300 hover:-translate-y-1 hover:border-accent hover:bg-surface min-h-[260px]"
+                    className="group flex items-start gap-4 px-4 py-4 transition-colors duration-200 hover:bg-surface-2 sm:items-center sm:gap-6 sm:px-5"
                   >
-                    {/* Top Accent Rim */}
-                    <div
-                      aria-hidden="true"
-                      className="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-accent to-transparent opacity-40 group-hover:opacity-100 transition-opacity"
-                    />
-
-                    {/* Shimmering vertical light ray */}
-                    <div
-                      aria-hidden="true"
-                      className="pointer-events-none absolute top-0 left-1/2 -translate-x-1/2 w-24 h-full bg-gradient-to-b from-accent/10 via-transparent to-transparent blur-lg opacity-40 group-hover:opacity-80 transition-opacity"
-                    />
-
-                    {/* Top Row: Tag & Index */}
-                    <div className="relative z-10 flex items-center justify-between">
-                      <div className="inline-flex items-center gap-1.5 rounded-full border border-line-accent/50 bg-accent-wash/70 px-3 py-1 text-xs font-mono font-bold uppercase text-accent">
-                        <Users className="h-3 w-3" />
-                        <span>{memberCount} Anggota</span>
-                      </div>
-                      <span className="font-mono text-xs font-bold text-ink-faint group-hover:text-accent transition-colors">
-                        ( 0{idx + 1} )
-                      </span>
-                    </div>
-
-                    {/* Middle: Name & Description */}
-                    <div className="relative z-10 my-4 flex-1">
-                      <h3 className="font-serif text-xl font-bold text-ink group-hover:text-accent transition-colors leading-tight">
+                    <span className="lp-num mt-1 w-8 shrink-0 text-lg text-ink-faint sm:mt-0" aria-hidden="true">
+                      {String(idx + 1).padStart(2, "0")}
+                    </span>
+                    <span className="min-w-0 flex-1">
+                      <span className="block font-serif text-lg font-normal leading-tight text-ink transition-colors group-hover:text-accent">
                         {cross.name}
-                      </h3>
-                      <p className="mt-2 text-xs leading-relaxed text-ink-muted line-clamp-3">
-                        {cross.description}
-                      </p>
-                    </div>
-
-                    {/* Bottom Metadata Shelf */}
-                    <div className="relative z-10 border-t border-rule-soft pt-3.5 flex flex-wrap items-center justify-between gap-2 text-xs font-mono">
-                      <div className="text-ink-muted">
-                        <span className="text-ink-faint">CL: </span>
-                        <span className="font-semibold text-ink">
-                          {leaders.length > 0 ? leaders.join(" & ") : "Belum diklaim"}
+                      </span>
+                      {cross.description && (
+                        <span className="mt-1 block text-sm leading-relaxed text-ink-muted line-clamp-2">
+                          {cross.description}
                         </span>
-                      </div>
-
-                      <div className="flex items-center gap-1 text-accent">
-                        <Clock className="h-3 w-3" />
-                        <span>{cross.meetingDay} {cross.meetingTime}</span>
-                      </div>
-                    </div>
+                      )}
+                      <span className="lp-meta mt-2 flex flex-wrap gap-x-4 gap-y-1">
+                        <span className="whitespace-nowrap">
+                          CL · <span className="text-ink-muted">{leaders.length > 0 ? leaders.join(" & ") : "Belum diklaim"}</span>
+                        </span>
+                        <span className="whitespace-nowrap">{memberCount} anggota</span>
+                        {cross.meetingDay && (
+                          <span className="whitespace-nowrap">
+                            {cross.meetingDay} {formatClock(cross.meetingTime)}
+                          </span>
+                        )}
+                      </span>
+                    </span>
+                    <ChevronRight
+                      className="mt-1 h-4 w-4 shrink-0 text-ink-faint transition-colors group-hover:text-accent sm:mt-0"
+                      aria-hidden="true"
+                    />
                   </Link>
-                </div>
+                </li>
               );
             })}
-          </div>
+          </ul>
         </div>
       )}
     </div>

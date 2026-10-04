@@ -156,7 +156,7 @@ export default async function DashboardPage() {
             className="lp-hud group flex flex-col justify-between px-4 pb-4 pt-5 transition-colors duration-200 hover:bg-surface sm:px-5"
           >
             <span className="flex items-center justify-between">
-              <span className="lp-meta text-accent">{s.kicker}</span>
+              <span className="lp-meta">{s.kicker}</span>
               <ChevronRight className="h-3.5 w-3.5 text-ink-faint group-hover:text-accent" aria-hidden="true" />
             </span>
             <span className="lp-num mt-5 block text-[clamp(2.25rem,1.6rem+2vw,3.5rem)] text-ink">
@@ -183,7 +183,7 @@ export default async function DashboardPage() {
                   </span>
                 </div>
                 <span className="flex items-center gap-1.5 font-mono text-xs text-ink-muted">
-                  <Clock className="h-3.5 w-3.5 text-accent" aria-hidden="true" />
+                  <Clock className="h-3.5 w-3.5 text-ink-faint" aria-hidden="true" />
                   {formatTime(upcoming.date)}
                 </span>
               </div>
@@ -201,7 +201,7 @@ export default async function DashboardPage() {
               {/* Readiness: slots per role, not a head count */}
               <div className="mt-6 rounded-xl border border-rule-soft bg-canvas-sunk/70 p-4">
                 <div className="flex flex-wrap items-baseline justify-between gap-2">
-                  <span className="lp-meta font-semibold text-accent">
+                  <span className="lp-meta font-semibold text-ink-muted">
                     <span className="lp-bracket">Kesiapan penatalayan</span>
                   </span>
                   <span className="num font-mono text-xs font-bold text-ink">
@@ -242,7 +242,7 @@ export default async function DashboardPage() {
                         <p className="truncate text-sm font-semibold text-ink">
                           {nameOf(s.profileId)}
                         </p>
-                        <p className="lp-meta text-accent">
+                        <p className="lp-meta">
                           {s.role}
                         </p>
                       </div>
@@ -257,7 +257,7 @@ export default async function DashboardPage() {
 
               <div className="mt-6 flex flex-wrap items-center gap-3 border-t border-rule-soft pt-4">
                 {committee && !complete && (
-                  <Link href="/dashboard/penatalayan" className="btn-primary text-sm">
+                  <Link href="/dashboard/penatalayan" className="btn-quiet text-sm font-semibold">
                     Isi yang kurang
                     <ArrowRight className="h-4 w-4" aria-hidden="true" />
                   </Link>
@@ -393,7 +393,7 @@ export default async function DashboardPage() {
             <Panel tone="sunk" aria-labelledby="account-heading">
               <SectionTitle id="account-heading" title="Akunmu" />
               <p className="mt-3 flex items-center gap-2 text-sm text-ink">
-                <UserCog className="h-4 w-4 text-accent" aria-hidden="true" />
+                <UserCog className="h-4 w-4 text-ink-faint" aria-hidden="true" />
                 {role ? ROLE_LABEL[role] : "Mode demo"}
               </p>
               <p className="mt-2 text-sm leading-relaxed text-ink-muted">
@@ -401,7 +401,7 @@ export default async function DashboardPage() {
               </p>
               <Link
                 href="/dashboard/settings"
-                className="mt-3 inline-flex min-h-[44px] items-center font-mono text-xs text-accent hover:underline"
+                className="lp-meta mt-3 inline-flex min-h-[44px] items-center text-ink-muted hover:text-accent"
               >
                 Lihat akun &amp; keluar &rarr;
               </Link>

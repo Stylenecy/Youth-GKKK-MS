@@ -27,17 +27,17 @@ export async function AccountApprovals() {
 
   return (
     <section
-      className="rounded-2xl border border-line/40 bg-surface/75 p-6 shadow-sm sm:p-7"
+      className="rounded-xl border border-line/60 bg-surface p-5 sm:p-6"
       aria-labelledby="approvals-heading"
     >
       <div className="flex flex-wrap items-center justify-between gap-3 border-b border-rule-soft pb-3">
         <div className="flex items-center gap-2">
-          <UserCheck className="h-4 w-4 text-accent" aria-hidden="true" />
+          <UserCheck className="h-4 w-4 text-ink-faint" aria-hidden="true" />
           <h2
             id="approvals-heading"
-            className="lp-meta font-semibold text-accent"
+            className="lp-meta font-semibold text-ink-muted"
           >
-            Akses Akun
+            <span className="lp-bracket">Akses akun</span>
           </h2>
         </div>
         {pending.length > 0 && (

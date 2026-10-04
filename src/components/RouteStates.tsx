@@ -13,7 +13,7 @@ import { RotateCcw } from "lucide-react";
 export function RouteLoading({ title }: { title: string }) {
   return (
     <div className="px-5 py-7 sm:px-8 sm:py-9" aria-busy="true">
-      <p className="lp-meta text-accent">
+      <p className="lp-meta">
         <span className="lp-bracket">Memuat</span>
       </p>
       <span className="lp-rule mt-3" aria-hidden="true" />

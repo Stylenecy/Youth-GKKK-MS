@@ -6,21 +6,27 @@ import type { ComponentPropsWithoutRef, ElementType, ReactNode } from "react";
  * bracketed mono kicker, a hairline, the title in the display serif, and
  * metadata in mono. Every dashboard page renders this, so changing it here
  * is what makes the whole workspace read as one with the public site.
+ *
+ * Gold is not spent here: like the landing's "( warta )", the kicker stays
+ * in the quiet lp-meta ink. `meta` is for short facts (dates, counts);
+ * a full sentence goes in `description`, set in the body face.
  */
 export function PageHeader({
   kicker,
   title,
   meta,
+  description,
   action,
 }: {
   kicker: string;
   title: string;
   meta?: string;
+  description?: string;
   action?: ReactNode;
 }) {
   return (
     <header className="dash-enter relative">
-      <p className="lp-meta text-accent">
+      <p className="lp-meta">
         <span className="lp-bracket">{kicker}</span>
       </p>
       <span className="lp-rule mt-3" aria-hidden="true" />
@@ -28,6 +34,9 @@ export function PageHeader({
         <div className="min-w-0 flex-1">
           <h1 className="lp-title text-ink">{title}</h1>
           {meta && <p className="lp-meta mt-3 text-ink-muted">{meta}</p>}
+          {description && (
+            <p className="mt-3 max-w-2xl text-sm leading-relaxed text-ink-muted">{description}</p>
+          )}
         </div>
         {action && <div className="flex shrink-0 flex-wrap items-center gap-2.5">{action}</div>}
       </div>
@@ -78,7 +87,8 @@ export function EmptyState({
   );
 }
 
-/** Label/value pair used across detail pages. */
+/** Label/value pair used across detail pages. Plain mono label — brackets
+ *  are kept for section markers, so they still mean "a new section". */
 export function DataPoint({
   label,
   value,
@@ -88,9 +98,7 @@ export function DataPoint({
 }) {
   return (
     <div className="border-t border-rule pt-3.5">
-      <dt className="lp-meta">
-        <span className="lp-bracket">{label}</span>
-      </dt>
+      <dt className="lp-meta">{label}</dt>
       <dd className="mt-1.5 text-[0.9375rem] font-medium text-ink leading-relaxed">
         {value}
       </dd>
@@ -115,12 +123,23 @@ export function Monogram({
   return (
     <span
       aria-hidden="true"
-      className={`${dim} flex shrink-0 items-center justify-center rounded-full border border-line bg-surface font-serif text-accent`}
+      className={`${dim} flex shrink-0 items-center justify-center rounded-full border border-line bg-surface font-serif text-ink-muted`}
     >
       {name.charAt(0).toUpperCase()}
     </span>
   );
 }
+
+/**
+ * A whole card that is a link (list of members, meetings…). Same radius,
+ * border and surface as Panel; hover only recolours — no lift, no shadow,
+ * no glow (dashboard motion stays under 240 ms and quiet). Full-strength
+ * border: the edge is what says "this is one clickable thing", so it keeps
+ * the ≥ 3:1 component contrast (.dex/KONTRAS-DASH-V3-R2-1905.txt); plain
+ * Panels group content under a heading and stay softer.
+ */
+export const CARD_LINK =
+  "rounded-xl border border-line bg-surface transition-colors duration-200 hover:border-line-accent";
 
 // Flat surfaces, no backdrop blur: nothing moves behind a dashboard card,
 // so the blur only cost GPU time on phones.
@@ -159,22 +178,24 @@ export function Panel({
 /**
  * Section heading inside a Panel or between blocks: mono bracketed label,
  * optional count/meta on the right and an optional action. Pass `id` and
- * point the Panel's aria-labelledby at it.
+ * point the Panel's aria-labelledby at it. Neutral by default (gold is for
+ * the active nav, the one primary action and the meter); `warning` stays
+ * for blocks that need attention.
  */
 export function SectionTitle({
   id,
   title,
   meta,
   action,
-  tone = "accent",
+  tone = "neutral",
 }: {
   id?: string;
   title: string;
   meta?: ReactNode;
   action?: ReactNode;
-  tone?: "accent" | "warning";
+  tone?: "neutral" | "warning";
 }) {
-  const color = tone === "warning" ? "text-warning" : "text-accent";
+  const color = tone === "warning" ? "text-warning" : "text-ink-muted";
   return (
     <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-2 border-b border-rule pb-3">
       <h2 id={id} className={`lp-meta font-semibold ${color}`}>
@@ -329,7 +350,7 @@ export function DataTable<T>({
               <th
                 key={c.key}
                 scope="col"
-                className={`px-4 py-2.5 font-mono text-[0.6875rem] font-semibold uppercase tracking-[0.12em] text-ink-muted ${
+                className={`lp-meta px-4 py-2.5 font-semibold text-ink-muted ${
                   c.align === "right" ? "text-right" : "text-left"
                 }`}
               >

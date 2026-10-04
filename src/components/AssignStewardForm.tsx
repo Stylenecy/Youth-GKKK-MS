@@ -382,7 +382,7 @@ export function AssignStewardForm({
       {toast && undoState !== "done" && (
         <div
           role="status"
-          className="fixed bottom-20 left-1/2 z-50 w-[calc(100%-2.5rem)] max-w-md -translate-x-1/2 rounded-2xl border border-line bg-surface p-4 shadow-2xl lg:bottom-8"
+          className="fixed bottom-20 left-1/2 z-50 w-[calc(100%-2.5rem)] max-w-md -translate-x-1/2 rounded-xl border border-line bg-surface p-4 shadow-2xl lg:bottom-8"
         >
           <p className="text-sm text-ink">
             <strong>{toast.name}</strong> ditetapkan sebagai {toast.role}.
@@ -414,7 +414,7 @@ export function AssignStewardForm({
       {toast && undoState === "done" && (
         <div
           role="status"
-          className="fixed bottom-20 left-1/2 z-50 w-[calc(100%-2.5rem)] max-w-md -translate-x-1/2 rounded-2xl border border-line bg-surface p-4 shadow-2xl lg:bottom-8"
+          className="fixed bottom-20 left-1/2 z-50 w-[calc(100%-2.5rem)] max-w-md -translate-x-1/2 rounded-xl border border-line bg-surface p-4 shadow-2xl lg:bottom-8"
         >
           <p className="text-sm text-ink">Perubahan dibatalkan.</p>
           <div className="mt-2.5">

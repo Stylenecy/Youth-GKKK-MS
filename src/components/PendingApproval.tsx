@@ -29,8 +29,8 @@ export function PendingApproval({
           <Logomark />
         </div>
 
-        <div className="rounded-2xl border border-line bg-surface/80 p-7 shadow-sm sm:p-8">
-          <div className="mx-auto mb-5 flex h-12 w-12 items-center justify-center rounded-2xl border border-line-accent/40 bg-accent-wash text-accent">
+        <div className="rounded-xl border border-line/60 bg-surface p-7 sm:p-8">
+          <div className="mx-auto mb-5 flex h-12 w-12 items-center justify-center rounded-full border border-line bg-canvas-sunk text-ink-faint">
             {rejected ? (
               <ShieldX className="h-5 w-5" aria-hidden="true" />
             ) : (
@@ -38,7 +38,7 @@ export function PendingApproval({
             )}
           </div>
 
-          <h1 className="font-serif text-2xl font-bold text-ink">
+          <h1 className="font-serif text-2xl font-normal text-ink">
             {rejected
               ? "Akses Tidak Disetujui"
               : "Menunggu Persetujuan Pengurus"}
