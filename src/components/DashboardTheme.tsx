@@ -11,8 +11,12 @@ import {
 
 /** Choice made this session when storage is blocked (private mode). */
 let sessionTheme: DashboardTheme = "dark";
+/** A write failed (quota, some private modes): storage no longer holds the
+ *  choice, so reading it back would undo the toggle. Trust the session. */
+let storageWriteFailed = false;
 
 function readStoredTheme(): DashboardTheme {
+  if (storageWriteFailed) return sessionTheme;
   try {
     return parseDashboardTheme(localStorage.getItem(DASHBOARD_THEME_KEY));
   } catch {
@@ -52,8 +56,18 @@ export function DashboardThemeShell({ children }: { children: React.ReactNode })
         "data-theme",
         parseDashboardTheme((e as CustomEvent).detail)
       );
+    // Another tab toggled: follow it, or this page's colours and the
+    // toggle's label (which re-reads storage) would disagree.
+    const onStorage = (e: StorageEvent) => {
+      if (e.key !== null && e.key !== DASHBOARD_THEME_KEY) return;
+      document.documentElement.setAttribute("data-theme", readStoredTheme());
+    };
     window.addEventListener(DASHBOARD_THEME_EVENT, onTheme);
-    return () => window.removeEventListener(DASHBOARD_THEME_EVENT, onTheme);
+    window.addEventListener("storage", onStorage);
+    return () => {
+      window.removeEventListener(DASHBOARD_THEME_EVENT, onTheme);
+      window.removeEventListener("storage", onStorage);
+    };
   }, []);
 
   return <>{children}</>;
@@ -88,6 +102,7 @@ export function ThemeToggle({ compact = false }: { compact?: boolean }) {
       localStorage.setItem(DASHBOARD_THEME_KEY, next);
     } catch {
       // Storage blocked: still flip for this session.
+      storageWriteFailed = true;
     }
     applyTheme(next);
   }
