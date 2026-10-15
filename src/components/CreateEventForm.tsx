@@ -35,8 +35,8 @@ export function CreateEventForm({ profiles }: { profiles: Profile[] }) {
         {success ? "Ibadah berhasil disimpan" : ""}
       </div>
       {success && (
-        <div className="fixed right-4 top-4 z-50 flex items-center gap-2 rounded-xl border border-sage/50 bg-sage-wash px-4 py-3 text-sm font-semibold text-sage shadow-2xl backdrop-blur-xl">
-          <span className="h-2 w-2 rounded-full bg-sage animate-pulse" />
+        <div className="fixed right-4 top-4 z-50 flex items-center gap-2 rounded-xl border border-sage/50 bg-sage-wash px-4 py-3 text-sm font-semibold text-sage shadow-2xl">
+          <span className="h-2 w-2 rounded-full bg-sage" />
           Ibadah berhasil disimpan dan dijadwalkan.
         </div>
       )}
@@ -44,7 +44,7 @@ export function CreateEventForm({ profiles }: { profiles: Profile[] }) {
       <button
         type="button"
         onClick={() => setIsOpen(true)}
-        className="btn-primary text-xs sm:text-sm shadow-[0_0_16px_rgba(253,190,2,0.25)]"
+        className="btn-primary text-xs sm:text-sm"
       >
         <Plus className="h-4 w-4" aria-hidden="true" />
         Ibadah Baru

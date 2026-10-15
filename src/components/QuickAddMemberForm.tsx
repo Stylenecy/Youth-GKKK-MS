@@ -85,7 +85,7 @@ export function QuickAddMemberForm({
         <button
           type="submit"
           disabled={pending || !name.trim()}
-          className="btn-primary min-h-[44px] shrink-0 px-4 text-xs sm:text-sm shadow-sm disabled:opacity-60"
+          className="btn-primary min-h-[44px] shrink-0 px-4 text-xs sm:text-sm disabled:opacity-60"
         >
           <UserPlus className="h-4 w-4" aria-hidden="true" />
           <span>

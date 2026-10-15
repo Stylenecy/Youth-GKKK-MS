@@ -136,7 +136,7 @@ export function AttendanceTaker({
                     aria-label={`Tandai ${m.nickname} hadir`}
                   />
                   <span className="min-w-0">
-                    <span className="block truncate font-serif text-base font-bold text-ink">
+                    <span className="block truncate font-serif text-base font-normal text-ink">
                       {m.nickname}
                     </span>
                     {m.fullName !== m.nickname && (

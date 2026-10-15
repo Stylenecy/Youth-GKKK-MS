@@ -45,8 +45,8 @@ export function EditEventForm({
         {success ? "Perubahan ibadah tersimpan" : ""}
       </div>
       {success && (
-        <div className="fixed right-4 top-4 z-50 flex items-center gap-2 rounded-xl border border-sage/50 bg-sage-wash px-4 py-3 text-sm font-semibold text-sage shadow-2xl backdrop-blur-xl">
-          <span className="h-2 w-2 rounded-full bg-sage animate-pulse" />
+        <div className="fixed right-4 top-4 z-50 flex items-center gap-2 rounded-xl border border-sage/50 bg-sage-wash px-4 py-3 text-sm font-semibold text-sage shadow-2xl">
+          <span className="h-2 w-2 rounded-full bg-sage" />
           Perubahan ibadah berhasil disimpan.
         </div>
       )}

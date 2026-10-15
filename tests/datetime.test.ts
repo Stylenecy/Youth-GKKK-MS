@@ -9,6 +9,7 @@ import {
   daysUntil,
   countdownLabel,
   formatRupiahCompact,
+  formatClock,
 } from "@/lib/datetime";
 
 // Vercel runs the server in UTC. Every one of these would pass locally in
@@ -83,5 +84,14 @@ describe("rupiah", () => {
     expect(formatRupiahCompact(250_000)).toBe("Rp250rb");
     expect(formatRupiahCompact(1_200_000)).toBe("Rp1,2jt");
     expect(formatRupiahCompact(-85_000)).toBe("-Rp85rb");
+  });
+});
+
+describe("formatClock", () => {
+  it("writes a stored wall-clock time in the house style", () => {
+    expect(formatClock("19:00")).toBe("19.00");
+    expect(formatClock("07:30:00")).toBe("07.30");
+    expect(formatClock("")).toBe("");
+    expect(formatClock(null)).toBe("");
   });
 });

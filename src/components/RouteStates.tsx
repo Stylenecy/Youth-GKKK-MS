@@ -5,28 +5,27 @@ import { useEffect } from "react";
 import { RotateCcw } from "lucide-react";
 
 /**
- * Loading and error states for dashboard routes. Kept in one file so the
- * three pages that need them (Keuangan, detail Ibadah, Penatalayan) say
- * the same thing the same way.
+ * Loading and error states for dashboard routes. Kept in one file so every
+ * route (its own boundary or the dashboard-wide one) says the same thing
+ * the same way, in the same header as PageHeader.
  */
 
 export function RouteLoading({ title }: { title: string }) {
   return (
     <div className="px-5 py-7 sm:px-8 sm:py-9" aria-busy="true">
-      <p className="kicker">
-        <span className="kicker-num">( MEMUAT )</span>
+      <p className="lp-meta">
+        <span className="lp-bracket">Memuat</span>
       </p>
-      <h1 className="section-heading mt-2.5 text-2xl font-bold tracking-tight text-ink sm:text-3xl">
-        {title}
-      </h1>
-      <p role="status" className="mt-1.5 text-sm text-ink-muted">
+      <span className="lp-rule mt-3" aria-hidden="true" />
+      <h1 className="lp-title mt-5 text-ink">{title}</h1>
+      <p role="status" className="lp-meta mt-3 text-ink-muted">
         Mengambil data terbaru…
       </p>
       <div aria-hidden="true" className="mt-8 space-y-3">
         {[0, 1, 2, 3].map((i) => (
           <div
             key={i}
-            className="h-12 rounded-xl border border-rule-soft bg-surface motion-safe:animate-pulse"
+            className="h-12 rounded-lg border border-rule bg-surface motion-safe:animate-pulse"
           />
         ))}
       </div>
@@ -50,12 +49,11 @@ export function RouteError({
 
   return (
     <div className="px-5 py-7 sm:px-8 sm:py-9">
-      <p className="kicker">
-        <span className="kicker-num">( GAGAL MEMUAT )</span>
+      <p className="lp-meta text-danger">
+        <span className="lp-bracket">Gagal memuat</span>
       </p>
-      <h1 className="section-heading mt-2.5 text-2xl font-bold tracking-tight text-ink sm:text-3xl">
-        {title}
-      </h1>
+      <span className="lp-rule mt-3" aria-hidden="true" />
+      <h1 className="lp-title mt-5 text-ink">{title}</h1>
       <div
         role="alert"
         className="mt-6 rounded-xl border border-danger/50 bg-danger-wash/60 px-4 py-4 text-sm leading-relaxed text-ink"

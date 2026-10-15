@@ -80,7 +80,7 @@ export function PenatalayanPhone({
           className="flex min-h-[44px] min-w-0 flex-col justify-center text-base font-semibold text-ink underline-offset-4 hover:underline"
         >
           <span className="block truncate">{col.theme}</span>
-          <span className="block text-xs font-normal text-ink-muted">{col.weekdayLabel}</span>
+          <span className="lp-meta block font-normal">{col.weekdayLabel}</span>
         </Link>
         <span className="num shrink-0 font-mono text-sm text-ink-muted">
           {ready.filled}/{ready.needed} slot

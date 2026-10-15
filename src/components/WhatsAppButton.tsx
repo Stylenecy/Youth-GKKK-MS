@@ -16,7 +16,7 @@ export default function WhatsAppButton({ number, name, className }: WhatsAppButt
     <a
       className={
         className ??
-        "inline-flex min-h-[44px] items-center justify-center gap-2 rounded-xl border border-sage/40 bg-sage-wash/80 px-4 py-2.5 text-xs sm:text-sm font-semibold text-sage transition-all duration-200 hover:border-sage hover:bg-sage-wash hover:shadow-[0_0_16px_rgba(123,160,108,0.25)]"
+        "inline-flex min-h-[44px] items-center justify-center gap-2 rounded-xl border border-sage/40 bg-sage-wash/80 px-4 py-2.5 text-xs sm:text-sm font-semibold text-sage transition-all duration-200 hover:border-sage hover:bg-sage-wash"
       }
       href={action.href}
       target="_blank"

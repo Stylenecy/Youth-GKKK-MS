@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useSyncExternalStore } from "react";
 import { Moon, Sun } from "lucide-react";
 import {
   DASHBOARD_THEME_EVENT,
@@ -9,13 +9,30 @@ import {
   type DashboardTheme,
 } from "@/lib/theme";
 
+/** Choice made this session when storage is blocked (private mode). */
+let sessionTheme: DashboardTheme = "dark";
+/** A write failed (quota, some private modes): storage no longer holds the
+ *  choice, so reading it back would undo the toggle. Trust the session. */
+let storageWriteFailed = false;
+
 function readStoredTheme(): DashboardTheme {
+  if (storageWriteFailed) return sessionTheme;
   try {
     return parseDashboardTheme(localStorage.getItem(DASHBOARD_THEME_KEY));
   } catch {
-    // Private mode / blocked storage: stay on the dark default.
-    return "dark";
+    // Private mode / blocked storage: whatever was picked this session.
+    return sessionTheme;
   }
+}
+
+/** Re-read the theme whenever this tab or another one changes it. */
+function subscribeTheme(onChange: () => void) {
+  window.addEventListener(DASHBOARD_THEME_EVENT, onChange);
+  window.addEventListener("storage", onChange);
+  return () => {
+    window.removeEventListener(DASHBOARD_THEME_EVENT, onChange);
+    window.removeEventListener("storage", onChange);
+  };
 }
 
 function applyTheme(theme: DashboardTheme) {
@@ -39,8 +56,18 @@ export function DashboardThemeShell({ children }: { children: React.ReactNode })
         "data-theme",
         parseDashboardTheme((e as CustomEvent).detail)
       );
+    // Another tab toggled: follow it, or this page's colours and the
+    // toggle's label (which re-reads storage) would disagree.
+    const onStorage = (e: StorageEvent) => {
+      if (e.key !== null && e.key !== DASHBOARD_THEME_KEY) return;
+      document.documentElement.setAttribute("data-theme", readStoredTheme());
+    };
     window.addEventListener(DASHBOARD_THEME_EVENT, onTheme);
-    return () => window.removeEventListener(DASHBOARD_THEME_EVENT, onTheme);
+    window.addEventListener("storage", onStorage);
+    return () => {
+      window.removeEventListener(DASHBOARD_THEME_EVENT, onTheme);
+      window.removeEventListener("storage", onStorage);
+    };
   }, []);
 
   return <>{children}</>;
@@ -63,25 +90,21 @@ export function ThemeInitScript() {
 
 /** Light/dark switch for the dashboard. Rendered in Sidebar + MobileNav. */
 export function ThemeToggle({ compact = false }: { compact?: boolean }) {
-  const [theme, setTheme] = useState<DashboardTheme>("dark");
-
-  useEffect(() => {
-    setTheme(readStoredTheme());
-    const onTheme = (e: Event) =>
-      setTheme(parseDashboardTheme((e as CustomEvent).detail));
-    window.addEventListener(DASHBOARD_THEME_EVENT, onTheme);
-    return () => window.removeEventListener(DASHBOARD_THEME_EVENT, onTheme);
-  }, []);
+  // The server always renders the dark default; the client reads storage.
+  // useSyncExternalStore instead of setState-in-effect (react-hooks rule).
+  const theme = useSyncExternalStore<DashboardTheme>(subscribeTheme, readStoredTheme, () => "dark");
 
   const next = theme === "dark" ? "light" : "dark";
 
   function toggle() {
+    sessionTheme = next;
     try {
       localStorage.setItem(DASHBOARD_THEME_KEY, next);
+      storageWriteFailed = false;
     } catch {
       // Storage blocked: still flip for this session.
+      storageWriteFailed = true;
     }
-    setTheme(next);
     applyTheme(next);
   }
 
@@ -94,8 +117,8 @@ export function ThemeToggle({ compact = false }: { compact?: boolean }) {
       title={theme === "dark" ? "Mode terang" : "Mode gelap"}
       className={
         compact
-          ? "flex h-11 w-11 items-center justify-center rounded-full text-ink-faint transition-colors hover:bg-surface-2 hover:text-accent"
-          : "flex min-h-[44px] w-full items-center gap-2 rounded-xl px-3 font-mono text-xs text-ink-faint transition-all duration-200 hover:bg-surface-2 hover:text-accent"
+          ? "flex h-11 w-11 items-center justify-center rounded-full text-ink-faint transition-colors hover:bg-surface hover:text-accent"
+          : "lp-meta flex min-h-[44px] w-full items-center gap-2 rounded-lg px-3 text-ink-muted transition-colors hover:bg-surface hover:text-accent"
       }
     >
       {theme === "dark" ? (

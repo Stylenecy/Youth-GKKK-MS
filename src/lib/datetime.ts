@@ -21,6 +21,9 @@ export const formatWeekdayDayMonth = (d: string | Date) =>
   weekdayDayMonth.format(new Date(d));
 export const formatShortDate = (d: string | Date) => shortDate.format(new Date(d));
 export const formatTime = (d: string | Date) => timeOnly.format(new Date(d)) + " WIB";
+/** A stored wall-clock "19:00" / "19:00:00" in the house style "19.00"; "" stays "". */
+export const formatClock = (hhmm: string | null | undefined) =>
+  hhmm ? hhmm.slice(0, 5).replace(":", ".") : "";
 export const formatDayNumber = (d: string | Date) => dayNumber.format(new Date(d));
 export const formatMonthShort = (d: string | Date) => monthShort.format(new Date(d));
 export const formatWeekdayShort = (d: string | Date) => weekdayShort.format(new Date(d));
