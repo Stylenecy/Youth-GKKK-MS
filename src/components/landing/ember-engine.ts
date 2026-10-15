@@ -1,4 +1,4 @@
-import crestPoints from "./crest-points.json";
+import { CREST_COUNT, CREST_POINTS_B64 } from "./crest-points";
 
 /**
  * The crest, told as fire — v3 port of the v2 `EmberCrest`
@@ -45,9 +45,30 @@ type Options = {
   onReady: () => void;
   /** Called if the context is lost; the caller falls back to the image. */
   onLost: () => void;
+  /** Called when a slow "full" device is demoted to "lite". */
+  onTier?: (tier: FireTier) => void;
 };
 
-const TOTAL = crestPoints.length / 2;
+const TOTAL = CREST_COUNT;
+
+/** Unpack the 10-bit crest coordinates (see crest-points.ts). */
+function decodeCrest(): Uint16Array {
+  const bytes = atob(CREST_POINTS_B64);
+  const out = new Uint16Array(TOTAL * 2);
+  let acc = 0;
+  let bits = 0;
+  let k = 0;
+  for (let i = 0; i < bytes.length && k < out.length; i++) {
+    acc |= bytes.charCodeAt(i) << bits;
+    bits += 8;
+    if (bits >= 10) {
+      out[k++] = acc & 1023;
+      acc >>= 10;
+      bits -= 10;
+    }
+  }
+  return out;
+}
 const FOCAL = 1 / Math.tan((45 * Math.PI) / 360); // 45° vertical FOV
 
 const VERT = `
@@ -125,14 +146,19 @@ export function createEmberCrest(host: HTMLElement, opts: Options): FireHandle |
   });
   if (!gl) return null;
 
+  // A failed setup releases its context now rather than whenever GC runs.
+  const giveUp = () => {
+    gl.getExtension("WEBGL_lose_context")?.loseContext();
+    return null;
+  };
   const vs = compile(gl, gl.VERTEX_SHADER, VERT);
   const fs = compile(gl, gl.FRAGMENT_SHADER, FRAG);
-  if (!vs || !fs) return null;
+  if (!vs || !fs) return giveUp();
   const prog = gl.createProgram()!;
   gl.attachShader(prog, vs);
   gl.attachShader(prog, fs);
   gl.linkProgram(prog);
-  if (!gl.getProgramParameter(prog, gl.LINK_STATUS)) return null;
+  if (!gl.getProgramParameter(prog, gl.LINK_STATUS)) return giveUp();
   gl.useProgram(prog);
 
   // ---- geometry ---------------------------------------------------------
@@ -143,6 +169,7 @@ export function createEmberCrest(host: HTMLElement, opts: Options): FireHandle |
     const j = Math.floor(Math.random() * (i + 1));
     [order[i], order[j]] = [order[j], order[i]];
   }
+  const crestPoints = decodeCrest();
   const data = new Float32Array(TOTAL * 7);
   for (let k = 0; k < TOTAL; k++) {
     const i = order[k];
@@ -233,6 +260,10 @@ export function createEmberCrest(host: HTMLElement, opts: Options): FireHandle |
   const draw = (now: number) => {
     const t = (now - t0) / 1000;
     const goal = Math.min(1, Math.max(0, opts.target()));
+    // The first frame starts where the scroll already is — a stage that is
+    // on screen when the engine arrives (restored scroll, anchor jump, fast
+    // fling) must not flash scattered embers over the still crest.
+    if (!drawn) shown = goal;
     shown += (goal - shown) * (tier === "lite" ? 0.2 : 0.12);
     if (Math.abs(goal - shown) < 0.0005) shown = goal;
     camX += (px - camX) * 0.06;
@@ -252,7 +283,7 @@ export function createEmberCrest(host: HTMLElement, opts: Options): FireHandle |
   };
 
   // ---- loop: only while visible AND awake -------------------------------
-  const BREATHE = tier === "lite" ? 2500 : 6000;
+  const breatheFor = () => (tier === "lite" ? 2500 : 6000);
   let awakeUntil = 0;
   let onScreen = false;
   let raf = 0;
@@ -268,24 +299,30 @@ export function createEmberCrest(host: HTMLElement, opts: Options): FireHandle |
       raf = requestAnimationFrame(tick);
       return;
     }
+    const gap = now - last;
     last = now;
     const moving = draw(now);
-    // A "full" device that cannot hold ~40 fps over its first frames is
-    // demoted for good.
+    // A "full" device that cannot hold ~40 fps over 40 consecutive frames is
+    // demoted for good. A pause (asleep, off screen, hidden tab) restarts the
+    // count so the pause itself is never mistaken for slowness.
     if (tier === "full" && probeFrames < 40) {
-      if (probeFrames === 0) probeStart = now;
+      if (probeFrames === 0 || gap > 100) {
+        probeStart = now;
+        probeFrames = 0;
+      }
       probeFrames++;
       if (probeFrames === 40 && (now - probeStart) / 39 > 25) {
         tier = "lite";
         count = Math.round(TOTAL / 2);
         resize();
+        opts.onTier?.(tier);
       }
     }
     if (moving || now < awakeUntil) raf = requestAnimationFrame(tick);
   };
 
   const wake = () => {
-    awakeUntil = performance.now() + BREATHE;
+    awakeUntil = performance.now() + breatheFor();
     if (!raf && onScreen && !document.hidden) raf = requestAnimationFrame(tick);
   };
 
@@ -305,8 +342,8 @@ export function createEmberCrest(host: HTMLElement, opts: Options): FireHandle |
   const onVisibility = () => {
     if (!document.hidden) wake();
   };
-  const onLost = (e: Event) => {
-    e.preventDefault();
+  // Not restored: the still crest underneath is the fallback.
+  const onLost = () => {
     destroy();
     opts.onLost();
   };

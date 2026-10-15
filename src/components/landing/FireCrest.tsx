@@ -26,11 +26,13 @@ function pickTier(): FireTier | null {
 }
 
 /**
- * Scroll-linked crest of embers (the v2 fire, brought back on 9 Oct at
- * Dex's request). Server markup is the static crest; this component only
+ * Scroll-linked crest of embers (the v2 fire — Dex asked for it back on
+ * 9 Oct; restored 16 Oct). Server markup is the static crest; this component only
  * adds the canvas on top once the stage is about a screen away, and hides
- * the static image after the first WebGL frame — by then the stage is still
- * below the fold, so the swap is never seen.
+ * the static image after the first WebGL frame. Normally the stage is still
+ * below the fold by then; if it is already on screen (restored scroll, an
+ * anchor jump) the first frame starts at the current scroll position and the
+ * still crest cross-fades out over 0.6 s.
  *
  * Progress: 0 while the stage's top is at the bottom of the viewport,
  * 1 when its centre has risen just above the middle. Scrolling back
@@ -63,6 +65,9 @@ export default function FireCrest() {
             target,
             onReady: () => stage.classList.add("is-lit"),
             onLost: () => stage.classList.remove("is-lit"),
+            onTier: (t) => {
+              stage.dataset.fire = t;
+            },
           });
           stage.dataset.fire = handle ? tier : "off";
         })
@@ -81,9 +86,23 @@ export default function FireCrest() {
     );
     near.observe(stage);
 
+    // Turning on "reduce motion" mid-visit puts the still crest back.
+    const reduce = window.matchMedia("(prefers-reduced-motion: reduce)");
+    const onReduce = () => {
+      if (!reduce.matches) return;
+      cancelled = true;
+      near.disconnect();
+      handle?.destroy();
+      handle = null;
+      stage.classList.remove("is-lit");
+      stage.dataset.fire = "off";
+    };
+    reduce.addEventListener("change", onReduce);
+
     return () => {
       cancelled = true;
       near.disconnect();
+      reduce.removeEventListener("change", onReduce);
       handle?.destroy();
       stage.classList.remove("is-lit");
     };
@@ -96,7 +115,7 @@ export default function FireCrest() {
       <img
         src="/brand/crest-384.webp"
         srcSet="/brand/crest-384.webp 384w, /brand/crest-768.webp 768w"
-        sizes="(min-width: 1024px) 300px, 46vw"
+        sizes="(min-width: 1024px) min(30vw, 382px), 46vw"
         width={384}
         height={515}
         alt=""
