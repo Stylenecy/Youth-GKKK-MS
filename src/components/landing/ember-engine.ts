@@ -290,6 +290,9 @@ export function createEmberCrest(host: HTMLElement, opts: Options): FireHandle |
   let last = 0;
   let probeFrames = 0;
   let probeStart = 0;
+  // Set when a stopped rAF chain restarts, so the speed probe can tell a
+  // pause (asleep, off screen, hidden tab) from a genuinely slow frame.
+  let resumed = false;
 
   const tick = (now: number) => {
     raf = 0;
@@ -299,17 +302,17 @@ export function createEmberCrest(host: HTMLElement, opts: Options): FireHandle |
       raf = requestAnimationFrame(tick);
       return;
     }
-    const gap = now - last;
     last = now;
     const moving = draw(now);
     // A "full" device that cannot hold ~40 fps over 40 consecutive frames is
-    // demoted for good. A pause (asleep, off screen, hidden tab) restarts the
-    // count so the pause itself is never mistaken for slowness.
+    // demoted for good. A pause restarts the count so the pause itself is
+    // never mistaken for slowness; a slow frame does not.
     if (tier === "full" && probeFrames < 40) {
-      if (probeFrames === 0 || gap > 100) {
+      if (probeFrames === 0 || resumed) {
         probeStart = now;
         probeFrames = 0;
       }
+      resumed = false;
       probeFrames++;
       if (probeFrames === 40 && (now - probeStart) / 39 > 25) {
         tier = "lite";
@@ -323,7 +326,10 @@ export function createEmberCrest(host: HTMLElement, opts: Options): FireHandle |
 
   const wake = () => {
     awakeUntil = performance.now() + breatheFor();
-    if (!raf && onScreen && !document.hidden) raf = requestAnimationFrame(tick);
+    if (!raf && onScreen && !document.hidden) {
+      resumed = true;
+      raf = requestAnimationFrame(tick);
+    }
   };
 
   const io = new IntersectionObserver(
