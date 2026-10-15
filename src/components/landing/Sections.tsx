@@ -1,6 +1,7 @@
 import Link from "next/link";
 import type { CSSProperties } from "react";
 import SectionHead from "./SectionHead";
+import FireCrest from "./FireCrest";
 import { Logomark } from "@/components/Masthead";
 import type { BulletinEvent, CrossSlot, PublicBulletin } from "@/lib/bulletin";
 import { slotsFilled } from "@/lib/bulletin";
@@ -37,6 +38,12 @@ export function Makna() {
   return (
     <section aria-label="Makna lambang" className="relative py-24 sm:py-28 lg:py-36">
       <div className="lp-wrap">
+        {/* The mark assembles from embers as it scrolls in (static crest
+            under reduced motion, Data Saver, or a very weak phone). */}
+        <FireCrest />
+        <p className="lp-meta mb-20 mt-6 text-center lg:mb-28" data-reveal="fade">
+          <span className="lp-bracket">Lambang</span>&nbsp;&nbsp;api di atas, wadah di bawah
+        </p>
         <div className="grid gap-20 lg:gap-28">
           {rows.map((r, i) => (
             <div key={r.key} className="grid gap-6 lg:grid-cols-12 lg:gap-6">

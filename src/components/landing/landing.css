@@ -653,3 +653,40 @@ html.lenis {
 .lp-btn:focus-visible {
   border-radius: 999px;
 }
+
+/* ---------- Fire crest (Makna) ----------
+   The v2 ember crest (requested 9 Oct; restored 16 Oct). The stage holds the static crest
+   (server-rendered, the only thing shown under reduced motion / Data Saver /
+   very weak phones); FireCrest lays a WebGL canvas over it and hides the
+   still once the first frame is drawn. */
+.lp-fire {
+  position: relative;
+  width: 100%;
+  height: min(118vw, 72svh);
+  max-height: 640px;
+  min-height: 320px;
+  overflow: hidden;
+}
+
+.lp-fire-bloom {
+  width: min(92%, 620px);
+  aspect-ratio: 1;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+}
+
+.lp-fire-still {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  height: 80%;
+  width: auto;
+  max-width: none;
+  transform: translate(-50%, -50%);
+  transition: opacity 0.6s var(--ease-move, ease);
+}
+
+.lp-fire.is-lit .lp-fire-still {
+  opacity: 0;
+}
