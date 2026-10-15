@@ -655,7 +655,7 @@ html.lenis {
 }
 
 /* ---------- Fire crest (Makna) ----------
-   The v2 ember crest, brought back 9 Oct. The stage holds the static crest
+   The v2 ember crest (requested 9 Oct; restored 16 Oct). The stage holds the static crest
    (server-rendered, the only thing shown under reduced motion / Data Saver /
    very weak phones); FireCrest lays a WebGL canvas over it and hides the
    still once the first frame is drawn. */
