@@ -9,6 +9,8 @@ import { friendlyDbError } from "@/lib/db-errors";
 import { recordAudit } from "@/lib/audit";
 import { COMMITTEE_ROLES } from "@/lib/roles";
 import { requireRole, NOT_COMMITTEE, NOTHING_CHANGED } from "@/lib/role-guard";
+import { staffingBlock } from "@/lib/events";
+import type { EventStatus } from "@/lib/types";
 
 const requireCommittee = () => requireRole(COMMITTEE_ROLES, NOT_COMMITTEE);
 
@@ -203,6 +205,17 @@ export async function assignSteward(eventId: string, profileId: string, role: st
   if (isSupabaseConfigured()) {
     const auth = await requireCommittee();
     if (!auth.ok) return { success: false, error: auth.error };
+
+    const { data: event, error: readError } = await auth.supabase
+      .from("events")
+      .select("date,status")
+      .eq("id", eventId)
+      .maybeSingle();
+    if (readError) return { success: false, error: friendlyDbError(readError.message) };
+    if (!event) return { success: false, error: "Ibadah itu tidak ditemukan — muat ulang halaman." };
+    const blocked = staffingBlock(event as { date: string; status: EventStatus }, Date.now());
+    if (blocked) return { success: false, error: blocked };
+
     const { data: created, error } = await auth.supabase.from("steward_assignments").insert({
       event_id: eventId,
       profile_id: profileId,
@@ -218,6 +231,14 @@ export async function assignSteward(eventId: string, profileId: string, role: st
     revalidatePath("/dashboard/penatalayan");
     return { success: true, id: created?.id ?? null };
   }
+
+  // Demo mode applies the same rule to the seed, so the preview behaves
+  // like the real thing instead of accepting everything.
+  const { seedEvents } = await import("@/lib/seed");
+  const seeded = seedEvents.find((e) => e.id === eventId);
+  if (!seeded) return { success: false, error: "Ibadah itu tidak ditemukan — muat ulang halaman." };
+  const blocked = staffingBlock(seeded, Date.now());
+  if (blocked) return { success: false, error: blocked };
   revalidatePath(`/dashboard/gatherings/${eventId}`);
   revalidatePath("/dashboard/penatalayan");
   return { success: true, id: null };

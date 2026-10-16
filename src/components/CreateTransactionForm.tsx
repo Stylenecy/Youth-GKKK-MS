@@ -5,8 +5,9 @@ import { Plus } from "lucide-react";
 import { createTransaction } from "@/app/actions/finance";
 import { Modal, Field, fieldClass } from "./Modal";
 import { useToast } from "./Toast";
-import { isSupabaseConfigured } from "@/lib/supabase/env";
 import { INCOME_CATEGORIES, EXPENSE_CATEGORIES, ACCOUNT_LABEL, type EventOption } from "@/lib/finance";
+import { callAction } from "@/lib/call-action";
+import { demoNote } from "@/lib/demo";
 
 type FieldErrors = Record<string, string[] | undefined>;
 
@@ -26,10 +27,10 @@ export function CreateTransactionForm({
   function handleSubmit(formData: FormData) {
     setErrors({});
     startTransition(async () => {
-      const result = await createTransaction(formData);
+      const result = await callAction(() => createTransaction(formData));
       if (result.success) {
         setIsOpen(false);
-        toast({ message: `Transaksi tersimpan.${isSupabaseConfigured() ? "" : " (mode demo — tidak tersimpan)"}` });
+        toast({ message: `Transaksi tersimpan.${demoNote()}` });
       } else {
         setErrors((result.errors ?? {}) as FieldErrors);
       }

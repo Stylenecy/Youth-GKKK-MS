@@ -10,6 +10,8 @@ import {
   toDateInputValue,
   toTimeInputValue,
 } from "@/lib/datetime";
+import { callAction } from "@/lib/call-action";
+import { demoNote } from "@/lib/demo";
 
 type FieldErrors = Record<string, string[] | undefined>;
 
@@ -28,7 +30,7 @@ export function EditEventForm({
   function handleSubmit(formData: FormData) {
     setErrors({});
     startTransition(async () => {
-      const result = await updateEvent(event.id, formData);
+      const result = await callAction(() => updateEvent(event.id, formData));
       if (result.success) {
         setIsOpen(false);
         setSuccess(true);
@@ -47,7 +49,7 @@ export function EditEventForm({
       {success && (
         <div className="fixed right-4 top-4 z-50 flex items-center gap-2 rounded-xl border border-sage/50 bg-sage-wash px-4 py-3 text-sm font-semibold text-sage shadow-2xl">
           <span className="h-2 w-2 rounded-full bg-sage" />
-          Perubahan ibadah berhasil disimpan.
+          Perubahan ibadah berhasil disimpan.{demoNote()}
         </div>
       )}
 

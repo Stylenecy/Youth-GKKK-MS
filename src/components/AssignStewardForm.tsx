@@ -13,6 +13,7 @@ import {
 } from "@/lib/stewards";
 import { isOverloaded } from "@/lib/fatigue";
 import { Modal, Field, fieldClass } from "./Modal";
+import { callAction } from "@/lib/call-action";
 
 export interface AssignedToast {
   assignmentId: string | null;
@@ -112,7 +113,7 @@ export function AssignStewardForm({
     if (!effectiveRole || !selectedId || !selected || isPending) return;
     setError(null);
     startTransition(async () => {
-      const result = await assignSteward(eventId, selectedId, effectiveRole);
+      const result = await callAction(() => assignSteward(eventId, selectedId, effectiveRole));
       if (result.success) {
         const name = selected.fullName;
         close();
@@ -133,7 +134,7 @@ export function AssignStewardForm({
     if (!toast?.assignmentId || undoState === "working") return;
     setUndoState("working");
     startTransition(async () => {
-      const result = await removeStewardAssignment(toast.assignmentId as string, eventId);
+      const result = await callAction(() => removeStewardAssignment(toast.assignmentId as string, eventId));
       if (result.success) {
         setUndoState("done");
         router.refresh();

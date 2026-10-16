@@ -4,6 +4,7 @@ import { useState, useTransition } from "react";
 import { Modal } from "./Modal";
 import { AlertTriangle } from "lucide-react";
 import { useToast } from "./Toast";
+import { callAction } from "@/lib/call-action";
 
 /**
  * Destructive / critical action behind a confirmation dialog with Nocturne styling.
@@ -34,7 +35,7 @@ export function ConfirmAction({
   function handleConfirm() {
     setError(null);
     startTransition(async () => {
-      const result = await onConfirm();
+      const result = await callAction(() => onConfirm());
       if (result.success) {
         setIsOpen(false);
         if (successMessage) toast({ message: successMessage });

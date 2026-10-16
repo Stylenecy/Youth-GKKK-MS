@@ -35,7 +35,10 @@ interface ReadResult {
 // (rows are mapped by the explicit mappers below, never cast).
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 function rows<T = any>(res: ReadResult, what: string): T[] {
-  if (res.error) throw new Error(`Gagal memuat ${what}: ${res.error.message}`);
+  if (res.error) {
+    if (isMalformedId(res.error)) return [];
+    throw new Error(`Gagal memuat ${what}: ${res.error.message}`);
+  }
   return (res.data as T[] | null) ?? [];
 }
 
@@ -43,10 +46,20 @@ function rows<T = any>(res: ReadResult, what: string): T[] {
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 function one<T = any>(res: ReadResult, what: string): T | null {
   if (res.error) {
-    if (res.error.code === "PGRST116") return null;
+    if (res.error.code === "PGRST116" || isMalformedId(res.error)) return null;
     throw new Error(`Gagal memuat ${what}: ${res.error.message}`);
   }
   return res.data as T | null;
+}
+
+/**
+ * Postgres 22P02 (invalid_text_representation): an id from the URL that is
+ * not a UUID at all, e.g. `/dashboard/gatherings/abc`. Nothing can match
+ * it, so it is "not found" (the route's 404), not "the database failed"
+ * (the route's error screen with a retry button that can never succeed).
+ */
+function isMalformedId(error: { code?: string }): boolean {
+  return error.code === "22P02";
 }
 
 /**
@@ -275,9 +288,12 @@ export async function getMemberWhatsapp(
   if (isSupabaseConfigured()) {
     const { createClient } = await import("./supabase/server");
     const supabase = await createClient();
-    const { data } = await supabase.rpc("get_member_whatsapp", {
+    const { data, error } = await supabase.rpc("get_member_whatsapp", {
       p_profile_id: profileId,
     });
+    // A failed read is not "no number" — swallowing it showed the
+    // "protected" notice to the very people allowed to see the number.
+    if (error) throw new Error(`Gagal memuat nomor WhatsApp: ${error.message}`);
     return typeof data === "string" && data.length > 0 ? data : null;
   }
 
@@ -298,9 +314,11 @@ export async function getDashboardStats(): Promise<DashboardStats> {
       supabase.from("profiles").select("id", { count: "exact", head: true }).eq("is_active", true),
       // Bounded to the calendar month. `gte` alone had no upper bound, so an
       // event scheduled for December counted towards "Bulan Ini" in August.
+      // Archived gatherings were withdrawn — they are not this month's.
       supabase.from("events").select("id", { count: "exact" })
         .gte("date", monthStart.toISOString())
-        .lt("date", nextMonthStart.toISOString()),
+        .lt("date", nextMonthStart.toISOString())
+        .neq("status", "archived"),
       supabase.from("crosses").select("id", { count: "exact", head: true }).eq("is_active", true),
       // Running balance across ALL transactions, not just the current month.
       // The card is labelled "Saldo Kas"; scoping it to transactions created

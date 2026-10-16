@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { X } from "lucide-react";
 import { Modal } from "./Modal";
 import { removeStewardAssignment } from "@/app/actions/gatherings";
+import { callAction } from "@/lib/call-action";
 
 /**
  * Tombol × di chip penatalayan (Papan, komite saja).
@@ -32,7 +33,7 @@ export function StewardRemoveButton({
   function handleConfirm() {
     setError(null);
     startTransition(async () => {
-      const result = await removeStewardAssignment(assignmentId, eventId);
+      const result = await callAction(() => removeStewardAssignment(assignmentId, eventId));
       if (result.success) {
         setIsOpen(false);
         router.refresh();

@@ -5,7 +5,7 @@ import {
   getCrossMembers,
   getCrossLeaders,
   getMyLeaderCrossIds,
-  getCurrentProfile,
+  getMyRole,
   isSupabaseConfigured,
 } from "@/lib/data";
 import { PageHeader, EmptyState, Monogram, SectionTitle } from "@/components/page-parts";
@@ -31,13 +31,14 @@ export default async function MyCrossPage() {
     );
   }
 
-  const [crosses, myLeaderCrossIds, me] = await Promise.all([
+  // Role from get_my_app_role(), not the profile row — see members/[id].
+  const [crosses, myLeaderCrossIds, role] = await Promise.all([
     getCrosses(),
     getMyLeaderCrossIds(),
-    getCurrentProfile(),
+    getMyRole(),
   ]);
 
-  const isAdmin = me?.appRole === "admin";
+  const isAdmin = role === "admin";
   const manageable = isAdmin
     ? crosses
     : crosses.filter((c) => myLeaderCrossIds.includes(c.id));

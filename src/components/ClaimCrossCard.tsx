@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { KeyRound } from "lucide-react";
 import { claimCrossLeadership } from "@/app/actions/cross";
 import type { Cross } from "@/lib/types";
+import { callAction } from "@/lib/call-action";
 
 /**
  * First-login self-claim card: a group the signed-in leader can claim with
@@ -21,7 +22,7 @@ export function ClaimCrossCard({ cross }: { cross: Cross }) {
     e.preventDefault();
     setError(null);
     startTransition(async () => {
-      const result = await claimCrossLeadership(cross.id, code);
+      const result = await callAction(() => claimCrossLeadership(cross.id, code));
       if (result.success) {
         router.refresh();
       } else {

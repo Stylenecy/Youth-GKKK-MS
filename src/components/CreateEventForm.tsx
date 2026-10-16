@@ -6,6 +6,8 @@ import { createEvent } from "@/app/actions/gatherings";
 import type { Profile } from "@/lib/types";
 import { Modal, Field, fieldClass } from "./Modal";
 import { EVENT_TYPE_LABEL } from "@/lib/datetime";
+import { callAction } from "@/lib/call-action";
+import { demoNote } from "@/lib/demo";
 
 type FieldErrors = Record<string, string[] | undefined>;
 
@@ -18,7 +20,7 @@ export function CreateEventForm({ profiles }: { profiles: Profile[] }) {
   function handleSubmit(formData: FormData) {
     setErrors({});
     startTransition(async () => {
-      const result = await createEvent(formData);
+      const result = await callAction(() => createEvent(formData));
       if (result.success) {
         setIsOpen(false);
         setSuccess(true);
@@ -37,7 +39,7 @@ export function CreateEventForm({ profiles }: { profiles: Profile[] }) {
       {success && (
         <div className="fixed right-4 top-4 z-50 flex items-center gap-2 rounded-xl border border-sage/50 bg-sage-wash px-4 py-3 text-sm font-semibold text-sage shadow-2xl">
           <span className="h-2 w-2 rounded-full bg-sage" />
-          Ibadah berhasil disimpan dan dijadwalkan.
+          Ibadah berhasil disimpan dan dijadwalkan.{demoNote()}
         </div>
       )}
 

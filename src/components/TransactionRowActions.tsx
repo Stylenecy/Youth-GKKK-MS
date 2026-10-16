@@ -4,11 +4,12 @@ import { useState, useTransition } from "react";
 import { Pencil, Trash2, AlertTriangle } from "lucide-react";
 import { updateTransaction, deleteTransaction, restoreTransaction } from "@/app/actions/finance";
 import { useToast } from "./Toast";
-import { isSupabaseConfigured } from "@/lib/supabase/env";
 import type { FinanceTransaction } from "@/lib/types";
 import { Modal, Field, fieldClass } from "./Modal";
 import { formatRupiah } from "@/lib/datetime";
 import { INCOME_CATEGORIES, EXPENSE_CATEGORIES, ACCOUNT_LABEL, type EventOption } from "@/lib/finance";
+import { callAction } from "@/lib/call-action";
+import { demoNote } from "@/lib/demo";
 
 type FieldErrors = Record<string, string[] | undefined>;
 
@@ -33,12 +34,12 @@ export function TransactionRowActions({
   const [errors, setErrors] = useState<FieldErrors>({});
   const [deleteError, setDeleteError] = useState<string | null>(null);
   const toast = useToast();
-  const demo = isSupabaseConfigured() ? "" : " (mode demo — tidak tersimpan)";
+  const demo = demoNote();
 
   function handleSubmit(formData: FormData) {
     setErrors({});
     startTransition(async () => {
-      const result = await updateTransaction(transaction.id, formData);
+      const result = await callAction(() => updateTransaction(transaction.id, formData));
       if (result.success) {
         setEditOpen(false);
         toast({ message: `Transaksi diperbarui.${demo}` });
@@ -51,7 +52,7 @@ export function TransactionRowActions({
   function handleDelete() {
     setDeleteError(null);
     startTransition(async () => {
-      const result = await deleteTransaction(transaction.id);
+      const result = await callAction(() => deleteTransaction(transaction.id));
       if (result.success) {
         setDeleteOpen(false);
         // Soft delete, so it is reversible — offer it right where the

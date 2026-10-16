@@ -4,6 +4,8 @@ import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { importTransactions, type ImportRowError } from "@/app/actions/finance";
 import { FileSpreadsheet, Check, AlertCircle } from "lucide-react";
+import { callAction } from "@/lib/call-action";
+import { demoNote } from "@/lib/demo";
 
 /**
  * Paste-and-validate import for legacy cash data with Nocturne styling.
@@ -22,7 +24,7 @@ export function BulkImportTransactionsForm() {
     setErrors([]);
     setDone(null);
     startTransition(async () => {
-      const result = await importTransactions(text);
+      const result = await callAction(() => importTransactions(text));
       if (result.success) {
         setDone(result.count ?? 0);
         setText("");
@@ -94,7 +96,7 @@ export function BulkImportTransactionsForm() {
       {done !== null && (
         <div className="mt-3 flex items-center gap-2 rounded-xl border border-sage/40 bg-sage-wash p-3 text-xs font-semibold text-sage">
           <Check className="h-4 w-4" />
-          {done} baris transaksi berhasil diimpor ke buku kas.
+          {done} baris transaksi berhasil diimpor ke buku kas.{demoNote()}
         </div>
       )}
 

@@ -13,6 +13,7 @@ import {
   FATIGUE_WINDOW_DAYS,
 } from "@/lib/fatigue";
 import { PageHeader, EmptyState, SectionTitle } from "@/components/page-parts";
+import { isLiveEvent } from "@/lib/events";
 import { isOverloaded } from "@/lib/fatigue";
 import { isCommittee } from "@/lib/roles";
 import {
@@ -43,11 +44,13 @@ export default async function PenatalayanPage() {
   // Server component: renders once per request, so "now" is stable here.
   // eslint-disable-next-line react-hooks/purity
   const now = Date.now();
-  const upcoming = events
+  // Archived gatherings were withdrawn: no column, nothing to staff.
+  const live = events.filter(isLiveEvent);
+  const upcoming = live
     .filter((e) => new Date(e.date).getTime() >= now)
     .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())
     .slice(0, MAX_UPCOMING);
-  const past = events
+  const past = live
     .filter((e) => new Date(e.date).getTime() < now)
     .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
     .slice(0, MAX_PAST)

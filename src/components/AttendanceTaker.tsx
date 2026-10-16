@@ -4,6 +4,7 @@ import { useMemo, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { AlertCircle, Search } from "lucide-react";
 import { markAttendance } from "@/app/actions/attendance";
+import { callAction } from "@/lib/call-action";
 
 export interface AttendanceMember {
   id: string;
@@ -60,7 +61,7 @@ export function AttendanceTaker({
     });
     setBusyIds((prev) => new Set(prev).add(memberId));
     startTransition(async () => {
-      const result = await markAttendance(eventId, memberId, next);
+      const result = await callAction(() => markAttendance(eventId, memberId, next));
       setBusyIds((prev) => {
         const updated = new Set(prev);
         updated.delete(memberId);

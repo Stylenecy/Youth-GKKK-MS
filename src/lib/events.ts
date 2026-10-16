@@ -35,3 +35,51 @@ export function eventStateLabel(event: {
     ? { label: "Terjadwal", cls: "tag tag-sage font-medium" }
     : { label: "Rencana", cls: "tag font-medium" };
 }
+
+/**
+ * Archived gatherings are withdrawn ones (cancelled, entered by mistake).
+ * They stay readable in the history list, but nothing that plans ahead —
+ * the steward board, "upcoming" counts, this month's statistics — may treat
+ * them as a gathering that is going to happen.
+ */
+export function isLiveEvent(event: { status: EventStatus }): boolean {
+  return event.status !== "archived";
+}
+
+/**
+ * Splits gatherings for the schedule page: upcoming = not archived and not
+ * yet started, soonest first; everything else (held, or archived whatever
+ * its date) is history, newest first.
+ */
+export function splitGatherings<T extends { status: EventStatus; date: string }>(
+  events: T[],
+  now: number
+): { upcoming: T[]; past: T[] } {
+  const time = (e: T) => new Date(e.date).getTime();
+  const upcoming = events
+    .filter((e) => isLiveEvent(e) && time(e) >= now)
+    .sort((a, b) => time(a) - time(b));
+  const past = events
+    .filter((e) => !(isLiveEvent(e) && time(e) >= now))
+    .sort((a, b) => time(b) - time(a));
+  return { upcoming, past };
+}
+
+/**
+ * Why a gathering can no longer take new stewards, or null if it can.
+ * The board and the roster already hide "Tambah" on these columns; this is
+ * the server's own copy of the rule, so a stale tab or a forged call cannot
+ * staff a withdrawn or finished gathering.
+ */
+export function staffingBlock(
+  event: { status: EventStatus; date: string },
+  now: number
+): string | null {
+  if (!isLiveEvent(event)) {
+    return "Ibadah ini sudah diarsipkan — pulihkan dulu sebelum menugaskan penatalayan.";
+  }
+  if (new Date(event.date).getTime() < now) {
+    return "Ibadah ini sudah berlangsung — penugasan baru hanya untuk ibadah yang akan datang.";
+  }
+  return null;
+}
