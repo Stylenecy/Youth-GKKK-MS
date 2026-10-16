@@ -275,7 +275,10 @@ interface ApprovalRow {
  * SQL my_profile_id() that RLS and the RPCs use, because it IS that call.
  */
 async function myProfileId(supabase: SupabaseClient, userId: string): Promise<string> {
-  const { data } = await supabase.rpc("my_profile_id");
+  const { data, error } = await supabase.rpc("my_profile_id");
+  // Falling back to the auth id is right for old accounts; a failed call is
+  // logged so a broken link never hides silently behind it.
+  if (error) console.error("[my_profile_id]", error.message);
   return typeof data === "string" && data.length > 0 ? data : userId;
 }
 

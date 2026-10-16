@@ -81,3 +81,22 @@ export async function linkAccountToProfile(userId: string, profileId: string) {
   revalidatePath("/dashboard/settings");
   return { success: true };
 }
+
+/** Undo a wrong link (migration 0024): the member also forgets this email. */
+export async function unlinkAccount(userId: string) {
+  if (typeof userId !== "string" || userId.trim() === "") {
+    return { success: false, error: "Data akun tidak valid." };
+  }
+  if (!isSupabaseConfigured()) {
+    return { success: false, error: DEMO_NEEDS_LOGIN };
+  }
+
+  const { createClient } = await import("@/lib/supabase/server");
+  const supabase = await createClient();
+  const { error } = await supabase.rpc("unlink_account", { p_user_id: userId });
+  if (error) return { success: false, error: friendlyDbError(error.message) };
+
+  await recordAudit("Melepas tautan akun dari data anggota", "account", userId);
+  revalidatePath("/dashboard/settings");
+  return { success: true };
+}

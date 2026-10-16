@@ -334,6 +334,18 @@ describe("Cross and account approval", () => {
     expect(await linkAccountToProfile("u-2", "p-9")).toEqual({ success: false, error: DEMO_NEEDS_LOGIN });
   });
 
+  it("unlinkAccount: refusal translated, success audited, demo needs login (migration 0024)", async () => {
+    const { unlinkAccount } = await import("@/app/actions/accounts");
+    const { DEMO_NEEDS_LOGIN } = await import("@/lib/demo");
+    fx.rpc.unlink_account = { data: null, error: { message: "not_an_admin" } };
+    expect(await unlinkAccount("u-2")).toMatchObject({ error: expect.stringMatching(/Hanya admin/) });
+    fx.rpc.unlink_account = { data: null, error: null };
+    expect(await unlinkAccount("u-2")).toEqual({ success: true });
+    expect(recordAudit).toHaveBeenCalledWith("Melepas tautan akun dari data anggota", "account", "u-2");
+    demo();
+    expect(await unlinkAccount("u-2")).toEqual({ success: false, error: DEMO_NEEDS_LOGIN });
+  });
+
   it("decideAccount: demo needs login, RPC refusal is translated, success audited", async () => {
     const { decideAccount } = await import("@/app/actions/accounts");
     const { DEMO_NEEDS_LOGIN } = await import("@/lib/demo");

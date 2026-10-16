@@ -2,7 +2,7 @@ import { UserCheck, ShieldAlert } from "lucide-react";
 import { getAccountApprovals, getMyRole, getProfiles } from "@/lib/data";
 import { LinkAccountForm } from "@/components/LinkAccountForm";
 import { canApproveAccounts } from "@/lib/roles";
-import { decideAccount } from "@/app/actions/accounts";
+import { decideAccount, unlinkAccount } from "@/app/actions/accounts";
 import { ConfirmAction } from "@/components/ConfirmAction";
 import { formatDateTime } from "@/lib/datetime";
 
@@ -86,15 +86,33 @@ export async function AccountApprovals() {
                 <p className="mt-0.5 font-mono text-[0.6875rem] text-ink-faint">
                   Masuk {formatDateTime(account.requestedAt)}
                 </p>
-                {account.link !== "unlinked" ? (
+                {account.link === "same_id" ? (
                   <p className="mt-1 text-xs text-ink-muted">
                     Data anggota: <span className="font-medium text-ink">{account.memberName}</span>
                   </p>
+                ) : account.link === "linked" ? (
+                  <div className="mt-1 flex flex-wrap items-center gap-2">
+                    <p className="text-xs text-ink-muted">
+                      Data anggota: <span className="font-medium text-ink">{account.memberName}</span>
+                    </p>
+                    <ConfirmAction
+                      label="Lepas tautan"
+                      title="Lepas tautan akun ini?"
+                      body={`${account.email} tidak lagi bertindak sebagai ${account.memberName ?? "anggota itu"}. Email ini juga dihapus dari data anggotanya, jadi tidak akan tertaut lagi otomatis.`}
+                      confirmLabel="Ya, lepas tautan"
+                      successMessage="Tautan dilepas."
+                      variant="outline"
+                      onConfirm={async () => {
+                        "use server";
+                        return unlinkAccount(account.userId);
+                      }}
+                    />
+                  </div>
                 ) : account.status === "approved" ? (
                   <div className="mt-1.5">
                     <span className="tag tag-warning font-medium">Perlu dicek</span>
                     <p className="mt-1 text-xs text-ink-muted">
-                      Belum tertaut ke data anggota — tidak ada anggota dengan email ini. Pilih siapa pemilik akun ini:
+                      Belum tertaut ke data anggota: tidak ada anggota bebas dengan email ini. Pilih siapa pemilik akun ini:
                     </p>
                     <LinkAccountForm userId={account.userId} email={account.email} members={linkable} />
                   </div>
