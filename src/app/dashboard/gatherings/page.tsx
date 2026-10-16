@@ -72,7 +72,7 @@ export default async function GatheringsPage() {
           <GatheringSection
             id="sudah-berlangsung"
             kicker="RIWAYAT"
-            title="Riwayat & Arsip Ibadah"
+            title="Sudah lewat & diarsipkan"
             events={past}
             nameOf={nameOf}
             empty="Belum ada ibadah yang sudah lewat atau diarsipkan."
