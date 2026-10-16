@@ -303,6 +303,15 @@ describe("Cross and account approval", () => {
     expect(recordAudit).not.toHaveBeenCalled();
   });
 
+  it("a pending account is told it needs approval (migration 0021)", async () => {
+    const { claimCrossLeadership, addCrossMember } = await import("@/app/actions/cross");
+    fx.rpc.claim_cross_leadership = { data: null, error: { message: "not_approved" } };
+    fx.rpc.add_cross_member = { data: null, error: { message: "not_approved" } };
+    expect(await claimCrossLeadership("c-1", "KODE")).toMatchObject({ error: expect.stringMatching(/belum disetujui/) });
+    expect(await addCrossMember("c-1", "Budi")).toMatchObject({ error: expect.stringMatching(/belum disetujui/) });
+    expect(recordAudit).not.toHaveBeenCalled();
+  });
+
   it("addCrossMember validates the name and audits a success", async () => {
     const { addCrossMember } = await import("@/app/actions/cross");
     expect(await addCrossMember("c-1", "   ")).toMatchObject({ success: false });
