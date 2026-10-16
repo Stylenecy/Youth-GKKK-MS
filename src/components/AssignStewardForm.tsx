@@ -14,7 +14,7 @@ import {
 import { isOverloaded } from "@/lib/fatigue";
 import { Modal, Field, fieldClass } from "./Modal";
 import { callAction } from "@/lib/call-action";
-import { DEMO_NOTE } from "@/lib/demo";
+import { DEMO_NOTE, demoNote } from "@/lib/demo";
 
 export interface AssignedToast {
   assignmentId: string | null;
@@ -150,7 +150,7 @@ export function AssignStewardForm({
     <>
       <div aria-live="polite" className="sr-only">
         {toast && undoState !== "done"
-          ? `${toast.name} ditetapkan sebagai ${toast.role}`
+          ? `${toast.name} ditetapkan sebagai ${toast.role}.${demoNote()}`
           : ""}
       </div>
 

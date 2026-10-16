@@ -74,10 +74,14 @@ export function ToastProvider({ children }: { children: ReactNode }) {
   return (
     <ToastContext.Provider value={show}>
       {children}
+      {/* The live region is always mounted and only its text changes: some
+          screen readers ignore a region that is inserted together with its
+          content. */}
+      <p role="status" aria-live="polite" className="sr-only">
+        {toast?.message ?? ""}
+      </p>
       {toast && (
         <div
-          role="status"
-          aria-live="polite"
           className="fixed bottom-20 left-1/2 z-50 w-[calc(100%-2.5rem)] max-w-md -translate-x-1/2 rounded-xl border border-line bg-surface p-4 shadow-2xl lg:bottom-8"
         >
           <p className="text-sm text-ink">{toast.message}</p>
