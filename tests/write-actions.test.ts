@@ -319,6 +319,21 @@ describe("Cross and account approval", () => {
     expect(recordAudit).toHaveBeenCalledWith("Menambah anggota Cross", "cross", "c-1", { after: { name: "Budi" } });
   });
 
+  it("linkAccountToProfile: input, demo, refusal, success (S19, migration 0023)", async () => {
+    const { linkAccountToProfile } = await import("@/app/actions/accounts");
+    const { DEMO_NEEDS_LOGIN } = await import("@/lib/demo");
+    expect(await linkAccountToProfile("u-2", "")).toMatchObject({ success: false, error: expect.stringMatching(/Pilih anggota/) });
+    fx.rpc.link_account_to_profile = { data: null, error: { message: "profile_taken" } };
+    expect(await linkAccountToProfile("u-2", "p-9")).toMatchObject({ error: expect.stringMatching(/sudah tertaut ke akun lain/) });
+    expect(recordAudit).not.toHaveBeenCalled();
+    fx.rpc.link_account_to_profile = { data: null, error: null };
+    expect(await linkAccountToProfile("u-2", "p-9")).toEqual({ success: true });
+    expect(fx.rpcCalls.find((c) => c.name === "link_account_to_profile")?.args).toEqual({ p_user_id: "u-2", p_profile_id: "p-9" });
+    expect(recordAudit).toHaveBeenCalledWith("Menautkan akun ke data anggota", "account", "u-2", { after: { profileId: "p-9" } });
+    demo();
+    expect(await linkAccountToProfile("u-2", "p-9")).toEqual({ success: false, error: DEMO_NEEDS_LOGIN });
+  });
+
   it("decideAccount: demo needs login, RPC refusal is translated, success audited", async () => {
     const { decideAccount } = await import("@/app/actions/accounts");
     const { DEMO_NEEDS_LOGIN } = await import("@/lib/demo");

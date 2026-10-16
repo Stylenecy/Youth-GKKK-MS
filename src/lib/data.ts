@@ -257,7 +257,7 @@ interface MembershipPairRow { cross_id: string; profile_id: string }
 interface NameRow { id: string; name: string }
 interface NicknameRow { id: string; nickname: string }
 interface AmountRow { amount: number; type: FinanceType }
-interface AuditRow { id: string; action: string; timestamp: string }
+interface AuditRow { id: string; action: string; timestamp: string; user_id: string | null }
 interface ApprovalRow {
   user_id: string;
   email: string;
@@ -265,6 +265,18 @@ interface ApprovalRow {
   status: AccountStatus;
   requested_at: string;
   note: string | null;
+  profile_id: string | null;
+}
+
+/**
+ * The signed-in account's member profile id: the profile it was linked to
+ * (account_approvals.profile_id, migration 0023), or — for old accounts
+ * whose profile shares the auth id — the auth id itself. Same rule as the
+ * SQL my_profile_id() that RLS and the RPCs use, because it IS that call.
+ */
+async function myProfileId(supabase: SupabaseClient, userId: string): Promise<string> {
+  const { data } = await supabase.rpc("my_profile_id");
+  return typeof data === "string" && data.length > 0 ? data : userId;
 }
 
 function mapMeetingRow(row: MeetingRow): Meeting {
@@ -453,16 +465,28 @@ export async function getRecentActivity(limit = 5): Promise<RecentActivity[]> {
     const data = rows(
       await supabase
         .from("audit_logs")
-        .select("id,action,timestamp")
+        .select("id,action,timestamp,user_id")
         .order("timestamp", { ascending: false })
         .limit(limit),
       "riwayat aktivitas"
-    );
+    ) as AuditRow[];
 
-    return (data as AuditRow[]).map((log) => ({
+    // Who did it (R6 #9): one name lookup for the whole page.
+    const actorIds = [...new Set(data.map((l) => l.user_id).filter((id): id is string => !!id))];
+    const names = new Map<string, string>();
+    if (actorIds.length > 0) {
+      const people = rows(
+        await supabase.from("profiles").select("id,nickname").in("id", actorIds),
+        "nama pelaku"
+      ) as NicknameRow[];
+      people.forEach((p) => names.set(p.id, p.nickname));
+    }
+
+    return data.map((log) => ({
       id: log.id,
       description: log.action,
       createdAt: log.timestamp,
+      actorName: log.user_id ? (names.get(log.user_id) ?? null) : null,
     }));
   }
 
@@ -808,10 +832,11 @@ export async function getCurrentProfile(): Promise<Profile | null> {
 
   // The role lookup stays tolerant on purpose: a failure falls back to
   // "member" (fail closed — fewer buttons), which is the safe direction.
-  const [profileRes, { data: appRole }] = await Promise.all([
-    supabase.from("profiles").select(PROFILE_COLUMNS).eq("id", user.id).single(),
+  const [profileId, { data: appRole }] = await Promise.all([
+    myProfileId(supabase, user.id),
     supabase.rpc("get_my_app_role"),
   ]);
+  const profileRes = await supabase.from("profiles").select(PROFILE_COLUMNS).eq("id", profileId).single();
   const profile = one(profileRes, "profilmu");
   if (!profile) return null;
 
@@ -827,6 +852,15 @@ export interface AccountApproval {
   status: AccountStatus;
   requestedAt: string;
   note: string | null;
+  /**
+   * Which member this login acts as (S19, migration 0023):
+   * - "linked": tied to a member by email or by an admin — see memberName;
+   * - "same_id": an old account whose member row shares its auth id;
+   * - "unlinked": no member yet — the admin must check ("perlu dicek").
+   */
+  link: "linked" | "same_id" | "unlinked";
+  memberId: string | null;
+  memberName: string | null;
 }
 
 /**
@@ -927,19 +961,37 @@ export async function getAccountApprovals(): Promise<AccountApproval[]> {
   const data = rows(
     await supabase
       .from("account_approvals")
-      .select("user_id,email,display_name,status,requested_at,note")
+      .select("user_id,email,display_name,status,requested_at,note,profile_id")
       .order("requested_at", { ascending: false }),
     "antrean persetujuan akun"
-  );
+  ) as ApprovalRow[];
 
-  return (data as ApprovalRow[]).map((r) => ({
-    userId: r.user_id,
-    email: r.email,
-    displayName: r.display_name,
-    status: r.status,
-    requestedAt: r.requested_at,
-    note: r.note,
-  }));
+  // Member names for both kinds of link, in one read.
+  const ids = [...new Set(data.flatMap((r) => (r.profile_id ? [r.profile_id, r.user_id] : [r.user_id])))];
+  const names = new Map<string, string>();
+  if (ids.length > 0) {
+    const people = rows(
+      await supabase.from("profiles").select("id,nickname").in("id", ids),
+      "nama anggota tertaut"
+    ) as NicknameRow[];
+    people.forEach((p) => names.set(p.id, p.nickname));
+  }
+
+  return data.map((r) => {
+    const linkedName = r.profile_id ? names.get(r.profile_id) ?? null : null;
+    const sameIdName = names.get(r.user_id) ?? null;
+    return {
+      userId: r.user_id,
+      email: r.email,
+      displayName: r.display_name,
+      status: r.status,
+      requestedAt: r.requested_at,
+      note: r.note,
+      link: r.profile_id ? "linked" : sameIdName ? "same_id" : "unlinked",
+      memberId: r.profile_id ?? (sameIdName ? r.user_id : null),
+      memberName: linkedName ?? sameIdName,
+    };
+  });
 }
 
 /** Cross ids the signed-in user actively leads. Empty outside a real session. */
@@ -955,7 +1007,7 @@ export async function getMyLeaderCrossIds(): Promise<string[]> {
     await supabase
       .from("cross_memberships")
       .select("cross_id")
-      .eq("profile_id", user.id)
+      .eq("profile_id", await myProfileId(supabase, user.id))
       .eq("role", "leader")
       .eq("is_active", true),
     "Cross yang kamu pimpin"
