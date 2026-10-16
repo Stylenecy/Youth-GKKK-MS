@@ -7,7 +7,7 @@ import { Modal, Field, fieldClass } from "./Modal";
 import { useToast } from "./Toast";
 import { INCOME_CATEGORIES, EXPENSE_CATEGORIES, ACCOUNT_LABEL, type EventOption } from "@/lib/finance";
 import { callAction } from "@/lib/call-action";
-import { demoNote } from "@/lib/demo";
+import { savedMessage } from "@/lib/demo";
 
 type FieldErrors = Record<string, string[] | undefined>;
 
@@ -30,7 +30,7 @@ export function CreateTransactionForm({
       const result = await callAction(() => createTransaction(formData));
       if (result.success) {
         setIsOpen(false);
-        toast({ message: `Transaksi tersimpan.${demoNote()}` });
+        toast({ message: savedMessage("Transaksi tersimpan.") });
       } else {
         setErrors((result.errors ?? {}) as FieldErrors);
       }

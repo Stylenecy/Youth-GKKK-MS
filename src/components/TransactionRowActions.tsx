@@ -9,7 +9,7 @@ import { Modal, Field, fieldClass } from "./Modal";
 import { formatRupiah } from "@/lib/datetime";
 import { INCOME_CATEGORIES, EXPENSE_CATEGORIES, ACCOUNT_LABEL, type EventOption } from "@/lib/finance";
 import { callAction } from "@/lib/call-action";
-import { demoNote } from "@/lib/demo";
+import { demoNote, savedMessage } from "@/lib/demo";
 
 type FieldErrors = Record<string, string[] | undefined>;
 
@@ -42,7 +42,7 @@ export function TransactionRowActions({
       const result = await callAction(() => updateTransaction(transaction.id, formData));
       if (result.success) {
         setEditOpen(false);
-        toast({ message: `Transaksi diperbarui.${demo}` });
+        toast({ message: savedMessage("Transaksi diperbarui.") });
       } else {
         setErrors((result.errors ?? {}) as FieldErrors);
       }

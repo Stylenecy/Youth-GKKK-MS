@@ -85,7 +85,16 @@ describe("archived gatherings (R6 #2)", () => {
     const { staffingBlock } = await import("../src/lib/events");
     const now = Date.now();
     expect(staffingBlock(ev("archived", 3), now)).toMatch(/diarsipkan/);
-    expect(staffingBlock(ev("published", -1), now)).toMatch(/sudah berlangsung/);
+    expect(staffingBlock(ev("published", -2), now)).toMatch(/sudah lewat/);
     expect(staffingBlock(ev("draft", 2), now)).toBeNull();
+  });
+
+  it("staffingBlock stays open until the end of the gathering's own day (WIB)", async () => {
+    const { staffingBlock } = await import("../src/lib/events");
+    // Sabtu 17.00 WIB; a stand-in is recorded at 20.00 the same evening.
+    const service = { status: "published" as const, date: "2026-10-17T10:00:00.000Z" };
+    expect(staffingBlock(service, Date.parse("2026-10-17T20:00:00+07:00"))).toBeNull();
+    expect(staffingBlock(service, Date.parse("2026-10-17T23:59:00+07:00"))).toBeNull();
+    expect(staffingBlock(service, Date.parse("2026-10-18T00:01:00+07:00"))).toMatch(/sudah lewat/);
   });
 });

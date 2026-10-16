@@ -19,4 +19,14 @@ describe("callAction (R6 #7)", () => {
     expect(res.errors?.form?.[0]).toBe(NETWORK_ERROR);
     spy.mockRestore();
   });
+
+  it("a thrown import carries no row list — forms must not index it", async () => {
+    const spy = vi.spyOn(console, "error").mockImplementation(() => {});
+    const res = await callAction<{ success: boolean; errors: unknown }>(async () => {
+      throw new Error("timeout");
+    });
+    // BulkImportTransactionsForm guards with Array.isArray for exactly this.
+    expect(Array.isArray(res.errors)).toBe(false);
+    spy.mockRestore();
+  });
 });

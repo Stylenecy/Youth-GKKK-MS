@@ -46,7 +46,7 @@ export default async function GatheringsPage() {
       <PageHeader
         kicker="PELAYANAN"
         title="Jadwal Ibadah"
-        meta={`${upcoming.length} ibadah mendatang · ${past.length} riwayat terlaksana`}
+        meta={`${upcoming.length} ibadah mendatang · ${past.length} riwayat & arsip`}
         action={canManage ? <CreateEventForm profiles={picOptions} /> : undefined}
       />
 
@@ -72,10 +72,10 @@ export default async function GatheringsPage() {
           <GatheringSection
             id="sudah-berlangsung"
             kicker="ARSIP"
-            title="Riwayat Ibadah Sebelumnya"
+            title="Riwayat & Arsip Ibadah"
             events={past}
             nameOf={nameOf}
-            empty="Belum ada riwayat ibadah sebelumnya."
+            empty="Belum ada ibadah yang sudah lewat atau diarsipkan."
             muted
           />
         </div>

@@ -14,6 +14,7 @@ import {
 import { isOverloaded } from "@/lib/fatigue";
 import { Modal, Field, fieldClass } from "./Modal";
 import { callAction } from "@/lib/call-action";
+import { DEMO_NOTE } from "@/lib/demo";
 
 export interface AssignedToast {
   assignmentId: string | null;
@@ -388,7 +389,7 @@ export function AssignStewardForm({
           <p className="text-sm text-ink">
             <strong>{toast.name}</strong> ditetapkan sebagai {toast.role}.
             {!isSupabaseConfigured() && (
-              <span className="text-ink-muted"> (mode demo — tidak tersimpan)</span>
+              <span className="font-normal text-ink-muted">{DEMO_NOTE}</span>
             )}
           </p>
           <div className="mt-2.5 flex gap-2">

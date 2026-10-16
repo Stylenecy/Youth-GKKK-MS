@@ -10,7 +10,7 @@
  * that render one message, `errors.form` for the forms.
  */
 export const NETWORK_ERROR =
-  "Koneksi terputus atau server tidak menjawab — belum tersimpan. Periksa internet lalu coba lagi.";
+  "Belum tersimpan karena koneksi terputus. Periksa internet, lalu coba lagi.";
 
 export async function callAction<T>(run: () => Promise<T>): Promise<T> {
   try {

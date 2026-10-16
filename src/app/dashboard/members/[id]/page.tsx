@@ -127,22 +127,25 @@ export default async function MemberDetailPage({
 
         {!canView ? (
           <p className="text-xs leading-relaxed text-ink-muted">
-            Nomor kontak privat dilindungi oleh sistem keamanan berbasis peran (Role-based access). Hubungi pengurus inti jika membutuhkan nomor WhatsApp anggota ini.
+            Nomor ini hanya bisa dilihat pengurus inti. Hubungi mereka kalau perlu.
           </p>
         ) : whatsapp === undefined ? (
-          <p role="alert" className="text-xs leading-relaxed text-danger">
-            Nomor WhatsApp belum bisa dimuat — koneksi ke database gagal. Muat ulang halaman ini sebentar lagi.
+          <p
+            role="alert"
+            className="rounded-xl border border-danger/40 bg-danger-wash px-3.5 py-2.5 text-xs text-danger"
+          >
+            Nomor WhatsApp gagal dimuat. Muat ulang halaman sebentar lagi.
           </p>
         ) : whatsapp ? (
           <div>
             <p className="text-xs text-ink-muted mb-4 leading-relaxed">
-              Nomor WhatsApp terverifikasi melalui otorisasi keamanan pengurus. Tekan tombol di bawah untuk langsung membuka obrolan.
+              Tekan tombol di bawah untuk membuka obrolan WhatsApp.
             </p>
             <WhatsAppButton number={whatsapp} name={profile.nickname} />
           </div>
         ) : (
           <p className="text-xs leading-relaxed text-ink-muted">
-            Belum ada nomor WhatsApp tercatat untuk anggota ini.
+            Belum ada nomor WhatsApp tercatat untuk anggota ini. Minta admin menambahkannya.
           </p>
         )}
       </Panel>

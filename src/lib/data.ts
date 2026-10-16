@@ -34,9 +34,15 @@ interface ReadResult {
 // Default `any` keeps exactly the typing the untyped client gave before
 // (rows are mapped by the explicit mappers below, never cast).
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-function rows<T = any>(res: ReadResult, what: string): T[] {
+function rows<T = any>(
+  res: ReadResult,
+  what: string,
+  opts: { idFromUrl?: boolean } = {}
+): T[] {
   if (res.error) {
-    if (isMalformedId(res.error)) return [];
+    // Opt-in only: 22P02 also means a bad enum/number/JSON (e.g. schema
+    // drift), which must stay a failure for every other list read.
+    if (opts.idFromUrl && isMalformedId(res.error)) return [];
     throw new Error(`Gagal memuat ${what}: ${res.error.message}`);
   }
   return (res.data as T[] | null) ?? [];
@@ -724,7 +730,8 @@ export async function getCrossMembers(crossId: string): Promise<Profile[]> {
         .select("profile_id")
         .eq("cross_id", crossId)
         .eq("is_active", true),
-      "anggota Cross"
+      "anggota Cross",
+      { idFromUrl: true }
     );
 
     const ids = [...new Set((memberships as ProfileIdRow[]).map((m) => m.profile_id))];
@@ -759,7 +766,8 @@ export async function getCrossLeaders(crossId: string): Promise<Profile[]> {
         .eq("cross_id", crossId)
         .eq("role", "leader")
         .eq("is_active", true),
-      "pemimpin Cross"
+      "pemimpin Cross",
+      { idFromUrl: true }
     );
 
     const ids = [...new Set((memberships as ProfileIdRow[]).map((m) => m.profile_id))];

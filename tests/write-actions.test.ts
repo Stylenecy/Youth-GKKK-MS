@@ -173,7 +173,7 @@ describe("assignSteward", () => {
     const { assignSteward } = await import("@/app/actions/gatherings");
     fx.tables.events = { data: { date: days(-2), status: "published" }, error: null };
     const res = await assignSteward("event-1", "p-1", "WL");
-    expect(res).toMatchObject({ success: false, error: expect.stringMatching(/sudah berlangsung/) });
+    expect(res).toMatchObject({ success: false, error: expect.stringMatching(/sudah lewat/) });
     expect(fx.inserts).toHaveLength(0);
   });
 

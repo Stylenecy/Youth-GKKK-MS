@@ -30,14 +30,14 @@ import { EditEventForm } from "@/components/EditEventForm";
 import { ConfirmAction } from "@/components/ConfirmAction";
 import { AttendanceTaker } from "@/components/AttendanceTaker";
 import { archiveEvent, restoreEvent } from "@/app/actions/gatherings";
-import { eventStateLabel } from "@/lib/events";
+import { eventStateLabel, staffingBlock } from "@/lib/events";
 import {
   formatFullDate,
   formatTime,
   countdownLabel,
   eventTypeLabel,
 } from "@/lib/datetime";
-import { Users } from "lucide-react";
+import { AlertCircle, Users } from "lucide-react";
 
 
 export async function generateMetadata({
@@ -79,6 +79,10 @@ export default async function GatheringDetailPage({
       ? [pic, ...picEligible]
       : picEligible;
   const status = eventStateLabel(event);
+  // Same rule the server applies in assignSteward (archived, or its day is over).
+  // Server component: renders once per request, so "now" is stable here.
+  // eslint-disable-next-line react-hooks/purity
+  const staffingClosed = staffingBlock(event, Date.now()) !== null;
   const ready = serviceReadiness(stewards);
 
   // Attendance visibility mirrors migration 0012's SQL policy at the UI
@@ -197,6 +201,7 @@ export default async function GatheringDetailPage({
               profiles={profiles}
               crossNames={crossNames}
               canManage={canManage}
+              readOnly={staffingClosed}
               showStatus
             />
           </div>
@@ -227,9 +232,12 @@ export default async function GatheringDetailPage({
           <SectionTitle id="attendance-heading" title="Kehadiran" />
 
           {!isSupabaseConfigured() && (
-            <p className="mt-2 text-xs text-ink-muted">
-              Mode demo: centang bisa dicoba, tapi tidak tersimpan.
-            </p>
+            <div className="mt-4 flex items-start gap-3 rounded-xl border border-warning/40 bg-warning-wash/70 p-4 text-xs sm:text-sm text-warning">
+              <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" aria-hidden="true" />
+              <span>
+                <strong>Mode demo:</strong> centang bisa dicoba, tapi tidak disimpan.
+              </span>
+            </div>
           )}
           <div className="mt-4">
             {recordable.length === 0 ? (

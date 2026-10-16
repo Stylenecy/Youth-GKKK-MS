@@ -65,10 +65,20 @@ export function splitGatherings<T extends { status: EventStatus; date: string }>
   return { upcoming, past };
 }
 
+/** 23:59:59.999 WIB on the calendar day (in WIB) of the given instant. */
+function endOfWibDay(iso: string): number {
+  const ymd = new Date(new Date(iso).getTime() + 7 * 3_600_000).toISOString().slice(0, 10);
+  return new Date(`${ymd}T23:59:59.999+07:00`).getTime();
+}
+
 /**
  * Why a gathering can no longer take new stewards, or null if it can.
- * The board and the roster already hide "Tambah" on these columns; this is
- * the server's own copy of the rule, so a stale tab or a forged call cannot
+ *
+ * Open until the end of the gathering's own day (WIB), not just until it
+ * starts: a stand-in who serves at 17.00 because someone fell ill is still
+ * recorded that evening. The detail page hides "Tambah" with this same rule
+ * (the board, a planning view, already closes a column once it starts);
+ * this is also the server's copy, so a stale tab or a forged call cannot
  * staff a withdrawn or finished gathering.
  */
 export function staffingBlock(
@@ -76,10 +86,10 @@ export function staffingBlock(
   now: number
 ): string | null {
   if (!isLiveEvent(event)) {
-    return "Ibadah ini sudah diarsipkan — pulihkan dulu sebelum menugaskan penatalayan.";
+    return "Ibadah ini sudah diarsipkan. Pulihkan dulu sebelum menugaskan penatalayan.";
   }
-  if (new Date(event.date).getTime() < now) {
-    return "Ibadah ini sudah berlangsung — penugasan baru hanya untuk ibadah yang akan datang.";
+  if (endOfWibDay(event.date) < now) {
+    return "Hari ibadah ini sudah lewat. Penugasan baru hanya untuk hari ini atau ibadah yang akan datang.";
   }
   return null;
 }

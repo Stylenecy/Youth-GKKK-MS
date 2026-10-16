@@ -62,12 +62,19 @@ describe("data reads surface failures", () => {
   });
 
   it("a malformed id (22P02) is 'not found', not a failure (R6 #3)", async () => {
-    const { getEventById, getMeetingById, getProfileById, getCrossMembers } = await import("@/lib/data");
+    // (getProfileById uses the same one(); its parallel 30-day count query
+    // cannot be faked separately here, so it is not listed.)
+    const { getEventById, getMeetingById, getCrossMembers } = await import("@/lib/data");
     cfg.result = { data: null, error: { code: "22P02", message: "invalid input syntax for type uuid" } };
     await expect(getEventById("abc")).resolves.toBeUndefined();
     await expect(getMeetingById("abc")).resolves.toBeUndefined();
-    await expect(getProfileById("abc")).resolves.toBeUndefined();
     await expect(getCrossMembers("abc")).resolves.toEqual([]);
+  });
+
+  it("22P02 on an ordinary list read is still a failure (schema drift, not 'empty')", async () => {
+    const { getEvents } = await import("@/lib/data");
+    cfg.result = { data: null, error: { code: "22P02", message: "invalid input value for enum" } };
+    await expect(getEvents()).rejects.toThrow(/Gagal memuat daftar ibadah/);
   });
 
   it("a failed WhatsApp read throws instead of looking 'protected' (R6 #10)", async () => {
