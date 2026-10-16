@@ -61,6 +61,23 @@ describe("data reads surface failures", () => {
     await expect(getMeetingById("x")).resolves.toBeUndefined();
   });
 
+  it("a malformed id (22P02) is 'not found', not a failure (R6 #3)", async () => {
+    const { getEventById, getMeetingById, getProfileById, getCrossMembers } = await import("@/lib/data");
+    cfg.result = { data: null, error: { code: "22P02", message: "invalid input syntax for type uuid" } };
+    await expect(getEventById("abc")).resolves.toBeUndefined();
+    await expect(getMeetingById("abc")).resolves.toBeUndefined();
+    await expect(getProfileById("abc")).resolves.toBeUndefined();
+    await expect(getCrossMembers("abc")).resolves.toEqual([]);
+  });
+
+  it("a failed WhatsApp read throws instead of looking 'protected' (R6 #10)", async () => {
+    const { getMemberWhatsapp } = await import("@/lib/data");
+    cfg.result = { data: null, error: { message: "network down" } };
+    await expect(getMemberWhatsapp("p-1")).rejects.toThrow(/Gagal memuat nomor WhatsApp/);
+    cfg.result = { data: null, error: null };
+    await expect(getMemberWhatsapp("p-1")).resolves.toBeNull();
+  });
+
   it(".single() with a real error throws", async () => {
     const { getEventById } = await import("@/lib/data");
     cfg.result = { data: null, error: { code: "42501", message: "permission denied" } };
