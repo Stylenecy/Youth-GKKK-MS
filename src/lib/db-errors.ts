@@ -14,6 +14,9 @@ const KNOWN: Record<string, string> = {
   name_too_long: "Nama terlalu panjang (maksimal 80 karakter).",
   not_a_leader_of_this_group:
     "Kamu bukan pemimpin kelompok ini, jadi tidak bisa menambah anggota di sini.",
+  // Migrasi 0021 (Cross butuh akun disetujui)
+  not_approved:
+    "Akunmu belum disetujui admin Pemuda, jadi belum bisa mengelola kelompok Cross.",
   // RPC 0011 (approval)
   not_an_admin: "Hanya admin yang bisa menyetujui atau menolak akun.",
   invalid_status: "Status tidak dikenal.",

@@ -4,13 +4,7 @@ import { revalidatePath } from "next/cache";
 import { isSupabaseConfigured } from "@/lib/supabase/env";
 import { friendlyDbError } from "@/lib/db-errors";
 import { recordAudit } from "@/lib/audit";
-
-const ERROR_MESSAGES: Record<string, string> = {
-  not_an_admin: "Hanya admin yang bisa menyetujui atau menolak akun.",
-  invalid_status: "Status tidak dikenal.",
-  cannot_revoke_self: "Kamu tidak bisa mencabut aksesmu sendiri.",
-  account_not_found: "Akun itu tidak ditemukan — mungkin sudah dihapus.",
-};
+import { DEMO_NEEDS_LOGIN } from "@/lib/demo";
 
 /**
  * Approve or reject a login request.
@@ -24,7 +18,7 @@ export async function decideAccount(
   status: "approved" | "rejected"
 ) {
   if (!isSupabaseConfigured()) {
-    return { success: false, error: "Supabase belum tersambung." };
+    return { success: false, error: DEMO_NEEDS_LOGIN };
   }
 
   const { createClient } = await import("@/lib/supabase/server");
@@ -39,7 +33,8 @@ export async function decideAccount(
   if (error) {
     return {
       success: false,
-      error: ERROR_MESSAGES[error.message] ?? friendlyDbError(error.message),
+      // One dictionary for every RPC error code: lib/db-errors.ts.
+      error: friendlyDbError(error.message),
     };
   }
 

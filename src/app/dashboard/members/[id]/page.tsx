@@ -3,7 +3,7 @@ import type { Metadata } from "next";
 import {
   getProfileById,
   getMemberWhatsapp,
-  getCurrentProfile,
+  getMyRole,
   isSupabaseConfigured,
 } from "@/lib/data";
 import { canViewContacts } from "@/lib/phone";
@@ -37,16 +37,21 @@ export default async function MemberDetailPage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
-  const [profile, me] = await Promise.all([
+  // The role comes from get_my_app_role() (via getMyRole), not from the
+  // caller's profile row: an admin login without a roster profile has no
+  // profile, and used to fall back to "member" and lose the contact button.
+  const [profile, role] = await Promise.all([
     getProfileById(id),
-    getCurrentProfile(),
+    getMyRole(),
   ]);
   if (!profile) notFound();
 
-  const canView = isSupabaseConfigured()
-    ? canViewContacts(me?.appRole)
-    : true;
-  const whatsapp = canView ? await getMemberWhatsapp(id) : null;
+  const canView = isSupabaseConfigured() ? canViewContacts(role) : true;
+  // undefined = the read failed (shown as an error, never as "protected");
+  // null = allowed, but no number on record.
+  const whatsapp = canView
+    ? await getMemberWhatsapp(id).catch(() => undefined)
+    : null;
 
   const status = MEMBER_STATUS_TAG[profile.status] ?? MEMBER_STATUS_TAG.inactive;
   const isFatigued = isOverloaded(profile.serviceCount30d);
@@ -120,16 +125,27 @@ export default async function MemberDetailPage({
           <SectionTitle id="contact-heading" title="Saluran komunikasi" />
         </div>
 
-        {whatsapp ? (
+        {!canView ? (
+          <p className="text-xs leading-relaxed text-ink-muted">
+            Nomor ini hanya bisa dilihat pengurus inti. Hubungi mereka kalau perlu.
+          </p>
+        ) : whatsapp === undefined ? (
+          <p
+            role="alert"
+            className="rounded-xl border border-danger/40 bg-danger-wash px-3.5 py-2.5 text-xs text-danger"
+          >
+            Nomor WhatsApp gagal dimuat. Muat ulang halaman sebentar lagi.
+          </p>
+        ) : whatsapp ? (
           <div>
             <p className="text-xs text-ink-muted mb-4 leading-relaxed">
-              Nomor WhatsApp terverifikasi melalui otorisasi keamanan pengurus. Tekan tombol di bawah untuk langsung membuka obrolan.
+              Tekan tombol di bawah untuk membuka obrolan WhatsApp.
             </p>
             <WhatsAppButton number={whatsapp} name={profile.nickname} />
           </div>
         ) : (
           <p className="text-xs leading-relaxed text-ink-muted">
-            Nomor kontak privat dilindungi oleh sistem keamanan berbasis peran (Role-based access). Hubungi pengurus inti jika membutuhkan nomor WhatsApp anggota ini.
+            Belum ada nomor WhatsApp tercatat untuk anggota ini. Minta admin menambahkannya.
           </p>
         )}
       </Panel>

@@ -13,6 +13,8 @@ import {
 } from "@/lib/stewards";
 import { isOverloaded } from "@/lib/fatigue";
 import { Modal, Field, fieldClass } from "./Modal";
+import { callAction } from "@/lib/call-action";
+import { DEMO_NOTE, demoNote } from "@/lib/demo";
 
 export interface AssignedToast {
   assignmentId: string | null;
@@ -112,7 +114,7 @@ export function AssignStewardForm({
     if (!effectiveRole || !selectedId || !selected || isPending) return;
     setError(null);
     startTransition(async () => {
-      const result = await assignSteward(eventId, selectedId, effectiveRole);
+      const result = await callAction(() => assignSteward(eventId, selectedId, effectiveRole));
       if (result.success) {
         const name = selected.fullName;
         close();
@@ -133,7 +135,7 @@ export function AssignStewardForm({
     if (!toast?.assignmentId || undoState === "working") return;
     setUndoState("working");
     startTransition(async () => {
-      const result = await removeStewardAssignment(toast.assignmentId as string, eventId);
+      const result = await callAction(() => removeStewardAssignment(toast.assignmentId as string, eventId));
       if (result.success) {
         setUndoState("done");
         router.refresh();
@@ -146,10 +148,14 @@ export function AssignStewardForm({
 
   return (
     <>
-      <div aria-live="polite" className="sr-only">
-        {toast && undoState !== "done"
-          ? `${toast.name} ditetapkan sebagai ${toast.role}`
-          : ""}
+      {/* One always-mounted live region (same pattern as Toast.tsx); the
+          visible boxes below carry no role, so nothing is announced twice. */}
+      <div role="status" aria-live="polite" className="sr-only">
+        {!toast
+          ? ""
+          : undoState === "done"
+            ? "Perubahan dibatalkan."
+            : `${toast.name} ditetapkan sebagai ${toast.role}.${demoNote()}`}
       </div>
 
       <button
@@ -381,13 +387,12 @@ export function AssignStewardForm({
 
       {toast && undoState !== "done" && (
         <div
-          role="status"
           className="fixed bottom-20 left-1/2 z-50 w-[calc(100%-2.5rem)] max-w-md -translate-x-1/2 rounded-xl border border-line bg-surface p-4 shadow-2xl lg:bottom-8"
         >
           <p className="text-sm text-ink">
             <strong>{toast.name}</strong> ditetapkan sebagai {toast.role}.
             {!isSupabaseConfigured() && (
-              <span className="text-ink-muted"> (mode demo — tidak tersimpan)</span>
+              <span className="font-normal text-ink-muted">{DEMO_NOTE}</span>
             )}
           </p>
           <div className="mt-2.5 flex gap-2">
@@ -413,7 +418,6 @@ export function AssignStewardForm({
       )}
       {toast && undoState === "done" && (
         <div
-          role="status"
           className="fixed bottom-20 left-1/2 z-50 w-[calc(100%-2.5rem)] max-w-md -translate-x-1/2 rounded-xl border border-line bg-surface p-4 shadow-2xl lg:bottom-8"
         >
           <p className="text-sm text-ink">Perubahan dibatalkan.</p>

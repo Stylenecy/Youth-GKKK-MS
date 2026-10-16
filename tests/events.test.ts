@@ -56,3 +56,45 @@ describe("eventStateLabel", () => {
     }
   });
 });
+
+describe("archived gatherings (R6 #2)", () => {
+  const ev = (status: "draft" | "published" | "completed" | "archived", n: number) => ({
+    id: `${status}${n}`,
+    status,
+    date: daysFromNow(n),
+  });
+
+  it("isLiveEvent: only archived is withdrawn", async () => {
+    const { isLiveEvent } = await import("../src/lib/events");
+    expect(isLiveEvent({ status: "archived" })).toBe(false);
+    expect(isLiveEvent({ status: "draft" })).toBe(true);
+    expect(isLiveEvent({ status: "completed" })).toBe(true);
+  });
+
+  it("splitGatherings keeps archived out of upcoming, whatever the date", async () => {
+    const { splitGatherings } = await import("../src/lib/events");
+    const { upcoming, past } = splitGatherings(
+      [ev("published", 7), ev("archived", 3), ev("draft", 1), ev("completed", -7), ev("archived", -1)],
+      Date.now()
+    );
+    expect(upcoming.map((e) => e.id)).toEqual(["draft1", "published7"]);
+    expect(past.map((e) => e.id)).toEqual(["archived3", "archived-1", "completed-7"]);
+  });
+
+  it("staffingBlock refuses archived and past gatherings only", async () => {
+    const { staffingBlock } = await import("../src/lib/events");
+    const now = Date.now();
+    expect(staffingBlock(ev("archived", 3), now)).toMatch(/diarsipkan/);
+    expect(staffingBlock(ev("published", -2), now)).toMatch(/sudah lewat/);
+    expect(staffingBlock(ev("draft", 2), now)).toBeNull();
+  });
+
+  it("staffingBlock stays open until the end of the gathering's own day (WIB)", async () => {
+    const { staffingBlock } = await import("../src/lib/events");
+    // Sabtu 17.00 WIB; a stand-in is recorded at 20.00 the same evening.
+    const service = { status: "published" as const, date: "2026-10-17T10:00:00.000Z" };
+    expect(staffingBlock(service, Date.parse("2026-10-17T20:00:00+07:00"))).toBeNull();
+    expect(staffingBlock(service, Date.parse("2026-10-17T23:59:00+07:00"))).toBeNull();
+    expect(staffingBlock(service, Date.parse("2026-10-18T00:01:00+07:00"))).toMatch(/sudah lewat/);
+  });
+});

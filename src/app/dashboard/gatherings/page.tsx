@@ -5,7 +5,7 @@ import { getEvents, getProfiles, getPicEligibleProfiles, getMyRole } from "@/lib
 import { isCommittee } from "@/lib/roles";
 import { CreateEventForm } from "@/components/CreateEventForm";
 import { PageHeader, EmptyState, SectionTitle } from "@/components/page-parts";
-import { eventStateLabel } from "@/lib/events";
+import { eventStateLabel, splitGatherings } from "@/lib/events";
 import {
   formatWeekdayDayMonth,
   formatDayNumber,
@@ -34,13 +34,9 @@ export default async function GatheringsPage() {
   // Server component: renders once per request, so "now" is stable here.
   // eslint-disable-next-line react-hooks/purity
   const now = Date.now();
-  const sorted = [...events].sort(
-    (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()
-  );
-  const upcoming = sorted
-    .filter((e) => new Date(e.date).getTime() >= now)
-    .reverse();
-  const past = sorted.filter((e) => new Date(e.date).getTime() < now);
+  // Archived gatherings (withdrawn) live in the history list, never in
+  // "upcoming" or its count, whatever their date.
+  const { upcoming, past } = splitGatherings(events, now);
 
   const nameOf = (id: string | null) =>
     (id ? profiles.find((p) => p.id === id)?.nickname : null) ?? "—";
@@ -50,7 +46,7 @@ export default async function GatheringsPage() {
       <PageHeader
         kicker="PELAYANAN"
         title="Jadwal Ibadah"
-        meta={`${upcoming.length} ibadah mendatang · ${past.length} riwayat terlaksana`}
+        meta={`${upcoming.length} ibadah mendatang · ${past.length} riwayat & arsip`}
         action={canManage ? <CreateEventForm profiles={picOptions} /> : undefined}
       />
 
@@ -75,11 +71,11 @@ export default async function GatheringsPage() {
 
           <GatheringSection
             id="sudah-berlangsung"
-            kicker="ARSIP"
-            title="Riwayat Ibadah Sebelumnya"
+            kicker="RIWAYAT"
+            title="Sudah lewat & diarsipkan"
             events={past}
             nameOf={nameOf}
-            empty="Belum ada riwayat ibadah sebelumnya."
+            empty="Belum ada ibadah yang sudah lewat atau diarsipkan."
             muted
           />
         </div>

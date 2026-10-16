@@ -192,12 +192,12 @@ export type ImportRowError = { line: number; message: string };
  * typo in row 40 can't leave rows 1-39 committed and the rest missing.
  */
 export async function importTransactions(pastedText: string) {
-  if (!isSupabaseConfigured()) {
-    return { success: false, error: "Supabase belum tersambung.", errors: [] as ImportRowError[] };
-  }
-
-  const auth = await requireTreasurer();
-  if (!auth.ok) return { success: false, error: auth.error, errors: [] as ImportRowError[] };
+  // Live mode checks the role first, so a non-treasurer learns that before
+  // fixing 40 rows. Demo mode validates the rows exactly the same way and
+  // then reports what *would* be imported (lib/demo.ts).
+  const live = isSupabaseConfigured();
+  const auth = live ? await requireTreasurer() : null;
+  if (auth && !auth.ok) return { success: false, error: auth.error, errors: [] as ImportRowError[] };
 
   const lines = pastedText.split("\n").map((l) => l.trim()).filter(Boolean);
   if (lines.length === 0) {
@@ -258,7 +258,6 @@ export async function importTransactions(pastedText: string) {
       account,
       category,
       description,
-      recorded_by: auth.userId,
       created_at: date.toISOString(),
     });
   });
@@ -267,7 +266,13 @@ export async function importTransactions(pastedText: string) {
     return { success: false, error: `${errors.length} baris bermasalah, tidak ada yang diimpor.`, errors };
   }
 
-  const { error } = await auth.supabase.from("finance_transactions").insert(toInsert);
+  if (!auth) {
+    return { success: true, error: null, errors: [] as ImportRowError[], count: toInsert.length };
+  }
+
+  const { error } = await auth.supabase
+    .from("finance_transactions")
+    .insert(toInsert.map((row) => ({ ...row, recorded_by: auth.userId })));
   if (error) {
     return { success: false, error: friendlyDbError(error.message), errors: [] as ImportRowError[] };
   }

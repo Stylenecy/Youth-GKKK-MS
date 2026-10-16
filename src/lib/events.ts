@@ -35,3 +35,61 @@ export function eventStateLabel(event: {
     ? { label: "Terjadwal", cls: "tag tag-sage font-medium" }
     : { label: "Rencana", cls: "tag font-medium" };
 }
+
+/**
+ * Archived gatherings are withdrawn ones (cancelled, entered by mistake).
+ * They stay readable in the history list, but nothing that plans ahead —
+ * the steward board, "upcoming" counts, this month's statistics — may treat
+ * them as a gathering that is going to happen.
+ */
+export function isLiveEvent(event: { status: EventStatus }): boolean {
+  return event.status !== "archived";
+}
+
+/**
+ * Splits gatherings for the schedule page: upcoming = not archived and not
+ * yet started, soonest first; everything else (held, or archived whatever
+ * its date) is history, newest first.
+ */
+export function splitGatherings<T extends { status: EventStatus; date: string }>(
+  events: T[],
+  now: number
+): { upcoming: T[]; past: T[] } {
+  const time = (e: T) => new Date(e.date).getTime();
+  const upcoming = events
+    .filter((e) => isLiveEvent(e) && time(e) >= now)
+    .sort((a, b) => time(a) - time(b));
+  const past = events
+    .filter((e) => !(isLiveEvent(e) && time(e) >= now))
+    .sort((a, b) => time(b) - time(a));
+  return { upcoming, past };
+}
+
+/** 23:59:59.999 WIB on the calendar day (in WIB) of the given instant. */
+function endOfWibDay(iso: string): number {
+  const ymd = new Date(new Date(iso).getTime() + 7 * 3_600_000).toISOString().slice(0, 10);
+  return new Date(`${ymd}T23:59:59.999+07:00`).getTime();
+}
+
+/**
+ * Why a gathering can no longer take new stewards, or null if it can.
+ *
+ * Open until the end of the gathering's own day (WIB), not just until it
+ * starts: a stand-in who serves at 17.00 because someone fell ill is still
+ * recorded that evening. The detail page hides "Tambah" with this same rule
+ * (the board, a planning view, already closes a column once it starts);
+ * this is also the server's copy, so a stale tab or a forged call cannot
+ * staff a withdrawn or finished gathering.
+ */
+export function staffingBlock(
+  event: { status: EventStatus; date: string },
+  now: number
+): string | null {
+  if (!isLiveEvent(event)) {
+    return "Ibadah ini sudah diarsipkan. Pulihkan dulu sebelum menugaskan penatalayan.";
+  }
+  if (endOfWibDay(event.date) < now) {
+    return "Hari ibadah ini sudah lewat. Penugasan baru hanya untuk hari ini atau ibadah yang akan datang.";
+  }
+  return null;
+}

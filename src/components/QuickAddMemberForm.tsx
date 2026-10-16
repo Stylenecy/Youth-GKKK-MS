@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { UserPlus, Check, AlertCircle } from "lucide-react";
 import { addCrossMember } from "@/app/actions/cross";
 import { validateMemberName } from "@/lib/validation";
+import { callAction } from "@/lib/call-action";
 
 /**
  * Name-only, inline, high-speed input for phone/desktop.
@@ -33,7 +34,7 @@ export function QuickAddMemberForm({
   function submit(trimmed: string) {
     setError(null);
     startTransition(async () => {
-      const result = await addCrossMember(crossId, trimmed);
+      const result = await callAction(() => addCrossMember(crossId, trimmed));
       if (result.success) {
         setJustAdded(trimmed);
         setName("");

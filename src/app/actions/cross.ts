@@ -5,6 +5,7 @@ import { isSupabaseConfigured } from "@/lib/supabase/env";
 import { validateMemberName } from "@/lib/validation";
 import { friendlyDbError } from "@/lib/db-errors";
 import { recordAudit } from "@/lib/audit";
+import { DEMO_NEEDS_LOGIN } from "@/lib/demo";
 
 /**
  * Self-service leadership claim.
@@ -15,11 +16,11 @@ import { recordAudit } from "@/lib/audit";
  * function, translate whatever comes back.
  */
 export async function claimCrossLeadership(crossId: string, code: string) {
-  if (!isSupabaseConfigured()) {
-    return { success: false, error: "Supabase belum tersambung." };
-  }
   if (!code.trim()) {
     return { success: false, error: "Kode akses wajib diisi." };
+  }
+  if (!isSupabaseConfigured()) {
+    return { success: false, error: DEMO_NEEDS_LOGIN };
   }
 
   const { createClient } = await import("@/lib/supabase/server");
@@ -51,13 +52,12 @@ export async function claimCrossLeadership(crossId: string, code: string) {
  * gets that feedback before a round trip, not the security boundary.
  */
 export async function addCrossMember(crossId: string, name: string) {
-  if (!isSupabaseConfigured()) {
-    return { success: false, error: "Supabase belum tersambung." };
-  }
-
   const validated = validateMemberName(name);
   if (!validated.ok) {
     return { success: false, error: validated.error };
+  }
+  if (!isSupabaseConfigured()) {
+    return { success: false, error: DEMO_NEEDS_LOGIN };
   }
 
   const { createClient } = await import("@/lib/supabase/server");

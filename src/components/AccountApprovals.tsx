@@ -20,8 +20,11 @@ const STATUS_TAG: Record<string, { label: string; cls: string }> = {
  * clear, not wonder where the section went.
  */
 export async function AccountApprovals() {
-  const [accounts, role] = await Promise.all([getAccountApprovals(), getMyRole()]);
+  // Role first: a non-admin never triggers the queue read at all (RLS would
+  // return nothing anyway, but there is no reason to ask).
+  const role = await getMyRole();
   if (role === null || !canApproveAccounts(role)) return null;
+  const accounts = await getAccountApprovals();
 
   const pending = accounts.filter((a) => a.status === "pending");
 

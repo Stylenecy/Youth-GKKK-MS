@@ -30,14 +30,14 @@ import { EditEventForm } from "@/components/EditEventForm";
 import { ConfirmAction } from "@/components/ConfirmAction";
 import { AttendanceTaker } from "@/components/AttendanceTaker";
 import { archiveEvent, restoreEvent } from "@/app/actions/gatherings";
-import { eventStateLabel } from "@/lib/events";
+import { eventStateLabel, staffingBlock } from "@/lib/events";
 import {
   formatFullDate,
   formatTime,
   countdownLabel,
   eventTypeLabel,
 } from "@/lib/datetime";
-import { Users, ClipboardCheck } from "lucide-react";
+import { AlertCircle, Users } from "lucide-react";
 
 
 export async function generateMetadata({
@@ -79,6 +79,10 @@ export default async function GatheringDetailPage({
       ? [pic, ...picEligible]
       : picEligible;
   const status = eventStateLabel(event);
+  // Same rule the server applies in assignSteward (archived, or its day is over).
+  // Server component: renders once per request, so "now" is stable here.
+  // eslint-disable-next-line react-hooks/purity
+  const staffingClosed = staffingBlock(event, Date.now()) !== null;
   const ready = serviceReadiness(stewards);
 
   // Attendance visibility mirrors migration 0012's SQL policy at the UI
@@ -197,6 +201,7 @@ export default async function GatheringDetailPage({
               profiles={profiles}
               crossNames={crossNames}
               canManage={canManage}
+              readOnly={staffingClosed}
               showStatus
             />
           </div>
@@ -226,17 +231,23 @@ export default async function GatheringDetailPage({
         <section aria-labelledby="attendance-heading" className="mt-10">
           <SectionTitle id="attendance-heading" title="Kehadiran" />
 
+          {!isSupabaseConfigured() && (
+            <div className="mt-4 flex items-start gap-3 rounded-xl border border-warning/40 bg-warning-wash/70 p-4 text-xs sm:text-sm text-warning">
+              <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" aria-hidden="true" />
+              <span>
+                <strong>Mode demo:</strong> centang bisa dicoba, tapi tidak disimpan.
+              </span>
+            </div>
+          )}
           <div className="mt-4">
-            {!isSupabaseConfigured() ? (
-              <EmptyState
-                title="Absensi butuh Supabase"
-                body="Sambungkan Supabase lalu jalankan migrasi 0012_attendance.sql (CHECKLIST_Dex.md Langkah 1) — kartu centang kehadiran akan muncul di sini."
-                icon={ClipboardCheck}
-              />
-            ) : recordable.length === 0 ? (
+            {recordable.length === 0 ? (
               <EmptyState
                 title="Belum ada anggota dalam jangkauanmu"
-                body="Kamu tercatat sebagai pemimpin Cross tapi belum ada anggota aktif di kelompokmu. Minta admin menautkan akunmu, atau tambah anggota lewat halaman Kelompokku."
+                body={
+                  isCommittee || isPic
+                    ? "Belum ada anggota aktif di direktori. Tambahkan anggota lewat halaman Anggota, lalu catat kehadirannya di sini."
+                    : "Kamu tercatat sebagai pemimpin Cross tapi belum ada anggota aktif di kelompokmu. Minta admin menautkan akunmu, atau tambah anggota lewat halaman Kelompokku."
+                }
                 icon={Users}
               />
             ) : (
