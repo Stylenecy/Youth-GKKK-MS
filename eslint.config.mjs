@@ -14,6 +14,8 @@ const eslintConfig = defineConfig([
     "next-env.d.ts",
     // Archived idea prototypes (another stack, not shipped) — not app code.
     ".agent/**",
+    // Local session vault + tools (git-ignored), not app code.
+    ".dex/**",
   ]),
 ]);
 

@@ -1,7 +1,8 @@
 import { UserCheck, ShieldAlert } from "lucide-react";
-import { getAccountApprovals, getMyRole } from "@/lib/data";
+import { getAccountApprovals, getMyRole, getProfiles } from "@/lib/data";
+import { LinkAccountForm } from "@/components/LinkAccountForm";
 import { canApproveAccounts } from "@/lib/roles";
-import { decideAccount } from "@/app/actions/accounts";
+import { decideAccount, unlinkAccount } from "@/app/actions/accounts";
 import { ConfirmAction } from "@/components/ConfirmAction";
 import { formatDateTime } from "@/lib/datetime";
 
@@ -24,7 +25,12 @@ export async function AccountApprovals() {
   // return nothing anyway, but there is no reason to ask).
   const role = await getMyRole();
   if (role === null || !canApproveAccounts(role)) return null;
-  const accounts = await getAccountApprovals();
+  const [accounts, profiles] = await Promise.all([getAccountApprovals(), getProfiles()]);
+  // Members a login can still be tied to: not already tied to another one.
+  const taken = new Set(accounts.map((a) => a.memberId).filter(Boolean));
+  const linkable = profiles
+    .filter((p) => !taken.has(p.id))
+    .map((p) => ({ id: p.id, label: p.fullName && p.fullName !== p.nickname ? `${p.nickname} — ${p.fullName}` : p.nickname }));
 
   const pending = accounts.filter((a) => a.status === "pending");
 
@@ -80,6 +86,41 @@ export async function AccountApprovals() {
                 <p className="mt-0.5 font-mono text-[0.6875rem] text-ink-faint">
                   Masuk {formatDateTime(account.requestedAt)}
                 </p>
+                {account.link === "same_id" ? (
+                  <p className="mt-1 text-xs text-ink-muted">
+                    Data anggota: <span className="font-medium text-ink">{account.memberName}</span>
+                  </p>
+                ) : account.link === "linked" ? (
+                  <div className="mt-1 flex flex-wrap items-center gap-2">
+                    <p className="text-xs text-ink-muted">
+                      Data anggota: <span className="font-medium text-ink">{account.memberName}</span>
+                    </p>
+                    <ConfirmAction
+                      label="Lepas tautan"
+                      title="Lepas tautan akun ini?"
+                      body={`${account.email} tidak lagi bertindak sebagai ${account.memberName ?? "anggota itu"}. Email ini juga dihapus dari data anggotanya, jadi tidak akan tertaut lagi otomatis.`}
+                      confirmLabel="Ya, lepas tautan"
+                      successMessage="Tautan dilepas."
+                      variant="outline"
+                      onConfirm={async () => {
+                        "use server";
+                        return unlinkAccount(account.userId);
+                      }}
+                    />
+                  </div>
+                ) : account.status === "approved" ? (
+                  <div className="mt-1.5">
+                    <span className="tag tag-warning font-medium">Perlu dicek</span>
+                    <p className="mt-1 text-xs text-ink-muted">
+                      Belum tertaut ke data anggota: tidak ada anggota bebas dengan email ini. Pilih siapa pemilik akun ini:
+                    </p>
+                    <LinkAccountForm userId={account.userId} email={account.email} members={linkable} />
+                  </div>
+                ) : (
+                  <p className="mt-1 text-xs text-ink-faint">
+                    Belum tertaut ke data anggota; akan dicocokkan lewat email saat disetujui.
+                  </p>
+                )}
               </div>
 
               <div className="flex shrink-0 items-center gap-2">

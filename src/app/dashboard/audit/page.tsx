@@ -66,6 +66,7 @@ export default async function AuditPage() {
                     {a.description}
                   </p>
                   <p className="lp-meta mt-1.5">
+                    {a.actorName ? `${a.actorName} · ` : ""}
                     {formatDateTime(a.createdAt)}
                   </p>
                 </div>

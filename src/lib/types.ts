@@ -162,4 +162,6 @@ export interface RecentActivity {
   id: string;
   description: string;
   createdAt: string;
+  /** Nickname of the member who did it; null when unknown (old rows, demo). */
+  actorName?: string | null;
 }

@@ -22,6 +22,10 @@ const KNOWN: Record<string, string> = {
   invalid_status: "Status tidak dikenal.",
   cannot_revoke_self: "Kamu tidak bisa mencabut aksesmu sendiri.",
   account_not_found: "Akun itu tidak ditemukan — mungkin sudah dihapus.",
+  // RPC 0023 (tautan akun ↔ anggota)
+  profile_not_found: "Data anggota itu tidak ditemukan — muat ulang halaman.",
+  profile_taken: "Anggota itu sudah tertaut ke akun lain. Satu anggota hanya untuk satu akun.",
+  email_on_other_profile: "Email akun ini sudah tercatat di anggota lain. Cek lagi siapa pemilik akun ini.",
   // RPC 0012 (absensi)
   not_allowed_to_record:
     "Kamu tidak punya hak mencatat kehadiran ini — hanya pengurus, PIC ibadah, atau pemimpin Cross atas anggotanya sendiri.",
