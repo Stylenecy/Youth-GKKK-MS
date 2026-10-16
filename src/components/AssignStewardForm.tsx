@@ -148,10 +148,14 @@ export function AssignStewardForm({
 
   return (
     <>
-      <div aria-live="polite" className="sr-only">
-        {toast && undoState !== "done"
-          ? `${toast.name} ditetapkan sebagai ${toast.role}.${demoNote()}`
-          : ""}
+      {/* One always-mounted live region (same pattern as Toast.tsx); the
+          visible boxes below carry no role, so nothing is announced twice. */}
+      <div role="status" aria-live="polite" className="sr-only">
+        {!toast
+          ? ""
+          : undoState === "done"
+            ? "Perubahan dibatalkan."
+            : `${toast.name} ditetapkan sebagai ${toast.role}.${demoNote()}`}
       </div>
 
       <button
@@ -383,7 +387,6 @@ export function AssignStewardForm({
 
       {toast && undoState !== "done" && (
         <div
-          role="status"
           className="fixed bottom-20 left-1/2 z-50 w-[calc(100%-2.5rem)] max-w-md -translate-x-1/2 rounded-xl border border-line bg-surface p-4 shadow-2xl lg:bottom-8"
         >
           <p className="text-sm text-ink">
@@ -415,7 +418,6 @@ export function AssignStewardForm({
       )}
       {toast && undoState === "done" && (
         <div
-          role="status"
           className="fixed bottom-20 left-1/2 z-50 w-[calc(100%-2.5rem)] max-w-md -translate-x-1/2 rounded-xl border border-line bg-surface p-4 shadow-2xl lg:bottom-8"
         >
           <p className="text-sm text-ink">Perubahan dibatalkan.</p>
