@@ -7,11 +7,11 @@ Alamat: **https://youth-gkkk-ms.vercel.app** → tombol **Masuk**.
 1. Tekan **Lanjutkan dengan Google**, pilih akun Google-mu.
 2. Akun baru belum bisa melihat data. Layar akan bilang **"Menunggu Persetujuan Pengurus"**.
 3. Kabari admin (Dex). Setelah disetujui, buka ulang halaman — dashboard muncul.
-4. Mau keluar? **Pengaturan → Keluar**.
+4. Mau keluar? **Pengaturan → Keluar** (di HP: **Lainnya → Pengaturan → Keluar**).
 
 ## 2. Siapa boleh apa
 
-Menu ada di kiri (laptop) atau di bawah layar (HP) dan menyesuaikan peranmu. Kalau sebuah menu tidak muncul, berarti memang bukan bagianmu — bukan rusak.
+Menu ada di kiri (laptop) atau di bawah layar (HP) dan menyesuaikan peranmu. **Di HP, bilah bawah hanya memuat 4 menu; menu lain (Keuangan, Penatalayan, Cross, Rapat, Pengaturan, dan Audit untuk admin) ada di tombol Lainnya.** Kalau sebuah menu tidak muncul di mana pun, berarti memang bukan bagianmu — bukan rusak.
 
 | Peran | Bisa |
 |---|---|
@@ -30,9 +30,9 @@ Peranmu tertulis di **Dashboard** ("Masuk sebagai …") dan di **Pengaturan**.
 **Isi petugas**
 1. Buka **Dashboard**. Kartu ibadah terdekat menunjukkan **"Masih kurang: …"** (mis. *Singer 1 · Usher 2*).
 2. Tekan **Isi yang kurang** → halaman **Penatalayan**.
-3. Di HP: pilih Sabtunya di deretan tanggal paling atas, lalu tekan tombol emas **Isi N slot yang kurang**. Di laptop: tekan **Tambah** di baris peran dan kolom Sabtu itu. Ketik nama → pilih.
+3. Di HP: pilih Sabtunya di deretan tanggal paling atas, lalu tekan tombol emas **Isi N slot yang kurang**. Di laptop: tekan **Tambah** di baris peran dan kolom Sabtu itu. Ketik nama → pilih → **Simpan penugasan**.
    - Nama di urutan atas = yang paling jarang bertugas. Angka di kanan (mis. *3× / 30 hari*) = berapa kali dia bertugas sebulan terakhir.
-   - Tulisan merah **"Cukup sering bertugas"** = sudah lebih dari 2× dalam 30 hari. Boleh tetap dipilih, tapi utamakan orang lain.
+   - Tulisan merah **"Cukup sering bertugas"** = sudah lebih dari 2× dalam 30 hari. Boleh tetap dipilih (**Tetap jadwalkan**), tapi utamakan orang lain (**Pilih orang lain**).
 4. Salah pilih? Tekan **Batalkan** di kotak kecil yang muncul sesudah menyimpan, atau hapus namanya dari papan.
 
 **Hari Sabtu:** **Ibadah → pilih tanggalnya** → bagian **Kehadiran** → centang yang hadir.
