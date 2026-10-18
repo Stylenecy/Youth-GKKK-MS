@@ -78,13 +78,27 @@ export interface StewardCandidate {
   /** null = data beban benar-benar tak tersedia (bedakan dari 0×!). */
   load: number | null;
   crossLabel: string;
+  /** Peran yang pernah dipegangnya (riwayat penatalayan). */
+  rolesServed?: string[];
 }
 
 export interface RankedCandidate {
   cand: StewardCandidate;
-  /** true = baris tampil tapi tak bisa ditekan (away hasil pencarian). */
+  /** true = baris tampil tapi tak bisa ditekan (berhalangan, hasil cari). */
   disabled: boolean;
   overloaded: boolean;
+}
+
+export interface CandidateSection {
+  key: "experienced" | "active" | "unavailable";
+  title: string;
+  items: RankedCandidate[];
+}
+
+export interface CandidateGroups {
+  sections: CandidateSection[];
+  /** Berhalangan / tidak aktif yang disembunyikan karena tidak sedang dicari. */
+  hiddenUnavailable: number;
 }
 
 function matches(c: StewardCandidate, q: string): boolean {
@@ -92,57 +106,102 @@ function matches(c: StewardCandidate, q: string): boolean {
   return hay.includes(q);
 }
 
-function byLoadThenName(a: StewardCandidate, b: StewardCandidate): number {
-  return (a.load ?? Infinity) - (b.load ?? Infinity) ||
-    a.fullName.localeCompare(b.fullName, "id");
+function byName(a: StewardCandidate, b: StewardCandidate): number {
+  return (
+    a.nickname.localeCompare(b.nickname, "id", { sensitivity: "base" }) ||
+    a.fullName.localeCompare(b.fullName, "id", { sensitivity: "base" })
+  );
+}
+
+function rank(cand: StewardCandidate, disabled = false): RankedCandidate {
+  return {
+    cand,
+    disabled,
+    overloaded: !disabled && cand.load !== null && isOverloaded(cand.load),
+  };
 }
 
 /**
- * Urutan kandidat (spek IMK 29 Sep 2026):
- * - Tanpa cari: aktif ringan (beban naik, alfabet) → beban tak dikenal →
- *   overload (beban naik) → away disembunyikan.
- * - Dengan cari: maksud eksplisit menang — cocok nama → aktif → beban →
- *   alfabet; away yang cocok menempel di bawah sebagai disabled.
+ * Kandidat petugas untuk satu peran di satu ibadah (masukan Nathan via Dex,
+ * 18 Okt 2026 — menggantikan urutan "beban paling ringan dulu" 29 Sep):
+ *
+ * - Yang sudah bertugas di ibadah itu tidak muncul sama sekali — satu orang
+ *   satu peran per hari (database menolaknya juga, migrasi 0025).
+ * - Bagian 1 "Pernah jadi <peran>": anggota aktif yang pernah memegang peran
+ *   itu, jadi pemusik/WL yang memang bisa langsung kelihatan di atas.
+ * - Bagian 2: anggota aktif lainnya.
+ * - Keduanya urut abjad nama panggilan; beban 30 hari tetap tampil dan yang
+ *   terlalu sering tetap ditandai (bukan diblokir).
+ * - Berhalangan / tidak aktif disembunyikan, kecuali sedang dicari namanya —
+ *   lalu tampil di bawah, tidak bisa dipilih.
  */
-export function sortStewardCandidates(
+export function groupStewardCandidates(
   cands: StewardCandidate[],
-  rawQuery: string
-): RankedCandidate[] {
+  rawQuery: string,
+  role: string,
+  servingIds: ReadonlySet<string> = new Set()
+): CandidateGroups {
   const q = rawQuery.trim().toLowerCase();
-  if (q) {
-    const hit = cands.filter((c) => matches(c, q));
-    const active = hit
-      .filter((c) => c.status === "active")
-      .sort(byLoadThenName);
-    const away = hit
-      .filter((c) => c.status !== "active")
-      .sort((a, b) => a.fullName.localeCompare(b.fullName, "id"));
-    return [
-      ...active.map((cand) => ({
-        cand,
-        disabled: false,
-        overloaded: cand.load !== null && isOverloaded(cand.load),
-      })),
-      ...away.map((cand) => ({ cand, disabled: true, overloaded: false })),
-    ];
+  const pool = cands.filter((c) => !servingIds.has(c.id) && (!q || matches(c, q)));
+  const active = pool.filter((c) => c.status === "active").sort(byName);
+  const unavailable = pool.filter((c) => c.status !== "active").sort(byName);
+
+  const experienced = active.filter((c) => c.rolesServed?.includes(role));
+  const others = active.filter((c) => !c.rolesServed?.includes(role));
+
+  const sections: CandidateSection[] = [];
+  if (experienced.length > 0) {
+    sections.push({
+      key: "experienced",
+      title: `Pernah jadi ${role}`,
+      items: experienced.map((c) => rank(c)),
+    });
   }
-  const active = cands.filter((c) => c.status === "active");
-  const light = active
-    .filter((c) => c.load === null || !isOverloaded(c.load))
-    .sort(byLoadThenName);
-  // null (tak dikenal) di atas overload: byLoadThenName menaruh null
-  // (Infinity) setelah angka 0–2 tapi sebelum... tidak — Infinity > 3.
-  // Pisahkan eksplisit supaya urutannya: ringan → tak dikenal → overload.
-  const known = light.filter((c) => c.load !== null);
-  const unknown = light.filter((c) => c.load === null);
-  const heavy = active
-    .filter((c) => c.load !== null && isOverloaded(c.load))
-    .sort(byLoadThenName);
-  return [...known, ...unknown, ...heavy].map((cand) => ({
-    cand,
-    disabled: false,
-    overloaded: cand.load !== null && isOverloaded(cand.load),
-  }));
+  if (others.length > 0) {
+    sections.push({
+      key: "active",
+      title: experienced.length > 0 ? "Anggota aktif lain" : "Anggota aktif",
+      items: others.map((c) => rank(c)),
+    });
+  }
+  if (q && unavailable.length > 0) {
+    sections.push({
+      key: "unavailable",
+      title: "Berhalangan / tidak aktif",
+      items: unavailable.map((c) => rank(c, true)),
+    });
+  }
+  return { sections, hiddenUnavailable: q ? 0 : unavailable.length };
+}
+
+/**
+ * Kalimat bantu di bawah daftar kandidat. Petunjuk "disembunyikan" tetap
+ * muncul saat daftar kosong — justru saat itu pengurus perlu tahu bahwa
+ * yang berhalangan bisa dicari namanya. Keterangan angka hanya bila ada
+ * baris yang punya angka.
+ */
+export function candidateHint(groups: CandidateGroups): string | null {
+  const anyCandidate = groups.sections.some((s) => s.items.length > 0);
+  const parts: string[] = [];
+  if (groups.hiddenUnavailable > 0) {
+    parts.push(
+      `${groups.hiddenUnavailable} anggota berhalangan/tidak aktif disembunyikan — ketik namanya kalau perlu.`
+    );
+  }
+  if (anyCandidate) {
+    parts.push("Angka di kanan = tugas 30 hari terakhir; ⚠ = cukup sering bertugas.");
+  }
+  return parts.length > 0 ? parts.join(" ") : null;
+}
+
+/** Slot kosong satu Sabtu, satu per baris, urut peran resmi — antrean
+ *  "Isi berurutan" di HP. */
+export function missingSlots(
+  stewards: { role: string; status: string }[]
+): StewardRole[] {
+  return serviceReadiness(stewards).missing.flatMap((m) =>
+    Array.from({ length: m.count }, () => m.role)
+  );
 }
 
 export interface Readiness {

@@ -5,15 +5,46 @@ import {
   filterMembers,
   countByStatus,
   parseMemberStatusFilter,
-  MEMBER_STATUS_FILTERS,
+  sortMembersByName,
+  MEMBER_STATUS_DOT,
   MEMBER_STATUS_TAG,
+  type MemberStatusFilter,
 } from "@/lib/members";
-import { PageHeader, EmptyState, Monogram, SectionTitle, CARD_LINK } from "@/components/page-parts";
-import { isOverloaded } from "@/lib/fatigue";
-import { Users, ChevronRight, Search } from "lucide-react";
+import type { MemberStatus } from "@/lib/types";
+import { PageHeader, EmptyState } from "@/components/page-parts";
+import { Users, Search } from "lucide-react";
 
 export const metadata: Metadata = { title: "Direktori Anggota" };
 
+const STATUS_ORDER: MemberStatus[] = ["active", "away", "alumni", "inactive"];
+
+function filterHref(status: MemberStatusFilter, q: string): string {
+  const params = new URLSearchParams();
+  if (q.trim()) params.set("q", q.trim());
+  if (status !== "all") params.set("status", status);
+  const qs = params.toString();
+  return qs ? `/dashboard/members?${qs}` : "/dashboard/members";
+}
+
+/** Same dot as the list rows, so the legend is the key to read them. */
+function StatusDot({ status }: { status: MemberStatus }) {
+  return (
+    <span
+      aria-hidden="true"
+      className={`inline-block h-2.5 w-2.5 shrink-0 rounded-full border-2 ${MEMBER_STATUS_DOT[status].dot}`}
+    />
+  );
+}
+
+/**
+ * Direktori anggota — daftar ringkas (masukan Nathan + Dex, 18 Okt 2026).
+ *
+ * The old 3-column card grid showed ~6 people per screen. This is a
+ * phone-book list: one line per person, alphabetical, flowing down the
+ * columns (4 on a laptop; 2 left-to-right on a phone), so most of Pemuda
+ * fits on one screen. Status is
+ * the dot's colour and shape; the legend above doubles as the filter.
+ */
 export default async function MembersPage({
   searchParams,
 }: {
@@ -22,30 +53,21 @@ export default async function MembersPage({
   const params = await searchParams;
   const q = typeof params.q === "string" ? params.q : "";
   const status = parseMemberStatusFilter(params.status);
-  const filtered = q.trim() !== "" || status !== "all";
 
   const [profiles, crossNames] = await Promise.all([
     getProfiles(),
     getProfileCrossNames(),
   ]);
   const counts = countByStatus(profiles);
-  const visible = filterMembers(profiles, crossNames, q, status);
+  const pengurusCount = profiles.filter((p) => p.isPengurus).length;
+  const visible = sortMembersByName(filterMembers(profiles, crossNames, q, status));
 
   return (
     <div className="px-5 py-7 sm:px-8 sm:py-9">
       <PageHeader
         kicker="DIREKTORI JEMAAT"
         title="Daftar Anggota"
-        // Non-breaking space keeps each count with its label when the line wraps.
-        meta={[
-          `${profiles.length} anggota`,
-          `${counts.active} aktif`,
-          `${counts.away} berhalangan`,
-          `${counts.alumni} alumni`,
-          `${counts.inactive} tidak aktif`,
-        ]
-          .map((part) => part.replace(/ /g, " "))
-          .join(" · ")}
+        meta={`${profiles.length} anggota · ${pengurusCount} pengurus`}
         action={
           <Link
             href="/dashboard/cross/mine"
@@ -57,12 +79,13 @@ export default async function MembersPage({
         }
       />
 
-      {/* Server-side filter: works with zero client JS, so it costs no bundle. */}
+      {/* Server-side search: works with zero client JS. The status filter
+          lives in the legend links below, so the form only carries it. */}
       <form
         method="get"
         role="search"
-        aria-label="Cari dan saring anggota"
-        className="mt-6 flex flex-col gap-2.5 sm:flex-row"
+        aria-label="Cari anggota"
+        className="mt-6 flex gap-2.5"
       >
         <label className="relative block flex-1">
           <span className="sr-only">Cari nama atau Cross</span>
@@ -78,27 +101,48 @@ export default async function MembersPage({
             className="min-h-[44px] w-full rounded-xl border border-line bg-surface/70 py-2.5 pl-10 pr-3 text-sm text-ink placeholder:text-ink-faint focus:border-line-accent focus:outline-none"
           />
         </label>
-        <div className="flex gap-2.5">
-          <label className="sr-only" htmlFor="member-status">
-            Saring berdasarkan status
-          </label>
-          <select
-            id="member-status"
-            name="status"
-            defaultValue={status}
-            className="min-h-[44px] flex-1 rounded-xl border border-line bg-surface/70 px-3 text-sm text-ink focus:border-line-accent focus:outline-none sm:flex-none"
-          >
-            {MEMBER_STATUS_FILTERS.map((f) => (
-              <option key={f.value} value={f.value}>
-                {f.label}
-              </option>
-            ))}
-          </select>
-          <button type="submit" className="btn-outline min-h-[44px] text-sm">
-            Cari
-          </button>
-        </div>
+        {status !== "all" && <input type="hidden" name="status" value={status} />}
+        <button type="submit" className="btn-outline min-h-[44px] text-sm">
+          Cari
+        </button>
       </form>
+
+      <nav aria-label="Saring status" className="mt-4">
+        <ul className="flex flex-wrap gap-2">
+          <li>
+            <Link
+              href={filterHref("all", q)}
+              aria-current={status === "all" ? "true" : undefined}
+              className={`inline-flex min-h-[44px] items-center gap-2 rounded-full border px-3 text-xs font-medium transition-colors ${
+                status === "all"
+                  ? "border-line-accent bg-accent-wash/60 text-ink"
+                  : "border-line/60 text-ink-muted hover:text-ink"
+              }`}
+            >
+              Semua <span className="num font-mono">{profiles.length}</span>
+            </Link>
+          </li>
+          {STATUS_ORDER.map((s) =>
+            counts[s] === 0 ? null : (
+              <li key={s}>
+                <Link
+                  href={filterHref(s, q)}
+                  aria-current={status === s ? "true" : undefined}
+                  className={`inline-flex min-h-[44px] items-center gap-2 rounded-full border px-3 text-xs font-medium transition-colors ${
+                    status === s
+                      ? "border-line-accent bg-accent-wash/60 text-ink"
+                      : "border-line/60 text-ink-muted hover:text-ink"
+                  }`}
+                >
+                  <StatusDot status={s} />
+                  {MEMBER_STATUS_TAG[s].label}
+                  <span className="num font-mono">{counts[s]}</span>
+                </Link>
+              </li>
+            )
+          )}
+        </ul>
+      </nav>
 
       {profiles.length === 0 ? (
         <div className="mt-8">
@@ -122,68 +166,47 @@ export default async function MembersPage({
           />
         </div>
       ) : (
-        <div className="mt-8">
-          <div className="mb-4">
-            <SectionTitle
-              title="Semua anggota Youth"
-              meta={
-                filtered
-                  ? `${visible.length} dari ${profiles.length} anggota`
-                  : `${profiles.length} anggota`
-              }
-            />
-          </div>
-
-          <ul className="grid gap-3.5 sm:grid-cols-2 lg:grid-cols-3">
+        <div className="mt-6">
+          <p className="lp-meta mb-3">
+            {visible.length === profiles.length
+              ? "Urut abjad"
+              : `${visible.length} dari ${profiles.length} · urut abjad`}
+            {" · "}
+            <span aria-hidden="true" className="tag tag-accent">P</span>
+            <span aria-hidden="true"> = pengurus</span>
+          </p>
+          {/* Phone/tablet: left-to-right rows, so scrolling stays in ABC order.
+              Laptop: phone-book columns, which mostly fit on one screen. */}
+          <ul className="grid grid-cols-2 gap-x-4 border-t border-rule-soft sm:gap-x-6 lg:block lg:columns-3 xl:columns-4">
             {visible.map((profile) => {
-              const s = MEMBER_STATUS_TAG[profile.status] ?? MEMBER_STATUS_TAG.inactive;
-              const isFatigued = isOverloaded(profile.serviceCount30d);
+              const look = MEMBER_STATUS_DOT[profile.status] ?? MEMBER_STATUS_DOT.inactive;
+              const label = MEMBER_STATUS_TAG[profile.status]?.label ?? "Tidak aktif";
               const crosses = crossNames[profile.id] ?? [];
               return (
-                <li key={profile.id}>
+                <li key={profile.id} className="break-inside-avoid border-b border-rule-soft">
                   <Link
                     href={`/dashboard/members/${profile.id}`}
-                    className={`group flex h-full items-center gap-4 p-4.5 ${CARD_LINK}`}
+                    title={[profile.fullName, label, crosses.join(", ")].filter(Boolean).join(" · ")}
+                    className="group flex min-h-[44px] items-center gap-2.5 px-1 py-1.5 sm:min-h-[38px]"
                   >
-                    <Monogram name={profile.nickname} size="lg" />
-                    <div className="min-w-0 flex-1">
-                      <div className="flex items-center justify-between gap-1">
-                        <span className="truncate font-serif text-lg font-normal text-ink transition-colors group-hover:text-accent">
-                          {profile.nickname}
-                        </span>
-                        <ChevronRight className="h-3.5 w-3.5 text-ink-faint opacity-0 transition-opacity duration-200 group-hover:opacity-100" aria-hidden="true" />
-                      </div>
-                      <span className="block truncate text-xs text-ink-muted mt-0.5">
-                        {profile.fullName}
+                    <StatusDot status={profile.status} />
+                    <span className="min-w-0 flex-1 truncate text-sm">
+                      <span className={`font-medium group-hover:text-accent ${look.name}`}>
+                        {profile.nickname}
                       </span>
-                      {crosses.length > 0 && (
-                        <span
-                          className="lp-meta mt-1 block truncate"
-                          title={crosses.join(", ")}
-                        >
-                          {crosses.join(" · ")}
+                      {profile.fullName !== profile.nickname && (
+                        <span className="ml-1.5 hidden text-xs text-ink-faint sm:inline">
+                          {profile.fullName}
                         </span>
                       )}
-                      {profile.notes && (
-                        <span className="mt-1 block truncate text-xs text-ink-faint">
-                          {profile.notes}
-                        </span>
-                      )}
-                      <div className="mt-2 flex flex-wrap items-center gap-1.5">
-                        <span className={s.cls}>{s.label}</span>
-                        {profile.serviceCount30d > 0 && (
-                          <span
-                            className={`num font-mono text-[0.625rem] font-bold px-2 py-0.5 rounded-full border ${
-                              isFatigued
-                                ? "border-warning/40 bg-warning-wash text-warning"
-                                : "border-line text-ink-muted"
-                            }`}
-                          >
-                            {profile.serviceCount30d}&times; / 30 hari
-                          </span>
-                        )}
-                      </div>
-                    </div>
+                    </span>
+                    <span className="sr-only">— {label}</span>
+                    {profile.isPengurus && (
+                      <span className="tag tag-accent shrink-0">
+                        <span aria-hidden="true">P</span>
+                        <span className="sr-only">Pengurus</span>
+                      </span>
+                    )}
                   </Link>
                 </li>
               );

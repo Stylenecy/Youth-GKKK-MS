@@ -1349,7 +1349,7 @@ GitHub = backup, live saat ini = patokan.
   Server: `picId: z.string().min(1)` tanpa cek peran. DB: `pic_id` cuma FK,
   `is_committee()` (0010) membatasi *penulis* event, bukan *target* PIC.
   → diperbaiki 3 lapis (keputusan Dex: PIC = pengurus inti atau pemimpin
-  Cross aktif): dropdown hanya opsi layak (`getPicEligibleProfiles()` —
+  Cross aktif — ⛔ MATI 18 Okt 2026: PIC = Pengurus saja, `.dex/30-KEPUTUSAN.md` #31): dropdown hanya opsi layak (`getPicEligibleProfiles()` —
   RPC `list_pic_eligible()`, demo = 8 leader seed) + PIC lama tetap
   selectable supaya edit tak menghapus sejarah; server cek
   `is_pic_eligible()` dengan pesan field; **migrasi 0013** (trigger
@@ -1548,7 +1548,8 @@ pasti bingung**. IMK di atas kecanggihan.
   (instruksi Dex 29 Sep).
 
 ### Upgrade 1+2 spek IMK AI-lain — dibangun 29 Sep (`lib/stewards.ts`)
-- Dropdown kandidat: nama lengkap + Cross + `N×/30 hari`, urut ringan-dulu,
+- Dropdown kandidat: nama lengkap + Cross + `N×/30 hari`, urut ringan-dulu
+  (⛔ MATI 18 Okt 2026: urut abjad, kelompok "Pernah jadi <peran>" — `.dex/30-KEPUTUSAN.md` #33),
   overload ⚠️ tanpa blokir ("Tetap jadwalkan" + "Pilih orang lain"), away
   disabled saat dicari, null ≠ 0.
 - Sel papan: `Role x/y` + Kurang/Lengkap/Lebih + tombol +Tambah per sel

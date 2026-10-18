@@ -31,7 +31,11 @@ const KNOWN: Record<string, string> = {
     "Kamu tidak punya hak mencatat kehadiran ini — hanya pengurus, PIC ibadah, atau pemimpin Cross atas anggotanya sendiri.",
   // Trigger 0013 (PIC)
   pic_must_be_pengurus:
-    "PIC harus pengurus — pengurus inti atau pemimpin Cross yang masih aktif.",
+    "PIC harus Pengurus Pemuda. Admin bisa menandai Pengurus di halaman anggota.",
+  // Migrasi 0025/0026 (Pengurus + satu peran per ibadah)
+  only_admin_sets_pengurus: "Hanya admin yang bisa menandai atau mencabut Pengurus.",
+  already_serving_this_event:
+    "Orang ini sudah bertugas di ibadah yang sama. Satu orang satu peran — pilih orang lain.",
 };
 
 export function friendlyDbError(

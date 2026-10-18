@@ -4,6 +4,7 @@ import {
   filterMembers,
   countByStatus,
   parseMemberStatusFilter,
+  sortMembersByName,
 } from "@/lib/members";
 import { getPicEligibleProfiles, getProfileCrossNames } from "@/lib/data";
 
@@ -20,6 +21,7 @@ function profile(overrides: Partial<Profile> & { id: string }): Profile {
     notes: null,
     avatarUrl: null,
     serviceCount30d: 0,
+    isPengurus: false,
     createdAt: "2026-01-01T00:00:00Z",
     updatedAt: "2026-01-01T00:00:00Z",
     ...overrides,
@@ -68,6 +70,26 @@ describe("filterMembers", () => {
   });
 });
 
+describe("sortMembersByName", () => {
+  it("sorts alphabetically by nickname, ignoring case, without mutating", () => {
+    const zed = profile({ id: "p4", nickname: "zed", fullName: "Zed A" });
+    const input = [oct, zed, dex, angel];
+    expect(sortMembersByName(input).map((p) => p.nickname)).toEqual([
+      "Angel",
+      "Dex",
+      "Ocvianty",
+      "zed",
+    ]);
+    expect(input[0]).toBe(oct);
+  });
+
+  it("breaks nickname ties by full name", () => {
+    const n1 = profile({ id: "n1", nickname: "Nathan", fullName: "Nathannael Culver" });
+    const n2 = profile({ id: "n2", nickname: "Nathan", fullName: "Nathanael Sugianto" });
+    expect(sortMembersByName([n1, n2]).map((p) => p.id)).toEqual(["n2", "n1"]);
+  });
+});
+
 describe("parseMemberStatusFilter", () => {
   it("accepts the four real statuses", () => {
     for (const s of ["active", "away", "alumni", "inactive"] as const) {
@@ -95,13 +117,13 @@ describe("countByStatus", () => {
 });
 
 describe("getPicEligibleProfiles (demo)", () => {
-  it("returns only the seed Cross leaders, never plain members", async () => {
-    // No Supabase env in tests, so this runs the demo path: the same
-    // rule production enforces (committee + active leaders), mirrored
-    // honestly from seed memberships.
+  it("returns only Pengurus — a Cross leader who is not Pengurus is left out", async () => {
+    // No Supabase env in tests, so this runs the demo path: the same rule
+    // production enforces since 0025 (is_pengurus), mirrored from the seed.
+    // Wangke ("3") leads a Cross but is not Pengurus.
     const eligible = await getPicEligibleProfiles();
     const ids = eligible.map((p) => p.id).sort();
-    expect(ids).toEqual(["1", "2", "3", "4", "5", "6", "7", "8"]);
+    expect(ids).toEqual(["1", "2", "4", "5", "6", "7", "8"]);
   });
 });
 

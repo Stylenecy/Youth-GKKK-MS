@@ -7,6 +7,8 @@ import {
   isSupabaseConfigured,
 } from "@/lib/data";
 import { canViewContacts } from "@/lib/phone";
+import { canApproveAccounts } from "@/lib/roles";
+import { PengurusToggle } from "@/components/PengurusToggle";
 import { isOverloaded, FATIGUE_THRESHOLD, FATIGUE_WINDOW_DAYS } from "@/lib/fatigue";
 import { MEMBER_STATUS_TAG } from "@/lib/members";
 import {
@@ -55,6 +57,8 @@ export default async function MemberDetailPage({
 
   const status = MEMBER_STATUS_TAG[profile.status] ?? MEMBER_STATUS_TAG.inactive;
   const isFatigued = isOverloaded(profile.serviceCount30d);
+  // Admin only; set_pengurus() re-checks in SQL. Demo mode has no admin.
+  const canEditPengurus = isSupabaseConfigured() && canApproveAccounts(role);
 
   return (
     <div className="px-5 py-7 sm:px-8 sm:py-9">
@@ -80,8 +84,22 @@ export default async function MemberDetailPage({
           </div>
         </div>
 
-        <span className={status.cls}>{status.label}</span>
+        <div className="flex flex-wrap items-center gap-2">
+          {profile.isPengurus && <span className="tag tag-accent font-medium">Pengurus</span>}
+          <span className={status.cls}>{status.label}</span>
+        </div>
       </div>
+
+      {canEditPengurus && (
+        <div className="mt-3 flex flex-wrap items-center gap-3 text-xs text-ink-muted">
+          <PengurusToggle
+            profileId={profile.id}
+            name={profile.nickname}
+            isPengurus={profile.isPengurus}
+          />
+          <span>Hanya Pengurus yang bisa dipilih sebagai PIC ibadah.</span>
+        </div>
+      )}
 
       {/* Fatigue Warning Banner */}
       {isFatigued && (

@@ -3,7 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import type { Profile } from "@/lib/types";
-import { serviceReadiness } from "@/lib/stewards";
+import { serviceReadiness, missingSlots } from "@/lib/stewards";
 import { Meter } from "./page-parts";
 import { RoleRoster } from "./RoleRoster";
 import { AssignStewardForm } from "./AssignStewardForm";
@@ -40,8 +40,10 @@ export function PenatalayanPhone({
   if (!col) return null;
 
   const ready = serviceReadiness(col.stewards);
-  const missing = ready.needed - ready.filled;
-  const firstMissing = ready.missing[0]?.role;
+  const queue = missingSlots(col.stewards);
+  const serving = col.stewards
+    .filter((s) => s.status !== "replaced")
+    .map((s) => ({ profileId: s.profileId, role: s.role }));
 
   return (
     <div>
@@ -61,7 +63,7 @@ export function PenatalayanPhone({
               onClick={() => setSelectedId(c.id)}
               className={`min-h-[44px] rounded-lg px-1 text-sm transition-colors ${
                 active
-                  ? "bg-surface font-semibold text-ink shadow-sm"
+                  ? "bg-surface font-semibold text-ink"
                   : "text-ink-muted hover:text-ink"
               }`}
             >
@@ -102,20 +104,30 @@ export function PenatalayanPhone({
         />
       </div>
 
-      {canManage && !col.isPast && missing > 0 && firstMissing && (
-        <div className="mt-5">
+      {/* Mounted for every editable Saturday, even when nothing is missing:
+          the open sheet (and its Batalkan) must survive the refresh that
+          follows saving the last empty slot. Only the button hides. */}
+      {canManage && !col.isPast && (
+        <div className={queue.length > 0 ? "mt-5" : ""}>
           <AssignStewardForm
+            // One form per Saturday. The sheet copies `queue` when it opens,
+            // so the refresh after each save does not reset an open sheet.
+            key={col.id}
             eventId={col.id}
             eventLabel={col.weekdayLabel}
             profiles={profiles}
             crossNames={crossNames}
-            presetRole={firstMissing}
-            buttonLabel={`Isi ${missing} slot yang kurang`}
+            serving={serving}
+            queue={queue}
+            buttonLabel={`Isi ${queue.length} slot yang kurang`}
             variant="primary"
+            hideTrigger={queue.length === 0}
           />
-          <p className="mt-2 text-xs text-ink-muted">
-            Mulai dari {firstMissing}; setelah disimpan, tombol ini menunjuk peran berikutnya.
-          </p>
+          {queue.length > 0 && (
+            <p className="mt-2 text-xs text-ink-muted">
+              Satu lembar berjalan dari {queue[0]} sampai slot kosong terakhir — pilih nama, Simpan &amp; lanjut, atau Lewati.
+            </p>
+          )}
         </div>
       )}
       {col.isPast && (

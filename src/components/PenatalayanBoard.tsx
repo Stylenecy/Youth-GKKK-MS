@@ -273,16 +273,22 @@ export function PenatalayanBoard({
                           })}
                         </ul>
                       )}
-                      {canManage && !readOnly && canAdd && (
-                        <div className="mt-2">
+                      {/* Mounted while editable so the undo box outlives the
+                          button when this save fills the slot. */}
+                      {canManage && !readOnly && (
+                        <div className={canAdd ? "mt-2" : ""}>
                           <AssignStewardForm
                             eventId={col.id}
                             eventLabel={col.weekdayLabel}
                             profiles={profiles}
                             crossNames={crossNames}
+                            serving={col.stewards
+                              .filter((x) => x.status !== "replaced")
+                              .map((x) => ({ profileId: x.profileId, role: x.role }))}
                             presetRole={role}
                             buttonLabel="Tambah"
                             compact
+                            hideTrigger={!canAdd}
                           />
                         </div>
                       )}

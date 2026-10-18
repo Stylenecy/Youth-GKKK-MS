@@ -2,7 +2,9 @@ import { describe, expect, it } from "vitest";
 import {
   SLOT_NEEDS,
   slotStatus,
-  sortStewardCandidates,
+  groupStewardCandidates,
+  candidateHint,
+  missingSlots,
   serviceReadiness,
   type StewardCandidate,
 } from "../src/lib/stewards";
@@ -73,44 +75,101 @@ describe("kebutuhan slot per peran (Dex 29 Sep 2026)", () => {
   });
 });
 
-describe("urutan kandidat (spek IMK 29 Sep 2026)", () => {
+describe("kandidat petugas (masukan Nathan 18 Okt 2026)", () => {
   const base = [
-    cand({ id: "a", fullName: "Dian Kusuma", load: 3 }),
+    cand({ id: "a", fullName: "Dian Kusuma", load: 3, rolesServed: ["Pemusik"] }),
     cand({ id: "b", fullName: "Angela Wijaya", load: 0 }),
-    cand({ id: "c", fullName: "Samuel", load: null }),
-    cand({ id: "d", fullName: "Nathan Gunawan", load: 2 }),
+    cand({ id: "c", fullName: "Samuel", load: null, rolesServed: ["Singer"] }),
+    cand({ id: "d", fullName: "Nathan Gunawan", load: 2, rolesServed: ["Pemusik", "WL"] }),
     cand({ id: "e", fullName: "Michael", load: 0 }),
-    cand({ id: "f", fullName: "Dian Prameswari", load: 1 }),
+    cand({ id: "f", fullName: "Bima Prameswari", load: 1, rolesServed: ["Pemusik"] }),
   ];
+  const ids = (g: ReturnType<typeof groupStewardCandidates>) =>
+    g.sections.map((s) => [s.key, s.items.map((r) => r.cand.id)]);
 
-  it("ringan-dulu, tak-dikenal, overload terakhir; alfabet seri", () => {
-    const ids = sortStewardCandidates(base, "").map((r) => r.cand.id);
-    expect(ids).toEqual(["b", "e", "f", "d", "c", "a"]);
+  it("yang pernah memegang peran itu di atas, lalu anggota aktif lain — masing-masing urut abjad", () => {
+    expect(ids(groupStewardCandidates(base, "", "Pemusik"))).toEqual([
+      ["experienced", ["f", "a", "d"]],
+      ["active", ["b", "e", "c"]],
+    ]);
   });
 
-  it("overload ditandai tapi tidak disabled", () => {
-    const rows = sortStewardCandidates(base, "");
-    const heavy = rows.find((r) => r.cand.id === "a")!;
+  it("tanpa riwayat peran itu, satu bagian saja: Anggota aktif", () => {
+    const g = groupStewardCandidates(base, "", "Usher");
+    expect(g.sections.map((s) => s.title)).toEqual(["Anggota aktif"]);
+    expect(g.sections[0].items.map((r) => r.cand.id)).toEqual(["b", "f", "a", "e", "d", "c"]);
+  });
+
+  it("yang sudah bertugas di ibadah itu tidak muncul (satu orang satu peran)", () => {
+    const g = groupStewardCandidates(base, "", "Pemusik", new Set(["f", "b"]));
+    expect(ids(g)).toEqual([
+      ["experienced", ["a", "d"]],
+      ["active", ["e", "c"]],
+    ]);
+  });
+
+  it("terlalu sering bertugas ditandai tapi tetap bisa dipilih", () => {
+    const g = groupStewardCandidates(base, "", "Pemusik");
+    const heavy = g.sections[0].items.find((r) => r.cand.id === "a")!;
     expect(heavy.overloaded).toBe(true);
     expect(heavy.disabled).toBe(false);
   });
 
-  it("away disembunyikan tanpa cari, muncul disabled saat dicari", () => {
+  it("berhalangan disembunyikan (dihitung) tanpa cari, muncul disabled saat dicari", () => {
     const withAway = [
       ...base,
       cand({ id: "z", fullName: "Jonathan Wijaya", status: "away", load: 1 }),
     ];
-    expect(
-      sortStewardCandidates(withAway, "").some((r) => r.cand.id === "z")
-    ).toBe(false);
-    const found = sortStewardCandidates(withAway, "jonathan");
-    expect(found.map((r) => r.cand.id)).toEqual(["z"]);
-    expect(found[0].disabled).toBe(true);
+    const plain = groupStewardCandidates(withAway, "", "Singer");
+    expect(plain.hiddenUnavailable).toBe(1);
+    expect(plain.sections.flatMap((s) => s.items).some((r) => r.cand.id === "z")).toBe(false);
+    const found = groupStewardCandidates(withAway, "jonathan", "Singer");
+    expect(ids(found)).toEqual([["unavailable", ["z"]]]);
+    expect(found.sections[0].items[0].disabled).toBe(true);
   });
 
-  it("saat mencari, cocok-nama menang atas beban", () => {
-    const rows = sortStewardCandidates(base, "dian");
-    expect(rows.map((r) => r.cand.id)).toEqual(["f", "a"]);
+  it("pencarian menyaring nama panggilan dan nama lengkap", () => {
+    expect(ids(groupStewardCandidates(base, "wijaya", "Singer"))).toEqual([
+      ["active", ["b"]],
+    ]);
+  });
+});
+
+describe("candidateHint", () => {
+  const away = cand({ id: "z", fullName: "Jonathan Wijaya", status: "away", load: 1 });
+  const free = cand({ id: "b", fullName: "Angela Wijaya", load: 0 });
+
+  it("keeps the hidden-members hint when nobody is free (the case that needs it most)", () => {
+    const hint = candidateHint(groupStewardCandidates([away], "", "Singer"));
+    expect(hint).toBe("1 anggota berhalangan/tidak aktif disembunyikan — ketik namanya kalau perlu.");
+  });
+
+  it("explains the numbers only when rows show them", () => {
+    expect(candidateHint(groupStewardCandidates([free], "", "Singer"))).toBe(
+      "Angka di kanan = tugas 30 hari terakhir; ⚠ = cukup sering bertugas."
+    );
+    expect(candidateHint(groupStewardCandidates([free, away], "", "Singer"))).toMatch(
+      /^1 anggota .* Angka di kanan/
+    );
+  });
+
+  it("says nothing when there is nothing to explain", () => {
+    expect(candidateHint(groupStewardCandidates([], "", "Singer"))).toBeNull();
+  });
+});
+
+describe("missingSlots (isi berurutan)", () => {
+  it("satu entri per slot kosong, urut peran resmi", () => {
+    expect(
+      missingSlots([
+        { role: "WL", status: "assigned" },
+        { role: "Singer", status: "assigned" },
+        { role: "Singer", status: "replaced" },
+        { role: "Pemusik", status: "confirmed" },
+        { role: "Multimedia", status: "assigned" },
+        { role: "Sound", status: "assigned" },
+      ])
+    ).toEqual(["Singer", "Usher", "Usher"]);
   });
 });
 
