@@ -113,7 +113,7 @@ export default async function MembersPage({
             <Link
               href={filterHref("all", q)}
               aria-current={status === "all" ? "true" : undefined}
-              className={`inline-flex min-h-[36px] items-center gap-2 rounded-full border px-3 text-xs font-medium transition-colors ${
+              className={`inline-flex min-h-[44px] items-center gap-2 rounded-full border px-3 text-xs font-medium transition-colors ${
                 status === "all"
                   ? "border-line-accent bg-accent-wash/60 text-ink"
                   : "border-line/60 text-ink-muted hover:text-ink"
@@ -128,7 +128,7 @@ export default async function MembersPage({
                 <Link
                   href={filterHref(s, q)}
                   aria-current={status === s ? "true" : undefined}
-                  className={`inline-flex min-h-[36px] items-center gap-2 rounded-full border px-3 text-xs font-medium transition-colors ${
+                  className={`inline-flex min-h-[44px] items-center gap-2 rounded-full border px-3 text-xs font-medium transition-colors ${
                     status === s
                       ? "border-line-accent bg-accent-wash/60 text-ink"
                       : "border-line/60 text-ink-muted hover:text-ink"
@@ -172,7 +172,7 @@ export default async function MembersPage({
               ? "Urut abjad"
               : `${visible.length} dari ${profiles.length} · urut abjad`}
             {" · "}
-            <span aria-hidden="true" className="tag tag-accent px-1.5 py-0 text-[0.625rem]">P</span>
+            <span aria-hidden="true" className="tag tag-accent">P</span>
             <span aria-hidden="true"> = pengurus</span>
           </p>
           {/* Phone/tablet: left-to-right rows, so scrolling stays in ABC order.
@@ -202,7 +202,7 @@ export default async function MembersPage({
                     </span>
                     <span className="sr-only">— {label}</span>
                     {profile.isPengurus && (
-                      <span className="tag tag-accent shrink-0 px-1.5 py-0 text-[0.625rem]">
+                      <span className="tag tag-accent shrink-0">
                         <span aria-hidden="true">P</span>
                         <span className="sr-only">Pengurus</span>
                       </span>

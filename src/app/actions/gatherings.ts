@@ -36,7 +36,7 @@ export async function createEvent(formData: FormData) {
     if (!auth.ok) return { success: false, errors: { form: [auth.error] } };
     const { supabase } = auth;
 
-    // PIC harus pengurus (keputusan Dex, 19 Sep 2026). Trigger 0013
+    // PIC harus Pengurus (0025, masukan Nathan 18 Okt 2026). Trigger 0013
     // menegakkan ini di database; cek di sini dulu supaya penolakannya
     // menempel di field yang salah dengan bahasa manusia, bukan crash.
     const { data: picEligible } = await supabase.rpc("is_pic_eligible", {
@@ -46,7 +46,7 @@ export async function createEvent(formData: FormData) {
       return {
         success: false,
         errors: {
-          picId: ["PIC harus pengurus — pengurus inti atau pemimpin Cross yang masih aktif."],
+          picId: [friendlyDbError("pic_must_be_pengurus")],
         },
       };
     }
@@ -96,17 +96,30 @@ export async function updateEvent(id: string, formData: FormData) {
     if (!auth.ok) return { success: false, errors: { form: [auth.error] } };
     const { supabase } = auth;
 
-    // Sama seperti createEvent di atas: PIC harus pengurus.
-    const { data: picEligible } = await supabase.rpc("is_pic_eligible", {
-      p_profile_id: validated.data.picId,
-    });
-    if (picEligible !== true) {
-      return {
-        success: false,
-        errors: {
-          picId: ["PIC harus pengurus — pengurus inti atau pemimpin Cross yang masih aktif."],
-        },
-      };
+    // PIC harus Pengurus — tapi hanya diperiksa kalau PIC-nya DIGANTI.
+    // Ibadah lama yang PIC-nya bukan Pengurus lagi (mis. pemimpin Cross
+    // sebelum 0025) tetap bisa diubah tema/jamnya tanpa memaksa ganti PIC.
+    const { data: current, error: readError } = await supabase
+      .from("events")
+      .select("pic_id")
+      .eq("id", id)
+      .maybeSingle();
+    if (readError) {
+      return { success: false, errors: { form: [friendlyDbError(readError.message)] } };
+    }
+    const picChanged = (current?.pic_id ?? null) !== validated.data.picId;
+    if (picChanged) {
+      const { data: picEligible } = await supabase.rpc("is_pic_eligible", {
+        p_profile_id: validated.data.picId,
+      });
+      if (picEligible !== true) {
+        return {
+          success: false,
+          errors: {
+            picId: [friendlyDbError("pic_must_be_pengurus")],
+          },
+        };
+      }
     }
 
     const { data: changed, error } = await supabase
@@ -115,7 +128,9 @@ export async function updateEvent(id: string, formData: FormData) {
         date: wibToISO(validated.data.date, validated.data.time),
         weekly_theme: validated.data.weeklyTheme,
         event_type: validated.data.eventType,
-        pic_id: validated.data.picId,
+        // Unchanged PIC is left out, so trigger 0013 (UPDATE OF pic_id)
+        // does not re-check a PIC that was valid when it was set.
+        ...(picChanged ? { pic_id: validated.data.picId } : {}),
         speaker_name: validated.data.speakerName,
         description: validated.data.description || null,
       })

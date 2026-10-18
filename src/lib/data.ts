@@ -101,7 +101,8 @@ interface ProfileRow {
   notes: string | null;
   avatar_url: string | null;
   is_active: boolean;
-  /** Absent only if migration 0025 is not applied yet. */
+  /** Migration 0025. PROFILE_COLUMNS asks for it, so a database without
+   *  0025 fails the whole read (PostgREST 42703), not just this field. */
   is_pengurus?: boolean;
   created_at: string;
   updated_at: string;

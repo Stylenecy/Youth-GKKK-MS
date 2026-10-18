@@ -12,6 +12,18 @@ import {
   type StewardCandidate,
 } from "@/lib/stewards";
 import { isOverloaded } from "@/lib/fatigue";
+import { MEMBER_STATUS_DOT } from "@/lib/members";
+import {
+  EMPTY_FILL,
+  currentSlot,
+  fillDone,
+  fillSaved,
+  fillSkipped,
+  fillUndone,
+  startFill,
+  type FillState,
+} from "@/lib/fill-queue";
+import type { MemberStatus } from "@/lib/types";
 import { Modal, Field, fieldClass } from "./Modal";
 import { callAction } from "@/lib/call-action";
 import { DEMO_NOTE, demoNote } from "@/lib/demo";
@@ -20,13 +32,6 @@ export interface AssignedToast {
   assignmentId: string | null;
   name: string;
   role: string;
-}
-
-interface SavedInChain {
-  assignmentId: string | null;
-  profileId: string;
-  name: string;
-  role: StewardRole;
 }
 
 /**
@@ -51,6 +56,7 @@ export function AssignStewardForm({
   buttonLabel,
   compact = false,
   variant = "outline",
+  hideTrigger = false,
 }: {
   eventId: string;
   eventLabel: string;
@@ -66,8 +72,16 @@ export function AssignStewardForm({
   /** dashed = empty slot in a roster; primary = the one gold action;
    *  plus = the compact round "+" in a roster's action column. */
   variant?: "outline" | "dashed" | "primary" | "plus";
+  /** Keep the form (and its open sheet / undo box) mounted but hide the
+   *  button — e.g. a role that just became full, or a Saturday whose last
+   *  empty slot was just filled from this sheet. */
+  hideTrigger?: boolean;
 }) {
-  const chain = queue !== undefined && queue.length > 0;
+  // Frozen when the sheet opens: the refresh after the last save empties
+  // `queue`, and that must not turn an open "Isi berurutan" sheet back into
+  // the single-role form.
+  const [chain, setChain] = useState(false);
+  const [chainAnnounce, setChainAnnounce] = useState("");
   const [isOpen, setIsOpen] = useState(false);
   const [role, setRole] = useState<StewardRole | "">(presetRole ?? "");
   const [query, setQuery] = useState("");
@@ -76,18 +90,18 @@ export function AssignStewardForm({
   const [toast, setToast] = useState<AssignedToast | null>(null);
   const [undoState, setUndoState] = useState<"idle" | "working" | "failed" | "done">("idle");
   // Isi berurutan: a local copy of the queue (undo can put a slot back),
-  // the current position, and what this sheet already saved.
-  const [slots, setSlots] = useState<StewardRole[]>([]);
-  const [pos, setPos] = useState(0);
-  const [saved, setSaved] = useState<SavedInChain[]>([]);
+  // the current position, and what this sheet already saved — pure rules
+  // in lib/fill-queue.ts.
+  const [fill, setFill] = useState<FillState>(EMPTY_FILL);
+  const saved = fill.saved;
   const [isPending, startTransition] = useTransition();
   const router = useRouter();
   const searchRef = useRef<HTMLInputElement>(null);
   const listRef = useRef<HTMLDivElement>(null);
 
-  const chainDone = chain && pos >= slots.length;
+  const chainDone = chain && fillDone(fill);
   const effectiveRole: StewardRole | "" = chain
-    ? (slots[pos] ?? "")
+    ? (currentSlot(fill) ?? "")
     : (presetRole ?? role);
 
   const candidates: StewardCandidate[] = useMemo(
@@ -148,11 +162,10 @@ export function AssignStewardForm({
     setSelectedId(null);
     setError(null);
     if (!presetRole) setRole("");
-    if (chain) {
-      setSlots(queue ?? []);
-      setPos(0);
-      setSaved([]);
-    }
+    const startChain = (queue?.length ?? 0) > 0;
+    setChain(startChain);
+    setChainAnnounce("");
+    setFill(startChain ? startFill(queue ?? []) : EMPTY_FILL);
     setIsOpen(true);
   }
 
@@ -163,18 +176,22 @@ export function AssignStewardForm({
     if (!window.matchMedia("(pointer: fine)").matches) return;
     const t = setTimeout(() => searchRef.current?.focus(), 60);
     return () => clearTimeout(t);
-  }, [isOpen, pos]);
+  }, [isOpen, fill.pos]);
 
   function close() {
     setIsOpen(false);
   }
 
-  function nextSlot() {
+  function resetPick() {
     setQuery("");
     setSelectedId(null);
     setError(null);
-    setPos((p) => p + 1);
     listRef.current?.scrollTo({ top: 0 });
+  }
+
+  function skipSlot() {
+    resetPick();
+    setFill(fillSkipped);
   }
 
   function handleSubmit() {
@@ -186,12 +203,11 @@ export function AssignStewardForm({
       if (result.success) {
         const name = selected.nickname;
         if (chain) {
-          setSaved((list) => [
-            ...list,
-            { assignmentId: result.id ?? null, profileId: selected.id, name, role: savedRole },
-          ]);
-          setUndoState("idle");
-          nextSlot();
+          resetPick();
+          setFill((f) =>
+            fillSaved(f, { assignmentId: result.id ?? null, profileId: selected.id, name, role: savedRole })
+          );
+          setChainAnnounce(`${name} ditetapkan sebagai ${savedRole}.${demoNote()}`);
         } else {
           close();
           setToast({ assignmentId: result.id ?? null, name, role: savedRole });
@@ -229,11 +245,8 @@ export function AssignStewardForm({
         removeStewardAssignment(last.assignmentId as string, eventId)
       );
       if (result.success) {
-        setSaved((list) => list.slice(0, -1));
-        setSlots((list) => {
-          const at = Math.min(pos, list.length);
-          return [...list.slice(0, at), last.role, ...list.slice(at)];
-        });
+        setFill(fillUndone);
+        setChainAnnounce("Perubahan dibatalkan.");
         setSelectedId(null);
         router.refresh();
       } else {
@@ -251,9 +264,7 @@ export function AssignStewardForm({
           visible boxes below carry no role, so nothing is announced twice. */}
       <div role="status" aria-live="polite" className="sr-only">
         {chain && isOpen
-          ? lastSaved
-            ? `${lastSaved.name} ditetapkan sebagai ${lastSaved.role}.${demoNote()}`
-            : ""
+          ? chainAnnounce
           : !toast
             ? ""
             : undoState === "done"
@@ -261,45 +272,47 @@ export function AssignStewardForm({
               : `${toast.name} ditetapkan sebagai ${toast.role}.${demoNote()}`}
       </div>
 
-      <button
-        type="button"
-        onClick={open}
-        // Many identical bare "Tambah" buttons on the desktop board: name
-        // each one. Labels that already say what they do keep their text as
-        // the accessible name (WCAG 2.5.3).
-        aria-label={
-          presetRole && (variant === "plus" || (buttonLabel ?? "Tambah") === "Tambah")
-            ? `Tambah ${presetRole} untuk ${eventLabel}`
-            : undefined
-        }
-        className={
-          variant === "plus"
-            ? "flex h-11 w-11 items-center justify-center rounded-full border border-dashed border-line text-ink-muted transition-colors hover:border-accent hover:text-accent"
-            : variant === "primary"
-            ? "btn-primary w-full justify-center text-sm"
-            : variant === "dashed"
-              ? "btn-outline w-full justify-center border-dashed text-sm"
-              : compact
-                ? "btn-outline w-full justify-center text-xs px-2 py-1.5"
-                : "btn-outline text-xs sm:text-sm"
-        }
-        // .btn-* sets a solid border shorthand outside Tailwind's layers,
-        // so the dashed "empty slot" look has to be inline.
-        style={
-          variant === "dashed"
-            ? { borderStyle: "dashed", paddingInline: "0.75rem" }
-            : undefined
-        }
-      >
-        {variant === "plus" ? (
-          <Plus className="h-5 w-5" aria-hidden="true" />
-        ) : (
-          <>
-            {variant !== "dashed" && <UserPlus className="h-4 w-4" aria-hidden="true" />}
-            {buttonLabel ?? "Tugaskan Penatalayan"}
-          </>
-        )}
-      </button>
+      {!hideTrigger && (
+        <button
+          type="button"
+          onClick={open}
+          // Many identical bare "Tambah" buttons on the desktop board: name
+          // each one. Labels that already say what they do keep their text as
+          // the accessible name (WCAG 2.5.3).
+          aria-label={
+            presetRole && (variant === "plus" || (buttonLabel ?? "Tambah") === "Tambah")
+              ? `Tambah ${presetRole} untuk ${eventLabel}`
+              : undefined
+          }
+          className={
+            variant === "plus"
+              ? "flex h-11 w-11 items-center justify-center rounded-full border border-dashed border-line text-ink-muted transition-colors hover:border-accent hover:text-accent"
+              : variant === "primary"
+              ? "btn-primary w-full justify-center text-sm"
+              : variant === "dashed"
+                ? "btn-outline w-full justify-center border-dashed text-sm"
+                : compact
+                  ? "btn-outline w-full justify-center text-xs px-2 py-1.5"
+                  : "btn-outline text-xs sm:text-sm"
+          }
+          // .btn-* sets a solid border shorthand outside Tailwind's layers,
+          // so the dashed "empty slot" look has to be inline.
+          style={
+            variant === "dashed"
+              ? { borderStyle: "dashed", paddingInline: "0.75rem" }
+              : undefined
+          }
+        >
+          {variant === "plus" ? (
+            <Plus className="h-5 w-5" aria-hidden="true" />
+          ) : (
+            <>
+              {variant !== "dashed" && <UserPlus className="h-4 w-4" aria-hidden="true" />}
+              {buttonLabel ?? "Tugaskan Penatalayan"}
+            </>
+          )}
+        </button>
+      )}
 
       <Modal open={isOpen} onClose={close} kicker="PENATALAYAN" title={title}>
         <p className="text-xs text-ink-muted">
@@ -307,7 +320,7 @@ export function AssignStewardForm({
           {effectiveRole ? ` · ${effectiveRole}` : ""}
           {chain && !chainDone && (
             <span className="num font-mono">
-              {" "}· slot {pos + 1} dari {slots.length}
+              {" "}· slot {fill.pos + 1} dari {fill.slots.length}
             </span>
           )}
         </p>
@@ -328,7 +341,7 @@ export function AssignStewardForm({
                 type="button"
                 disabled={isPending}
                 onClick={undoLastInChain}
-                className="shrink-0 font-semibold underline underline-offset-2 disabled:opacity-60"
+                className="min-h-[44px] shrink-0 px-1 font-semibold underline underline-offset-2 disabled:opacity-60"
               >
                 Batalkan
               </button>
@@ -436,36 +449,40 @@ export function AssignStewardForm({
                                 }`}
                               >
                                 <span className="flex min-w-0 items-center gap-2.5">
+                                  {/* Same dot as the directory (MEMBER_STATUS_DOT). */}
                                   <span
                                     aria-hidden="true"
                                     className={`inline-block h-2.5 w-2.5 shrink-0 rounded-full border-2 ${
-                                      disabled
-                                        ? "border-warning bg-transparent"
-                                        : "border-sage bg-sage"
+                                      (MEMBER_STATUS_DOT[cand.status as MemberStatus] ?? MEMBER_STATUS_DOT.inactive).dot
                                     }`}
                                   />
                                   <span className="min-w-0">
                                     <span className="block truncate text-sm">
                                       <span className="font-semibold text-ink">{cand.nickname}</span>
                                       {cand.fullName !== cand.nickname && (
-                                        <span className="ml-1.5 text-xs text-ink-faint">{cand.fullName}</span>
+                                        <span className={`ml-1.5 text-xs ${active ? "text-ink-muted" : "text-ink-faint"}`}>
+                                          {cand.fullName}
+                                        </span>
                                       )}
                                     </span>
-                                    <span className="block truncate text-xs text-ink-muted">
-                                      {disabled ? "Berhalangan / tidak aktif · " : ""}Cross: {cand.crossLabel}
-                                    </span>
-                                    {overloaded && (
-                                      <span className="flex items-center gap-1 text-xs font-medium text-danger">
-                                        <TriangleAlert className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
-                                        Cukup sering bertugas
+                                    {(disabled || cand.crossLabel !== "—") && (
+                                      <span className="block truncate text-xs text-ink-muted">
+                                        {disabled ? "Berhalangan / tidak aktif" : `Cross: ${cand.crossLabel}`}
                                       </span>
                                     )}
                                   </span>
                                 </span>
-                                <span className="num flex shrink-0 items-center gap-1.5 font-mono text-xs font-bold text-ink-muted">
+                                <span
+                                  className={`num flex shrink-0 items-center gap-1 font-mono text-xs font-bold ${
+                                    overloaded ? "text-danger" : "text-ink-muted"
+                                  }`}
+                                >
                                   {cand.load === null ? "—" : `${cand.load}×`}
-                                  <span className="sr-only"> dalam 30 hari</span>
-                                  {active && <Check className="h-4 w-4 text-accent" aria-hidden="true" />}
+                                  {overloaded && <TriangleAlert className="h-3.5 w-3.5" aria-hidden="true" />}
+                                  <span className="sr-only">
+                                    {" "}dalam 30 hari{overloaded ? " — cukup sering bertugas" : ""}
+                                  </span>
+                                  {active && <Check className="ml-0.5 h-4 w-4 text-accent" aria-hidden="true" />}
                                 </span>
                               </button>
                             </li>
@@ -481,7 +498,7 @@ export function AssignStewardForm({
             {effectiveRole && groups.hiddenUnavailable > 0 && (
               <p className="text-xs text-ink-faint">
                 {groups.hiddenUnavailable} anggota berhalangan/tidak aktif disembunyikan — ketik namanya kalau perlu.
-                Angka di kanan = tugas 30 hari terakhir.
+                Angka di kanan = tugas 30 hari terakhir; ⚠ = cukup sering bertugas.
               </p>
             )}
 
@@ -544,7 +561,7 @@ export function AssignStewardForm({
                   <button
                     type="button"
                     disabled={isPending}
-                    onClick={chain ? nextSlot : close}
+                    onClick={chain ? skipSlot : close}
                     className="btn-outline flex-none justify-center px-4 text-sm disabled:opacity-60"
                   >
                     {chain ? "Lewati" : "Batal"}

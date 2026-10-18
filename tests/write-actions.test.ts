@@ -59,6 +59,7 @@ beforeAll(async () => {
     import("@/app/actions/attendance"),
     import("@/app/actions/cross"),
     import("@/app/actions/accounts"),
+    import("@/app/actions/members"),
   ]);
 }, 60_000);
 
@@ -127,7 +128,7 @@ describe("createEvent / updateEvent", () => {
     fx.rpc.is_pic_eligible = { data: false, error: null };
     const res = await createEvent(goodEvent());
     expect(res.success).toBe(false);
-    expect((res as { errors: Record<string, string[]> }).errors.picId[0]).toMatch(/PIC harus pengurus/);
+    expect((res as { errors: Record<string, string[]> }).errors.picId[0]).toMatch(/PIC harus Pengurus/);
     expect(fx.inserts).toHaveLength(0);
   });
 
@@ -140,6 +141,25 @@ describe("createEvent / updateEvent", () => {
     expect(fx.inserts[0].table).toBe("events");
     expect(fx.inserts[0].payload).toMatchObject({ status: "draft", pic_id: "pic-1" });
     expect(recordAudit).toHaveBeenCalledWith("Menambah ibadah", "event", "event-9", expect.anything());
+  });
+
+  it("updateEvent keeps an old PIC without re-checking it (PIC unchanged)", async () => {
+    const { updateEvent } = await import("@/app/actions/gatherings");
+    // The event already has pic-1, who is no longer eligible (e.g. a Cross
+    // leader before 0025). Changing only the theme must still be allowed.
+    fx.rpc.is_pic_eligible = { data: false, error: null };
+    fx.tables.events = { data: { pic_id: "pic-1" }, error: null };
+    await updateEvent("event-1", goodEvent());
+    expect(fx.rpcCalls.some((c) => c.name === "is_pic_eligible")).toBe(false);
+  });
+
+  it("updateEvent re-checks a changed PIC and puts the error on the field", async () => {
+    const { updateEvent } = await import("@/app/actions/gatherings");
+    fx.rpc.is_pic_eligible = { data: false, error: null };
+    fx.tables.events = { data: { pic_id: "pic-old" }, error: null };
+    const res = await updateEvent("event-1", goodEvent());
+    expect(fx.rpcCalls.some((c) => c.name === "is_pic_eligible")).toBe(true);
+    expect((res as { errors: Record<string, string[]> }).errors.picId[0]).toMatch(/PIC harus Pengurus/);
   });
 
   it("updateEvent that changes 0 rows says nothing changed", async () => {
@@ -363,3 +383,35 @@ describe("Cross and account approval", () => {
     expect(await decideAccount("u-2", "approved")).toEqual({ success: false, error: DEMO_NEEDS_LOGIN });
   });
 });
+
+describe("setPengurus", () => {
+  it("rejects bad input before calling the database", async () => {
+    const { setPengurus } = await import("@/app/actions/members");
+    expect(await setPengurus("", true)).toMatchObject({ success: false });
+    expect(fx.rpcCalls).toHaveLength(0);
+  });
+
+  it("needs a real login in demo mode", async () => {
+    demo();
+    const { setPengurus } = await import("@/app/actions/members");
+    const { DEMO_NEEDS_LOGIN } = await import("@/lib/demo");
+    expect(await setPengurus("p-1", true)).toEqual({ success: false, error: DEMO_NEEDS_LOGIN });
+  });
+
+  it("calls set_pengurus and lets SQL write the audit line (no second row)", async () => {
+    const { setPengurus } = await import("@/app/actions/members");
+    expect(await setPengurus("p-1", true)).toEqual({ success: true });
+    expect(fx.rpcCalls).toContainEqual({ name: "set_pengurus", args: { p_profile_id: "p-1", p_value: true } });
+    expect(recordAudit).not.toHaveBeenCalled();
+  });
+
+  it("translates the admin-only refusal", async () => {
+    const { setPengurus } = await import("@/app/actions/members");
+    fx.rpc.set_pengurus = { data: null, error: { message: "only_admin_sets_pengurus" } };
+    expect(await setPengurus("p-1", false)).toEqual({
+      success: false,
+      error: "Hanya admin yang bisa menandai atau mencabut Pengurus.",
+    });
+  });
+});
+

@@ -166,19 +166,20 @@ export function RoleRoster({
               </td>
               {manage && (
                 <td className="py-1.5 text-right">
-                  {canAdd && (
-                    <span className="flex justify-end">
-                      <AssignStewardForm
-                        eventId={eventId}
-                        eventLabel={eventLabel}
-                        profiles={profiles}
-                        crossNames={crossNames}
-                        serving={serving}
-                        presetRole={role}
-                        variant="plus"
-                      />
-                    </span>
-                  )}
+                  {/* Always mounted: filling the last slot hides the "+",
+                      but its Batalkan box must stay. */}
+                  <span className="flex justify-end">
+                    <AssignStewardForm
+                      eventId={eventId}
+                      eventLabel={eventLabel}
+                      profiles={profiles}
+                      crossNames={crossNames}
+                      serving={serving}
+                      presetRole={role}
+                      variant="plus"
+                      hideTrigger={!canAdd}
+                    />
+                  </span>
                 </td>
               )}
             </tr>
