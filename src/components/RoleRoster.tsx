@@ -21,12 +21,15 @@ const STATUS_NOTE: Record<string, string> = {
 };
 
 /**
- * One Saturday as a ruled table: Peran · Petugas · Slot.
+ * One Saturday as a ruled table: Peran (+ slot) · Petugas · tambah.
  *
  * The same reading order Grace/Nita use in their spreadsheet, at any
  * width — the phone board shows one Saturday through this, and the
- * service detail page shows its own. Load (N× / 30 hari) sits beside
- * every name; overload is a word + icon, never colour alone.
+ * service detail page shows its own. Rapat (18 Okt 2026): the slot count
+ * sits under the role name and adding is a round "+" in its own column,
+ * so a role costs one line instead of a name line plus a button line.
+ * Load (N× / 30 hari) sits beside every name; overload is a word + icon,
+ * never colour alone.
  */
 export function RoleRoster({
   eventId,
@@ -51,6 +54,9 @@ export function RoleRoster({
 }) {
   const byId = new Map(profiles.map((p) => [p.id, p]));
   const manage = canManage && !readOnly;
+  const serving = stewards
+    .filter((s) => s.status !== "replaced")
+    .map((s) => ({ profileId: s.profileId, role: s.role }));
 
   return (
     <table className="w-full table-fixed border-collapse text-sm">
@@ -58,21 +64,21 @@ export function RoleRoster({
       <colgroup>
         <col className="w-[6.5rem] sm:w-36" />
         <col />
-        <col className="w-12 sm:w-16" />
+        {manage && <col className="w-12" />}
       </colgroup>
       <thead>
         <tr className="border-b border-rule">
-          {["Peran", "Petugas", "Slot"].map((h, i) => (
-            <th
-              key={h}
-              scope="col"
-              className={`py-2 font-mono text-[0.6875rem] font-semibold uppercase tracking-[0.12em] text-ink-muted ${
-                i === 2 ? "text-right" : "text-left"
-              }`}
-            >
-              {h}
+          <th scope="col" className="py-2 text-left font-mono text-[0.6875rem] font-semibold uppercase tracking-[0.12em] text-ink-muted">
+            Peran · slot
+          </th>
+          <th scope="col" className="py-2 text-left font-mono text-[0.6875rem] font-semibold uppercase tracking-[0.12em] text-ink-muted">
+            Petugas
+          </th>
+          {manage && (
+            <th scope="col" className="py-2">
+              <span className="sr-only">Tambah</span>
             </th>
-          ))}
+          )}
         </tr>
       </thead>
       <tbody>
@@ -89,16 +95,32 @@ export function RoleRoster({
             need.max === null ? `${rows.length}` : `${rows.length}/${need.max}`;
           return (
             <tr key={role} className="border-t border-rule-soft align-top first:border-t-0">
-              <th scope="row" className="py-2.5 pr-2 text-left font-semibold text-ink">
-                {/* Same 44 px line box as a name row, so role, name and slot
+              <th scope="row" className="py-1.5 pr-2 text-left font-semibold text-ink">
+                {/* Same 44 px line box as a name row, so role and first name
                     share one baseline. */}
-                <span className="flex min-h-[44px] items-center">{role}</span>
+                <span className="flex min-h-[44px] flex-col justify-center leading-tight">
+                  {role}
+                  <span
+                    className={`num font-mono text-xs font-normal ${
+                      slot.tone === "full"
+                        ? "text-sage"
+                        : missing
+                          ? "text-warning"
+                          : "text-ink-muted"
+                    }`}
+                  >
+                    {count}
+                    <span className="sr-only"> — {slot.sub}</span>
+                  </span>
+                </span>
               </th>
-              <td className="py-2.5 pr-2">
-                {rows.length === 0 && !canAdd && (
-                  <span className="flex min-h-[44px] items-center text-ink-muted">Belum ada</span>
+              <td className="py-1.5 pr-2">
+                {rows.length === 0 && (
+                  <span className="flex min-h-[44px] items-center text-ink-muted">
+                    {missing ? "Kosong" : "—"}
+                  </span>
                 )}
-                <ul className="space-y-1">
+                <ul>
                   {rows.map((s) => {
                     const p = byId.get(s.profileId);
                     const name = p?.nickname ?? "—";
@@ -141,34 +163,24 @@ export function RoleRoster({
                     );
                   })}
                 </ul>
-                {canAdd && (
-                  <div className={rows.length ? "mt-1.5" : ""}>
-                    <AssignStewardForm
-                      eventId={eventId}
-                      eventLabel={eventLabel}
-                      profiles={profiles}
-                      crossNames={crossNames}
-                      presetRole={role}
-                      buttonLabel={`Tambah ${role}`}
-                      variant="dashed"
-                    />
-                  </div>
-                )}
               </td>
-              <td
-                className={`num py-2.5 font-mono ${
-                  slot.tone === "full"
-                    ? "text-sage"
-                    : missing
-                      ? "text-warning"
-                      : "text-ink-muted"
-                }`}
-              >
-                <span className="flex min-h-[44px] items-center justify-end">
-                  {count}
-                  <span className="sr-only"> — {slot.sub}</span>
-                </span>
-              </td>
+              {manage && (
+                <td className="py-1.5 text-right">
+                  {canAdd && (
+                    <span className="flex justify-end">
+                      <AssignStewardForm
+                        eventId={eventId}
+                        eventLabel={eventLabel}
+                        profiles={profiles}
+                        crossNames={crossNames}
+                        serving={serving}
+                        presetRole={role}
+                        variant="plus"
+                      />
+                    </span>
+                  )}
+                </td>
+              )}
             </tr>
           );
         })}

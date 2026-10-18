@@ -2,13 +2,13 @@
 
 import { useEffect, useMemo, useRef, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { UserPlus, TriangleAlert } from "lucide-react";
+import { UserPlus, TriangleAlert, Check, Plus } from "lucide-react";
 import { assignSteward, removeStewardAssignment } from "@/app/actions/gatherings";
 import { isSupabaseConfigured } from "@/lib/supabase/env";
 import type { Profile } from "@/lib/types";
 import { STEWARD_ROLES, type StewardRole } from "@/lib/validation";
 import {
-  sortStewardCandidates,
+  groupStewardCandidates,
   type StewardCandidate,
 } from "@/lib/stewards";
 import { isOverloaded } from "@/lib/fatigue";
@@ -22,20 +22,32 @@ export interface AssignedToast {
   role: string;
 }
 
+interface SavedInChain {
+  assignmentId: string | null;
+  profileId: string;
+  name: string;
+  role: StewardRole;
+}
+
 /**
- * Assign steward — rebuild IMK 29 Sep 2026.
+ * Assign steward — masukan Nathan via Dex, 18 Okt 2026.
  *
- * Keputusan TIDAK lagi buta: tiap kandidat membawa beban 30 hari + Cross,
- * diurut ringan-dulu, overload ditandai (tak pernah diblokir — koordinator
- * memegang keputusan akhir). Dari sel papan, tanggal + peran sudah terisi
- * (presetRole) sehingga Nita tak mengulang 3 pilihan.
+ * - Siapa pun yang sudah bertugas di ibadah ini tidak bisa dipilih lagi
+ *   (satu orang satu peran per hari; migrasi 0025 menjaga di database).
+ * - Kandidat dikelompokkan: "Pernah jadi <peran>" dulu, lalu anggota aktif
+ *   lain — keduanya urut abjad. Beban 30 hari tetap tampil, yang terlalu
+ *   sering ditandai (tidak diblokir — koordinator memegang keputusan).
+ * - `queue` = mode "Isi berurutan" (HP): satu lembar berjalan dari slot
+ *   kosong satu ke berikutnya tanpa ditutup.
  */
 export function AssignStewardForm({
   eventId,
   eventLabel,
   profiles,
   crossNames,
+  serving = [],
   presetRole,
+  queue,
   buttonLabel,
   compact = false,
   variant = "outline",
@@ -44,12 +56,18 @@ export function AssignStewardForm({
   eventLabel: string;
   profiles: Profile[];
   crossNames: Record<string, string[]>;
+  /** Who already serves at this event (replaced rows excluded). */
+  serving?: { profileId: string; role: string }[];
   presetRole?: StewardRole;
+  /** Isi berurutan: the empty slots of this Saturday, one entry per slot. */
+  queue?: StewardRole[];
   buttonLabel?: string;
   compact?: boolean;
-  /** dashed = empty slot in a roster; primary = the one gold action. */
-  variant?: "outline" | "dashed" | "primary";
+  /** dashed = empty slot in a roster; primary = the one gold action;
+   *  plus = the compact round "+" in a roster's action column. */
+  variant?: "outline" | "dashed" | "primary" | "plus";
 }) {
+  const chain = queue !== undefined && queue.length > 0;
   const [isOpen, setIsOpen] = useState(false);
   const [role, setRole] = useState<StewardRole | "">(presetRole ?? "");
   const [query, setQuery] = useState("");
@@ -57,11 +75,20 @@ export function AssignStewardForm({
   const [error, setError] = useState<string | null>(null);
   const [toast, setToast] = useState<AssignedToast | null>(null);
   const [undoState, setUndoState] = useState<"idle" | "working" | "failed" | "done">("idle");
+  // Isi berurutan: a local copy of the queue (undo can put a slot back),
+  // the current position, and what this sheet already saved.
+  const [slots, setSlots] = useState<StewardRole[]>([]);
+  const [pos, setPos] = useState(0);
+  const [saved, setSaved] = useState<SavedInChain[]>([]);
   const [isPending, startTransition] = useTransition();
   const router = useRouter();
   const searchRef = useRef<HTMLInputElement>(null);
+  const listRef = useRef<HTMLDivElement>(null);
 
-  const effectiveRole = presetRole ?? (role as StewardRole | "");
+  const chainDone = chain && pos >= slots.length;
+  const effectiveRole: StewardRole | "" = chain
+    ? (slots[pos] ?? "")
+    : (presetRole ?? role);
 
   const candidates: StewardCandidate[] = useMemo(
     () =>
@@ -72,23 +99,47 @@ export function AssignStewardForm({
         status: p.status,
         load: p.serviceCount30d ?? null,
         crossLabel: crossNames[p.id]?.join(", ") || "—",
+        rolesServed: p.rolesServed,
       })),
     [profiles, crossNames]
   );
+  const nameOf = useMemo(() => {
+    const byId = new Map(profiles.map((p) => [p.id, p.nickname]));
+    return (id: string) => byId.get(id) ?? "—";
+  }, [profiles]);
 
-  const ranked = useMemo(
-    () => sortStewardCandidates(candidates, query),
-    [candidates, query]
+  // Already serving = the server's list + what this sheet just saved (the
+  // refresh that brings them into `serving` may still be on its way).
+  const servingNow = useMemo(() => {
+    const list = serving.map((s) => ({ profileId: s.profileId, role: s.role }));
+    for (const s of saved) {
+      if (!list.some((x) => x.profileId === s.profileId)) {
+        list.push({ profileId: s.profileId, role: s.role });
+      }
+    }
+    return list;
+  }, [serving, saved]);
+  const servingIds = useMemo(
+    () => new Set(servingNow.map((s) => s.profileId)),
+    [servingNow]
   );
+
+  const groups = useMemo(
+    () =>
+      effectiveRole
+        ? groupStewardCandidates(candidates, query, effectiveRole, servingIds)
+        : { sections: [], hiddenUnavailable: 0 },
+    [candidates, query, effectiveRole, servingIds]
+  );
+  const anyCandidate = groups.sections.some((s) => s.items.length > 0);
 
   const selected = useMemo(
     () => candidates.find((c) => c.id === selectedId) ?? null,
     [candidates, selectedId]
   );
   const selectedOverloaded =
-    selected !== null &&
-    selected.load !== null &&
-    isOverloaded(selected.load);
+    selected !== null && selected.load !== null && isOverloaded(selected.load);
+  const lastSaved = saved[saved.length - 1] ?? null;
 
   // Fresh form on every open — reset in the handler, not in an effect
   // (an effect would render once with stale values, then again).
@@ -97,33 +148,55 @@ export function AssignStewardForm({
     setSelectedId(null);
     setError(null);
     if (!presetRole) setRole("");
+    if (chain) {
+      setSlots(queue ?? []);
+      setPos(0);
+      setSaved([]);
+    }
     setIsOpen(true);
   }
 
+  // Keyboard users land in the search box; on a phone that would pop the
+  // keyboard over the list, so touch screens start on the list instead.
   useEffect(() => {
     if (!isOpen) return;
+    if (!window.matchMedia("(pointer: fine)").matches) return;
     const t = setTimeout(() => searchRef.current?.focus(), 60);
     return () => clearTimeout(t);
-  }, [isOpen]);
+  }, [isOpen, pos]);
 
   function close() {
     setIsOpen(false);
   }
 
+  function nextSlot() {
+    setQuery("");
+    setSelectedId(null);
+    setError(null);
+    setPos((p) => p + 1);
+    listRef.current?.scrollTo({ top: 0 });
+  }
+
   function handleSubmit() {
     if (!effectiveRole || !selectedId || !selected || isPending) return;
+    const savedRole = effectiveRole;
     setError(null);
     startTransition(async () => {
-      const result = await callAction(() => assignSteward(eventId, selectedId, effectiveRole));
+      const result = await callAction(() => assignSteward(eventId, selectedId, savedRole));
       if (result.success) {
-        const name = selected.fullName;
-        close();
-        setToast({
-          assignmentId: result.id ?? null,
-          name,
-          role: effectiveRole,
-        });
-        setUndoState("idle");
+        const name = selected.nickname;
+        if (chain) {
+          setSaved((list) => [
+            ...list,
+            { assignmentId: result.id ?? null, profileId: selected.id, name, role: savedRole },
+          ]);
+          setUndoState("idle");
+          nextSlot();
+        } else {
+          close();
+          setToast({ assignmentId: result.id ?? null, name, role: savedRole });
+          setUndoState("idle");
+        }
         router.refresh();
       } else {
         setError(result.error ?? "Gagal menugaskan penatalayan.");
@@ -146,16 +219,46 @@ export function AssignStewardForm({
     });
   }
 
+  /** Isi berurutan: undo the last save and put its slot back in front. */
+  function undoLastInChain() {
+    const last = saved[saved.length - 1];
+    if (!last?.assignmentId || isPending) return;
+    setError(null);
+    startTransition(async () => {
+      const result = await callAction(() =>
+        removeStewardAssignment(last.assignmentId as string, eventId)
+      );
+      if (result.success) {
+        setSaved((list) => list.slice(0, -1));
+        setSlots((list) => {
+          const at = Math.min(pos, list.length);
+          return [...list.slice(0, at), last.role, ...list.slice(at)];
+        });
+        setSelectedId(null);
+        router.refresh();
+      } else {
+        setError(result.error ?? "Perubahan belum berhasil dibatalkan.");
+      }
+    });
+  }
+
+  const title = chain ? "Isi yang kurang" : presetRole ? "Tambah penatalayan" : "Tugaskan Tim Pelayanan";
+  const searchId = `cari-${eventId}-${presetRole ?? (chain ? "urut" : "semua")}`;
+
   return (
     <>
       {/* One always-mounted live region (same pattern as Toast.tsx); the
           visible boxes below carry no role, so nothing is announced twice. */}
       <div role="status" aria-live="polite" className="sr-only">
-        {!toast
-          ? ""
-          : undoState === "done"
-            ? "Perubahan dibatalkan."
-            : `${toast.name} ditetapkan sebagai ${toast.role}.${demoNote()}`}
+        {chain && isOpen
+          ? lastSaved
+            ? `${lastSaved.name} ditetapkan sebagai ${lastSaved.role}.${demoNote()}`
+            : ""
+          : !toast
+            ? ""
+            : undoState === "done"
+              ? "Perubahan dibatalkan."
+              : `${toast.name} ditetapkan sebagai ${toast.role}.${demoNote()}`}
       </div>
 
       <button
@@ -165,12 +268,14 @@ export function AssignStewardForm({
         // each one. Labels that already say what they do keep their text as
         // the accessible name (WCAG 2.5.3).
         aria-label={
-          presetRole && (buttonLabel ?? "Tambah") === "Tambah"
+          presetRole && (variant === "plus" || (buttonLabel ?? "Tambah") === "Tambah")
             ? `Tambah ${presetRole} untuk ${eventLabel}`
             : undefined
         }
         className={
-          variant === "primary"
+          variant === "plus"
+            ? "flex h-11 w-11 items-center justify-center rounded-full border border-dashed border-line text-ink-muted transition-colors hover:border-accent hover:text-accent"
+            : variant === "primary"
             ? "btn-primary w-full justify-center text-sm"
             : variant === "dashed"
               ? "btn-outline w-full justify-center border-dashed text-sm"
@@ -180,215 +285,287 @@ export function AssignStewardForm({
         }
         // .btn-* sets a solid border shorthand outside Tailwind's layers,
         // so the dashed "empty slot" look has to be inline.
-        // Tighter side padding too: "Tambah Multimedia" must stay on one line
-        // in the ~160 px roster column of a 360 px phone.
         style={
           variant === "dashed"
             ? { borderStyle: "dashed", paddingInline: "0.75rem" }
             : undefined
         }
       >
-        {/* The dashed empty-slot button sits in a narrow roster column on a
-            360 px phone; its label already says the action, so no icon. */}
-        {variant !== "dashed" && <UserPlus className="h-4 w-4" aria-hidden="true" />}
-        {buttonLabel ?? "Tugaskan Penatalayan"}
+        {variant === "plus" ? (
+          <Plus className="h-5 w-5" aria-hidden="true" />
+        ) : (
+          <>
+            {variant !== "dashed" && <UserPlus className="h-4 w-4" aria-hidden="true" />}
+            {buttonLabel ?? "Tugaskan Penatalayan"}
+          </>
+        )}
       </button>
 
-      <Modal
-        open={isOpen}
-        onClose={close}
-        kicker="PENATALAYAN"
-        title={presetRole ? "Tambah penatalayan" : "Tugaskan Tim Pelayanan"}
-      >
+      <Modal open={isOpen} onClose={close} kicker="PENATALAYAN" title={title}>
         <p className="text-xs text-ink-muted">
           {eventLabel}
           {effectiveRole ? ` · ${effectiveRole}` : ""}
+          {chain && !chainDone && (
+            <span className="num font-mono">
+              {" "}· slot {pos + 1} dari {slots.length}
+            </span>
+          )}
         </p>
 
-        <div className="mt-4 space-y-4">
-          {!presetRole && (
-            <Field name="role" label="Peran Pelayanan">
-              <select
-                id="role"
-                name="role"
-                required
-                value={role}
-                disabled={isPending}
-                onChange={(e) => {
-                  setRole(e.target.value as StewardRole | "");
-                  setSelectedId(null);
-                }}
-                className={fieldClass}
-              >
-                <option value="">Pilih peran…</option>
-                {STEWARD_ROLES.map((r) => (
-                  <option key={r} value={r}>
-                    {r}
-                  </option>
-                ))}
-              </select>
-            </Field>
-          )}
-
-          <div>
-            <label
-              htmlFor={`cari-${eventId}-${effectiveRole || "semua"}`}
-              className="mb-1.5 block text-xs font-semibold text-ink"
-            >
-              Penatalayan
-            </label>
-            <input
-              ref={searchRef}
-              id={`cari-${eventId}-${effectiveRole || "semua"}`}
-              type="search"
-              value={query}
-              disabled={isPending || !effectiveRole}
-              onChange={(e) => setQuery(e.target.value)}
-              placeholder={
-                effectiveRole ? "Cari nama…" : "Pilih peran terlebih dahulu"
-              }
-              autoComplete="off"
-              className={fieldClass}
-            />
-          </div>
-
-          {effectiveRole ? (
-            ranked.length === 0 ? (
-              <p className="rounded-xl border border-line/40 bg-canvas-sunk/60 px-3.5 py-3 text-xs leading-relaxed text-ink-muted">
-                {query.trim() ? (
-                  <>
-                    Tidak ada penatalayan aktif dengan nama “{query.trim()}”.
-                    Periksa kembali nama yang dicari.
-                  </>
-                ) : (
-                  "Tidak ada kandidat. Muat ulang halaman lalu coba lagi."
-                )}
-              </p>
-            ) : (
-              <ul className="max-h-64 space-y-1.5 overflow-y-auto pr-0.5" aria-label="Daftar kandidat">
-                {ranked.map(({ cand, disabled, overloaded }) => {
-                  const active = cand.id === selectedId;
-                  return (
-                    <li key={cand.id}>
-                      <button
-                        type="button"
-                        disabled={disabled || isPending}
-                        onClick={() =>
-                          setSelectedId(active ? null : cand.id)
-                        }
-                        aria-pressed={active}
-                        className={`flex min-h-[52px] w-full items-center justify-between gap-3 rounded-xl border px-3 py-2 text-left transition-colors disabled:cursor-not-allowed disabled:opacity-60 ${
-                          active
-                            ? "border-accent bg-accent-wash/50"
-                            : "border-line/40 bg-surface/60 hover:border-accent/60"
-                        }`}
-                      >
-                        <span className="min-w-0">
-                          <span className="block truncate text-sm font-semibold text-ink">
-                            {cand.fullName}
-                          </span>
-                          <span className="block truncate text-xs text-ink-muted">
-                            Cross: {cand.crossLabel}
-                            {disabled ? " · Sedang tidak tersedia" : ""}
-                          </span>
-                          {overloaded && (
-                            <span className="mt-0.5 flex items-center gap-1 text-xs font-medium text-danger">
-                              <TriangleAlert className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
-                              Cukup sering bertugas
-                            </span>
-                          )}
-                        </span>
-                        <span className="num shrink-0 font-mono text-xs font-bold text-ink-muted">
-                          {cand.load === null ? "—" : `${cand.load}×`} / 30 hari
-                        </span>
-                      </button>
-                    </li>
-                  );
-                })}
-              </ul>
-            )
-          ) : null}
-
-          {selected && selectedOverloaded && (
-            <p
-              role="alert"
-              className="rounded-xl border border-danger/40 bg-danger-wash/60 px-3.5 py-2.5 text-xs leading-relaxed text-danger"
-            >
-              <TriangleAlert className="mr-1 inline h-3.5 w-3.5" aria-hidden="true" />
-              {selected.fullName} sudah bertugas {selected.load}× dalam 30 hari
-              terakhir. Pastikan penugasan ini memang disengaja.
-            </p>
-          )}
-
-          {error && (
-            <p
-              role="alert"
-              className="rounded-xl border border-danger/40 bg-danger-wash px-3.5 py-2.5 text-xs text-danger"
-            >
-              {error}
-              {undoState === "failed" && toast?.assignmentId && (
-                <button
-                  type="button"
-                  onClick={handleUndo}
-                  className="ml-2 font-semibold underline underline-offset-2"
-                >
-                  Coba lagi
-                </button>
+        {chain && lastSaved && (
+          <div className="mt-3 flex items-center gap-2 rounded-xl border border-sage/40 bg-sage-wash/60 px-3 py-2 text-xs text-ink">
+            <Check className="h-4 w-4 shrink-0 text-sage" aria-hidden="true" />
+            <span className="min-w-0 flex-1">
+              <strong>{lastSaved.name}</strong> → {lastSaved.role}
+              {isSupabaseConfigured() ? (
+                " tersimpan."
+              ) : (
+                <span className="text-ink-muted">{DEMO_NOTE}</span>
               )}
-            </p>
-          )}
-
-          <div className="flex gap-2.5">
-            {selected && selectedOverloaded ? (
-              <>
-                <button
-                  type="button"
-                  disabled={isPending}
-                  onClick={() => {
-                    setSelectedId(null);
-                    searchRef.current?.focus();
-                  }}
-                  className="btn-outline flex-1 justify-center text-sm disabled:opacity-60"
-                >
-                  Pilih orang lain
-                </button>
-                <button
-                  type="button"
-                  disabled={isPending}
-                  onClick={handleSubmit}
-                  className="btn-primary flex-1 justify-center text-sm disabled:opacity-60"
-                >
-                  {isPending ? "Menyimpan…" : "Tetap jadwalkan"}
-                </button>
-              </>
-            ) : (
-              <>
-                <button
-                  type="button"
-                  disabled={isPending}
-                  onClick={close}
-                  className="btn-outline flex-1 justify-center text-sm disabled:opacity-60"
-                >
-                  Batal
-                </button>
-                <button
-                  type="button"
-                  disabled={isPending || !effectiveRole || !selectedId}
-                  onClick={handleSubmit}
-                  className="btn-primary flex-1 justify-center text-sm disabled:opacity-60"
-                >
-                  {isPending ? "Menyimpan…" : "Simpan penugasan"}
-                </button>
-              </>
+            </span>
+            {lastSaved.assignmentId && (
+              <button
+                type="button"
+                disabled={isPending}
+                onClick={undoLastInChain}
+                className="shrink-0 font-semibold underline underline-offset-2 disabled:opacity-60"
+              >
+                Batalkan
+              </button>
             )}
           </div>
-        </div>
+        )}
+
+        {chainDone ? (
+          <div className="mt-5 space-y-4">
+            <p className="rounded-xl border border-line/40 bg-canvas-sunk/60 px-3.5 py-3 text-sm text-ink">
+              {!isSupabaseConfigured()
+                ? "Selesai. Mode demo: tidak ada yang disimpan."
+                : saved.length > 0
+                  ? `Selesai — ${saved.length} slot terisi di lembar ini.`
+                  : "Semua slot dilewati."}{" "}
+              Tutup untuk melihat papan.
+            </p>
+            <button type="button" onClick={close} className="btn-primary w-full justify-center text-sm">
+              Tutup
+            </button>
+          </div>
+        ) : (
+          <div className="mt-4 space-y-3">
+            {!presetRole && !chain && (
+              <Field name="role" label="Peran Pelayanan">
+                <select
+                  id="role"
+                  name="role"
+                  required
+                  value={role}
+                  disabled={isPending}
+                  onChange={(e) => {
+                    setRole(e.target.value as StewardRole | "");
+                    setSelectedId(null);
+                  }}
+                  className={fieldClass}
+                >
+                  <option value="">Pilih peran…</option>
+                  {STEWARD_ROLES.map((r) => (
+                    <option key={r} value={r}>
+                      {r}
+                    </option>
+                  ))}
+                </select>
+              </Field>
+            )}
+
+            <div>
+              <label htmlFor={searchId} className="mb-1.5 block text-xs font-semibold text-ink">
+                Penatalayan
+              </label>
+              <input
+                ref={searchRef}
+                id={searchId}
+                type="search"
+                value={query}
+                disabled={isPending || !effectiveRole}
+                onChange={(e) => setQuery(e.target.value)}
+                placeholder={effectiveRole ? "Cari nama…" : "Pilih peran terlebih dahulu"}
+                autoComplete="off"
+                className={fieldClass}
+              />
+            </div>
+
+            {servingNow.length > 0 && (
+              <p className="text-xs leading-relaxed text-ink-muted">
+                <span className="font-semibold text-ink">Sudah bertugas hari itu</span>{" "}
+                (tidak bisa dipilih lagi):{" "}
+                {servingNow.map((s) => `${nameOf(s.profileId)} (${s.role})`).join(" · ")}
+              </p>
+            )}
+
+            {effectiveRole ? (
+              !anyCandidate ? (
+                <p className="rounded-xl border border-line/40 bg-canvas-sunk/60 px-3.5 py-3 text-xs leading-relaxed text-ink-muted">
+                  {query.trim()
+                    ? `Tidak ada anggota aktif bernama “${query.trim()}” yang masih bebas hari itu.`
+                    : "Tidak ada anggota aktif yang masih bebas hari itu."}
+                </p>
+              ) : (
+                <div
+                  ref={listRef}
+                  className="max-h-[min(46dvh,26rem)] overflow-y-auto rounded-xl border border-line/40"
+                >
+                  {groups.sections.map((section) => (
+                    <section key={section.key} aria-label={section.title}>
+                      <h3 className="sticky top-0 z-10 border-b border-rule-soft bg-surface px-3 py-1.5 font-mono text-[0.6875rem] font-semibold uppercase tracking-[0.12em] text-ink-muted">
+                        {section.title}{" "}
+                        <span className="num">{section.items.length}</span>
+                      </h3>
+                      <ul>
+                        {section.items.map(({ cand, disabled, overloaded }) => {
+                          const active = cand.id === selectedId;
+                          return (
+                            <li key={cand.id} className="border-b border-rule-soft last:border-b-0">
+                              <button
+                                type="button"
+                                disabled={disabled || isPending}
+                                onClick={() => setSelectedId(active ? null : cand.id)}
+                                aria-pressed={active}
+                                className={`flex min-h-[48px] w-full items-center justify-between gap-3 px-3 py-1.5 text-left transition-colors disabled:cursor-not-allowed disabled:opacity-55 ${
+                                  active
+                                    ? "bg-accent-wash shadow-[inset_3px_0_0_var(--color-accent)]"
+                                    : "hover:bg-canvas-sunk/60"
+                                }`}
+                              >
+                                <span className="flex min-w-0 items-center gap-2.5">
+                                  <span
+                                    aria-hidden="true"
+                                    className={`inline-block h-2.5 w-2.5 shrink-0 rounded-full border-2 ${
+                                      disabled
+                                        ? "border-warning bg-transparent"
+                                        : "border-sage bg-sage"
+                                    }`}
+                                  />
+                                  <span className="min-w-0">
+                                    <span className="block truncate text-sm">
+                                      <span className="font-semibold text-ink">{cand.nickname}</span>
+                                      {cand.fullName !== cand.nickname && (
+                                        <span className="ml-1.5 text-xs text-ink-faint">{cand.fullName}</span>
+                                      )}
+                                    </span>
+                                    <span className="block truncate text-xs text-ink-muted">
+                                      {disabled ? "Berhalangan / tidak aktif · " : ""}Cross: {cand.crossLabel}
+                                    </span>
+                                    {overloaded && (
+                                      <span className="flex items-center gap-1 text-xs font-medium text-danger">
+                                        <TriangleAlert className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
+                                        Cukup sering bertugas
+                                      </span>
+                                    )}
+                                  </span>
+                                </span>
+                                <span className="num flex shrink-0 items-center gap-1.5 font-mono text-xs font-bold text-ink-muted">
+                                  {cand.load === null ? "—" : `${cand.load}×`}
+                                  <span className="sr-only"> dalam 30 hari</span>
+                                  {active && <Check className="h-4 w-4 text-accent" aria-hidden="true" />}
+                                </span>
+                              </button>
+                            </li>
+                          );
+                        })}
+                      </ul>
+                    </section>
+                  ))}
+                </div>
+              )
+            ) : null}
+
+            {effectiveRole && groups.hiddenUnavailable > 0 && (
+              <p className="text-xs text-ink-faint">
+                {groups.hiddenUnavailable} anggota berhalangan/tidak aktif disembunyikan — ketik namanya kalau perlu.
+                Angka di kanan = tugas 30 hari terakhir.
+              </p>
+            )}
+
+            {selected && selectedOverloaded && (
+              <p
+                role="alert"
+                className="rounded-xl border border-danger/40 bg-danger-wash/60 px-3.5 py-2.5 text-xs leading-relaxed text-danger"
+              >
+                <TriangleAlert className="mr-1 inline h-3.5 w-3.5" aria-hidden="true" />
+                {selected.nickname} sudah bertugas {selected.load}× dalam 30 hari
+                terakhir. Pastikan penugasan ini memang disengaja.
+              </p>
+            )}
+
+            {error && (
+              <p
+                role="alert"
+                className="rounded-xl border border-danger/40 bg-danger-wash px-3.5 py-2.5 text-xs text-danger"
+              >
+                {error}
+                {!chain && undoState === "failed" && toast?.assignmentId && (
+                  <button
+                    type="button"
+                    onClick={handleUndo}
+                    className="ml-2 font-semibold underline underline-offset-2"
+                  >
+                    Coba lagi
+                  </button>
+                )}
+              </p>
+            )}
+
+            {/* Pinned to the bottom of the sheet: on a phone the list scrolls
+                under it, so Simpan is always one tap away. */}
+            <div className="sticky -bottom-6 z-20 -mx-6 flex gap-2.5 border-t border-rule-soft bg-surface px-6 pb-1 pt-3 sm:-bottom-7 sm:-mx-7 sm:px-7">
+              {selected && selectedOverloaded ? (
+                <>
+                  <button
+                    type="button"
+                    disabled={isPending}
+                    onClick={() => {
+                      setSelectedId(null);
+                      searchRef.current?.focus();
+                    }}
+                    className="btn-outline flex-1 justify-center text-sm disabled:opacity-60"
+                  >
+                    Pilih orang lain
+                  </button>
+                  <button
+                    type="button"
+                    disabled={isPending}
+                    onClick={handleSubmit}
+                    className="btn-primary flex-1 justify-center text-sm disabled:opacity-60"
+                  >
+                    {isPending ? "Menyimpan…" : "Tetap jadwalkan"}
+                  </button>
+                </>
+              ) : (
+                <>
+                  <button
+                    type="button"
+                    disabled={isPending}
+                    onClick={chain ? nextSlot : close}
+                    className="btn-outline flex-none justify-center px-4 text-sm disabled:opacity-60"
+                  >
+                    {chain ? "Lewati" : "Batal"}
+                  </button>
+                  <button
+                    type="button"
+                    disabled={isPending || !effectiveRole || !selectedId}
+                    onClick={handleSubmit}
+                    className="btn-primary flex-1 justify-center whitespace-nowrap text-sm disabled:opacity-60"
+                  >
+                    {isPending ? "Menyimpan…" : chain ? "Simpan & lanjut" : "Simpan"}
+                  </button>
+                </>
+              )}
+            </div>
+          </div>
+        )}
       </Modal>
 
       {toast && undoState !== "done" && (
-        <div
-          className="fixed bottom-20 left-1/2 z-50 w-[calc(100%-2.5rem)] max-w-md -translate-x-1/2 rounded-xl border border-line bg-surface p-4 shadow-2xl lg:bottom-8"
-        >
+        <div className="fixed bottom-20 left-1/2 z-50 w-[calc(100%-2.5rem)] max-w-md -translate-x-1/2 rounded-xl border border-line bg-surface p-4 shadow-2xl lg:bottom-8">
           <p className="text-sm text-ink">
             <strong>{toast.name}</strong> ditetapkan sebagai {toast.role}.
             {!isSupabaseConfigured() && (
@@ -417,9 +594,7 @@ export function AssignStewardForm({
         </div>
       )}
       {toast && undoState === "done" && (
-        <div
-          className="fixed bottom-20 left-1/2 z-50 w-[calc(100%-2.5rem)] max-w-md -translate-x-1/2 rounded-xl border border-line bg-surface p-4 shadow-2xl lg:bottom-8"
-        >
+        <div className="fixed bottom-20 left-1/2 z-50 w-[calc(100%-2.5rem)] max-w-md -translate-x-1/2 rounded-xl border border-line bg-surface p-4 shadow-2xl lg:bottom-8">
           <p className="text-sm text-ink">Perubahan dibatalkan.</p>
           <div className="mt-2.5">
             <button

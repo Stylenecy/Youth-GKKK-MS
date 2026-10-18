@@ -8,6 +8,27 @@ export const MEMBER_STATUS_TAG: Record<MemberStatus, { label: string; cls: strin
   inactive: { label: "Tidak aktif", cls: "tag font-medium opacity-60" },
 };
 
+/**
+ * Directory dot per status (masukan Nathan 18 Okt: "mainin warna aja").
+ * Colour AND shape, so it still reads without colour: filled = aktif,
+ * ring = berhalangan, hollow faint = alumni / tidak aktif.
+ */
+export const MEMBER_STATUS_DOT: Record<MemberStatus, { dot: string; name: string }> = {
+  active: { dot: "bg-sage border-sage", name: "text-ink" },
+  away: { dot: "bg-transparent border-warning border-[3px]", name: "text-ink" },
+  alumni: { dot: "bg-transparent border-ink-faint", name: "text-ink-faint" },
+  inactive: { dot: "bg-transparent border-ink-faint border-dashed", name: "text-ink-faint" },
+};
+
+/** Directory order: alphabetical by the name people actually use. */
+export function sortMembersByName(profiles: Profile[]): Profile[] {
+  return [...profiles].sort(
+    (a, b) =>
+      a.nickname.localeCompare(b.nickname, "id", { sensitivity: "base" }) ||
+      a.fullName.localeCompare(b.fullName, "id", { sensitivity: "base" })
+  );
+}
+
 export type MemberStatusFilter = MemberStatus | "all";
 
 export const MEMBER_STATUS_FILTERS: { value: MemberStatusFilter; label: string }[] = [

@@ -234,11 +234,19 @@ export async function assignSteward(eventId: string, profileId: string, role: st
 
   // Demo mode applies the same rule to the seed, so the preview behaves
   // like the real thing instead of accepting everything.
-  const { seedEvents } = await import("@/lib/seed");
+  const { seedEvents, seedStewards } = await import("@/lib/seed");
   const seeded = seedEvents.find((e) => e.id === eventId);
   if (!seeded) return { success: false, error: "Ibadah itu tidak ditemukan — muat ulang halaman." };
   const blocked = staffingBlock(seeded, Date.now());
   if (blocked) return { success: false, error: blocked };
+  // Same rule as the 0025 trigger: one person, one role per gathering.
+  if (
+    seedStewards.some(
+      (s) => s.eventId === eventId && s.profileId === profileId && s.status !== "replaced"
+    )
+  ) {
+    return { success: false, error: friendlyDbError("already_serving_this_event") };
+  }
   revalidatePath(`/dashboard/gatherings/${eventId}`);
   revalidatePath("/dashboard/penatalayan");
   return { success: true, id: null };

@@ -26,6 +26,10 @@ export interface Profile {
   notes: string | null;
   avatarUrl: string | null;
   serviceCount30d: number;
+  /** Pengurus Komisi Pemuda (0025) — only they can be PIC; admin sets it. */
+  isPengurus: boolean;
+  /** Steward roles this person has ever held — filled by getProfiles(). */
+  rolesServed?: string[];
   createdAt: string;
   updatedAt: string;
   /** Not a DB column — set only for the signed-in user's own profile. */

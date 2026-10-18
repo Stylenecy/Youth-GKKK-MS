@@ -280,6 +280,9 @@ export function PenatalayanBoard({
                             eventLabel={col.weekdayLabel}
                             profiles={profiles}
                             crossNames={crossNames}
+                            serving={col.stewards
+                              .filter((x) => x.status !== "replaced")
+                              .map((x) => ({ profileId: x.profileId, role: x.role }))}
                             presetRole={role}
                             buttonLabel="Tambah"
                             compact

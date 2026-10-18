@@ -79,7 +79,7 @@ function isMalformedId(error: { code?: string }): boolean {
  * caller's role in SQL.
  */
 const PROFILE_COLUMNS =
-  "id,full_name,nickname,birth_date,hometown,university,cohort,status,notes,avatar_url,is_active,created_at,updated_at";
+  "id,full_name,nickname,birth_date,hometown,university,cohort,status,notes,avatar_url,is_active,is_pengurus,created_at,updated_at";
 
 /**
  * A profile row as the database ever sends it: snake_case, and — thanks to
@@ -101,6 +101,8 @@ interface ProfileRow {
   notes: string | null;
   avatar_url: string | null;
   is_active: boolean;
+  /** Absent only if migration 0025 is not applied yet. */
+  is_pengurus?: boolean;
   created_at: string;
   updated_at: string;
 }
@@ -119,6 +121,7 @@ function mapProfileRow(row: ProfileRow): Profile {
     notes: row.notes,
     avatarUrl: row.avatar_url,
     serviceCount30d: 0,
+    isPengurus: row.is_pengurus === true,
     createdAt: row.created_at,
     updatedAt: row.updated_at,
   };
@@ -524,25 +527,59 @@ async function serviceCounts30d(
   return counts;
 }
 
+/**
+ * Which steward roles each person has ever held (replaced rows excluded) —
+ * the picker lists "Pernah jadi Pemusik" first (masukan Nathan, 18 Okt).
+ * Whole-history read of a small table (±220 rows), one query per page.
+ */
+async function rolesServedMap(
+  supabase: SupabaseClient
+): Promise<Record<string, string[]>> {
+  const data = rows<{ profile_id: string; role: string }>(
+    await supabase
+      .from("steward_assignments")
+      .select("profile_id, role")
+      .neq("status", "replaced"),
+    "riwayat peran"
+  );
+  return groupRoles(data.map((r) => ({ profileId: r.profile_id, role: r.role })));
+}
+
+function groupRoles(
+  list: { profileId: string; role: string }[]
+): Record<string, string[]> {
+  const map: Record<string, string[]> = {};
+  for (const { profileId, role } of list) {
+    const roles = (map[profileId] ??= []);
+    if (!roles.includes(role)) roles.push(role);
+  }
+  return map;
+}
+
 export async function getProfiles(): Promise<Profile[]> {
   if (isSupabaseConfigured()) {
     const { createClient } = await import("./supabase/server");
     const supabase = await createClient();
-    const [res, counts] = await Promise.all([
+    const [res, counts, served] = await Promise.all([
       // is_active marks "on the roster", separate from `status` ("are they
       // attending"). A login that was never a member of Pemuda is is_active
       // false, so it never shows up in the directory or the member count.
       supabase.from("profiles").select(PROFILE_COLUMNS).eq("is_active", true).order("full_name"),
       serviceCounts30d(supabase),
+      rolesServedMap(supabase),
     ]);
     return rows(res, "daftar anggota").map((row) => ({
       ...mapProfileRow(row),
       serviceCount30d: counts[row.id] ?? 0,
+      rolesServed: served[row.id] ?? [],
     }));
   }
 
-  const { seedProfiles } = await import("./seed");
-  return seedProfiles;
+  const { seedProfiles, seedStewards } = await import("./seed");
+  const served = groupRoles(
+    seedStewards.filter((s) => s.status !== "replaced")
+  );
+  return seedProfiles.map((p) => ({ ...p, rolesServed: served[p.id] ?? [] }));
 }
 
 export async function getProfileById(id: string): Promise<Profile | undefined> {
@@ -641,13 +678,12 @@ export async function getAttendanceByEvent(eventId: string): Promise<AttendanceR
 }
 
 /**
- * Profiles allowed to be picked as PIC — committee + active Cross leaders
- * (keputusan Dex, 19 Sep 2026, enforced by migration 0013's trigger).
+ * Profiles allowed to be picked as PIC — Pengurus only (masukan Nathan via
+ * Dex, 18 Okt 2026; migration 0025 replaced "committee + Cross leaders").
  *
  * Supabase mode asks list_pic_eligible(), the same function the trigger
  * uses, so the dropdown can never offer someone the database would
- * reject. Demo mode mirrors the rule honestly from the seed: the 8
- * Cross leaders.
+ * reject. Demo mode mirrors the rule from the seed's isPengurus flags.
  */
 export async function getPicEligibleProfiles(): Promise<Profile[]> {
   if (isSupabaseConfigured()) {
@@ -672,13 +708,8 @@ export async function getPicEligibleProfiles(): Promise<Profile[]> {
     }));
   }
 
-  const { seedCrossMemberships, seedProfiles } = await import("./seed");
-  const leaderIds = new Set(
-    seedCrossMemberships
-      .filter((m) => m.role === "leader" && m.isActive)
-      .map((m) => m.profileId)
-  );
-  return seedProfiles.filter((p) => leaderIds.has(p.id));
+  const { seedProfiles } = await import("./seed");
+  return seedProfiles.filter((p) => p.isPengurus);
 }
 
 /**

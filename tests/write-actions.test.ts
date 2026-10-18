@@ -197,7 +197,12 @@ describe("assignSteward", () => {
   it("demo mode applies the same rule to the seed", async () => {
     demo();
     const { assignSteward } = await import("@/app/actions/gatherings");
-    expect(await assignSteward("e1", "1", "WL")).toEqual({ success: true, id: null });
+    // Arion ("4") is free on e1; Dex ("1") already plays Pemusik there.
+    expect(await assignSteward("e1", "4", "Usher")).toEqual({ success: true, id: null });
+    expect(await assignSteward("e1", "1", "WL")).toEqual({
+      success: false,
+      error: "Orang ini sudah bertugas di ibadah yang sama. Satu orang satu peran — pilih orang lain.",
+    });
     expect(await assignSteward("nope", "1", "WL")).toMatchObject({ success: false });
     expect(fx.inserts).toHaveLength(0);
   });
