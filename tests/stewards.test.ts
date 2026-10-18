@@ -3,6 +3,7 @@ import {
   SLOT_NEEDS,
   slotStatus,
   groupStewardCandidates,
+  candidateHint,
   missingSlots,
   serviceReadiness,
   type StewardCandidate,
@@ -131,6 +132,29 @@ describe("kandidat petugas (masukan Nathan 18 Okt 2026)", () => {
     expect(ids(groupStewardCandidates(base, "wijaya", "Singer"))).toEqual([
       ["active", ["b"]],
     ]);
+  });
+});
+
+describe("candidateHint", () => {
+  const away = cand({ id: "z", fullName: "Jonathan Wijaya", status: "away", load: 1 });
+  const free = cand({ id: "b", fullName: "Angela Wijaya", load: 0 });
+
+  it("keeps the hidden-members hint when nobody is free (the case that needs it most)", () => {
+    const hint = candidateHint(groupStewardCandidates([away], "", "Singer"));
+    expect(hint).toBe("1 anggota berhalangan/tidak aktif disembunyikan — ketik namanya kalau perlu.");
+  });
+
+  it("explains the numbers only when rows show them", () => {
+    expect(candidateHint(groupStewardCandidates([free], "", "Singer"))).toBe(
+      "Angka di kanan = tugas 30 hari terakhir; ⚠ = cukup sering bertugas."
+    );
+    expect(candidateHint(groupStewardCandidates([free, away], "", "Singer"))).toMatch(
+      /^1 anggota .* Angka di kanan/
+    );
+  });
+
+  it("says nothing when there is nothing to explain", () => {
+    expect(candidateHint(groupStewardCandidates([], "", "Singer"))).toBeNull();
   });
 });
 

@@ -8,6 +8,7 @@ import { isSupabaseConfigured } from "@/lib/supabase/env";
 import type { Profile } from "@/lib/types";
 import { STEWARD_ROLES, type StewardRole } from "@/lib/validation";
 import {
+  candidateHint,
   groupStewardCandidates,
   type StewardCandidate,
 } from "@/lib/stewards";
@@ -146,6 +147,7 @@ export function AssignStewardForm({
     [candidates, query, effectiveRole, servingIds]
   );
   const anyCandidate = groups.sections.some((s) => s.items.length > 0);
+  const hint = candidateHint(groups);
 
   const selected = useMemo(
     () => candidates.find((c) => c.id === selectedId) ?? null,
@@ -505,13 +507,7 @@ export function AssignStewardForm({
               )
             ) : null}
 
-            {effectiveRole && anyCandidate && (
-              <p className="text-xs text-ink-faint">
-                {groups.hiddenUnavailable > 0 &&
-                  `${groups.hiddenUnavailable} anggota berhalangan/tidak aktif disembunyikan — ketik namanya kalau perlu. `}
-                Angka di kanan = tugas 30 hari terakhir; ⚠ = cukup sering bertugas.
-              </p>
-            )}
+            {effectiveRole && hint && <p className="text-xs text-ink-faint">{hint}</p>}
 
             {selected && selectedOverloaded && (
               <p

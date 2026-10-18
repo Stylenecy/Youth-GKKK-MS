@@ -174,6 +174,26 @@ export function groupStewardCandidates(
   return { sections, hiddenUnavailable: q ? 0 : unavailable.length };
 }
 
+/**
+ * Kalimat bantu di bawah daftar kandidat. Petunjuk "disembunyikan" tetap
+ * muncul saat daftar kosong — justru saat itu pengurus perlu tahu bahwa
+ * yang berhalangan bisa dicari namanya. Keterangan angka hanya bila ada
+ * baris yang punya angka.
+ */
+export function candidateHint(groups: CandidateGroups): string | null {
+  const anyCandidate = groups.sections.some((s) => s.items.length > 0);
+  const parts: string[] = [];
+  if (groups.hiddenUnavailable > 0) {
+    parts.push(
+      `${groups.hiddenUnavailable} anggota berhalangan/tidak aktif disembunyikan — ketik namanya kalau perlu.`
+    );
+  }
+  if (anyCandidate) {
+    parts.push("Angka di kanan = tugas 30 hari terakhir; ⚠ = cukup sering bertugas.");
+  }
+  return parts.length > 0 ? parts.join(" ") : null;
+}
+
 /** Slot kosong satu Sabtu, satu per baris, urut peran resmi — antrean
  *  "Isi berurutan" di HP. */
 export function missingSlots(
