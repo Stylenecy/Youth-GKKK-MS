@@ -351,6 +351,16 @@ export function AssignStewardForm({
 
         {chainDone ? (
           <div className="mt-5 space-y-4">
+            {/* The undo above can fail here too — the sheet's own error box
+                lives in the other branch, so repeat it. */}
+            {error && (
+              <p
+                role="alert"
+                className="rounded-xl border border-danger/40 bg-danger-wash px-3.5 py-2.5 text-xs text-danger"
+              >
+                {error}
+              </p>
+            )}
             <p className="rounded-xl border border-line/40 bg-canvas-sunk/60 px-3.5 py-3 text-sm text-ink">
               {!isSupabaseConfigured()
                 ? "Selesai. Mode demo: tidak ada yang disimpan."
@@ -442,7 +452,7 @@ export function AssignStewardForm({
                                 disabled={disabled || isPending}
                                 onClick={() => setSelectedId(active ? null : cand.id)}
                                 aria-pressed={active}
-                                className={`flex min-h-[48px] w-full items-center justify-between gap-3 px-3 py-1.5 text-left transition-colors disabled:cursor-not-allowed disabled:opacity-55 ${
+                                className={`flex min-h-[48px] w-full items-center justify-between gap-3 px-3 py-1.5 text-left transition-colors focus-visible:outline-offset-[-3px] disabled:cursor-not-allowed disabled:opacity-55 ${
                                   active
                                     ? "bg-accent-wash shadow-[inset_3px_0_0_var(--color-accent)]"
                                     : "hover:bg-canvas-sunk/60"
@@ -495,9 +505,10 @@ export function AssignStewardForm({
               )
             ) : null}
 
-            {effectiveRole && groups.hiddenUnavailable > 0 && (
+            {effectiveRole && anyCandidate && (
               <p className="text-xs text-ink-faint">
-                {groups.hiddenUnavailable} anggota berhalangan/tidak aktif disembunyikan — ketik namanya kalau perlu.
+                {groups.hiddenUnavailable > 0 &&
+                  `${groups.hiddenUnavailable} anggota berhalangan/tidak aktif disembunyikan — ketik namanya kalau perlu. `}
                 Angka di kanan = tugas 30 hari terakhir; ⚠ = cukup sering bertugas.
               </p>
             )}

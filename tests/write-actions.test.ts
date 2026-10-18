@@ -16,15 +16,20 @@ const fx: {
   tables: Record<string, Res>;
   rpc: Record<string, Res>;
   inserts: { table: string; payload: unknown }[];
+  updates: { table: string; payload: Record<string, unknown> }[];
   rpcCalls: { name: string; args: unknown }[];
-} = { role: "admin", tables: {}, rpc: {}, inserts: [], rpcCalls: [] };
+} = { role: "admin", tables: {}, rpc: {}, inserts: [], updates: [], rpcCalls: [] };
 
 function query(table: string) {
   const answer = () => fx.tables[table] ?? { data: [], error: null };
   const q: Record<string, unknown> = {};
-  for (const m of ["select", "update", "delete", "eq", "is", "order", "in", "gte", "lt", "neq", "limit"]) {
+  for (const m of ["select", "delete", "eq", "is", "order", "in", "gte", "lt", "neq", "limit"]) {
     q[m] = () => q;
   }
+  q.update = (payload: Record<string, unknown>) => {
+    fx.updates.push({ table, payload });
+    return q;
+  };
   q.insert = (payload: unknown) => {
     fx.inserts.push({ table, payload });
     return q;
@@ -79,6 +84,7 @@ beforeEach(() => {
   fx.tables = {};
   fx.rpc = {};
   fx.inserts = [];
+  fx.updates = [];
   fx.rpcCalls = [];
   recordAudit.mockClear();
 });
@@ -148,9 +154,14 @@ describe("createEvent / updateEvent", () => {
     // The event already has pic-1, who is no longer eligible (e.g. a Cross
     // leader before 0025). Changing only the theme must still be allowed.
     fx.rpc.is_pic_eligible = { data: false, error: null };
-    fx.tables.events = { data: { pic_id: "pic-1" }, error: null };
-    await updateEvent("event-1", goodEvent());
+    // One answer for both reads: the current row has pic-1, and the update
+    // "returns" one changed row (the fake answers every query the same).
+    fx.tables.events = { data: Object.assign([{ id: "event-1" }], { pic_id: "pic-1" }), error: null };
+    const res = await updateEvent("event-1", goodEvent());
+    expect(res).toEqual({ success: true });
     expect(fx.rpcCalls.some((c) => c.name === "is_pic_eligible")).toBe(false);
+    expect(fx.updates[0].payload).toMatchObject({ weekly_theme: "Satu tubuh" });
+    expect(fx.updates[0].payload).not.toHaveProperty("pic_id");
   });
 
   it("updateEvent re-checks a changed PIC and puts the error on the field", async () => {
