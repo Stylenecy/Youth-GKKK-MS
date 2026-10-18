@@ -32,7 +32,7 @@ Peranmu tertulis di **Dashboard** ("Masuk sebagai …") dan di **Pengaturan**.
 2. Tekan **Isi yang kurang** → halaman **Penatalayan**.
 3. **Di HP:** pilih Sabtunya di deretan tanggal paling atas, lalu tekan tombol emas **Isi N slot yang kurang**. Satu lembar mengisi slot kosong satu per satu: pilih nama → **Simpan & lanjut** (atau **Lewati**), sampai selesai. Mau mengisi satu peran saja? Tekan **+** di baris peran itu.
    **Di laptop:** tekan **Tambah** di baris peran dan kolom Sabtu itu → pilih nama → **Simpan**.
-   - Nama dikelompokkan: **Pernah jadi (peran itu)** di atas, lalu **Anggota aktif lain** — masing-masing urut abjad. Yang berhalangan disembunyikan; ketik namanya kalau perlu.
+   - Nama dikelompokkan: **Pernah jadi (peran itu)** di atas, lalu **Anggota aktif lain** — masing-masing urut abjad. Yang berhalangan/tidak aktif disembunyikan; ketik namanya kalau perlu.
    - Orang yang **sudah bertugas di Sabtu itu** tidak bisa dipilih lagi — satu orang satu peran per ibadah.
    - Angka di kanan (mis. *3×*) = berapa kali dia bertugas 30 hari terakhir. Tulisan merah **"Cukup sering bertugas"** = lebih dari 2×. Boleh tetap dipilih (**Tetap jadwalkan**), tapi utamakan orang lain (**Pilih orang lain**).
 4. Salah pilih? Tekan **Batalkan** yang muncul sesudah menyimpan, atau tekan **×** di samping namanya di papan.
